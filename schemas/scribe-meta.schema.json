@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/scribe-meta.schema.json",
+  "title": "STUDIO Scribe Metadata",
+  "description": "Metadata tracking for The Scribe's self-learning rule system",
+  "type": "object",
+  "required": ["version", "created_at", "last_modified"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the metadata schema"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the rules directory was initialized"
+    },
+    "last_modified": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of last rule modification"
+    },
+    "rule_count": {
+      "type": "object",
+      "description": "Count of rules per domain",
+      "properties": {
+        "global": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of global rules"
+        },
+        "frontend": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of frontend rules"
+        },
+        "backend": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of backend rules"
+        },
+        "testing": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of testing rules"
+        },
+        "security": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of security rules"
+        },
+        "devops": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of DevOps rules"
+        }
+      },
+      "additionalProperties": false
+    },
+    "history": {
+      "type": "array",
+      "description": "History of rule changes for audit and learning analysis",
+      "items": {
+        "type": "object",
+        "required": ["timestamp", "domain", "action", "rule"],
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the rule change occurred"
+          },
+          "domain": {
+            "type": "string",
+            "enum": ["global", "frontend", "backend", "testing", "security", "devops"],
+            "description": "Which domain file was modified"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["add", "remove", "modify"],
+            "description": "Type of change made"
+          },
+          "rule": {
+            "type": "string",
+            "description": "The rule text that was added/removed/modified"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category header under which the rule was placed"
+          },
+          "cast_id": {
+            "type": "string",
+            "pattern": "^cast_[0-9]{8}_[0-9]{6}$",
+            "description": "Cast ID if the rule was learned during a cast"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": ["user_correction", "rejected_proposal", "explicit_teaching", "manual"],
+            "description": "What triggered the rule to be recorded"
+          }
+        }
+      }
+    }
+  }
+}

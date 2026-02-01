@@ -1,0 +1,420 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/blueprint.schema.json",
+  "title": "STUDIO Blueprint",
+  "description": "Blueprint structure for STUDIO cast execution plans",
+  "type": "object",
+  "required": ["id", "cast_id", "goal", "created_at", "gathered_requirements", "steps", "tempering_criteria"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^bp_[0-9]{8}_[0-9]{6}_[a-f0-9]{4}$",
+      "description": "Unique blueprint identifier (format: bp_YYYYMMDD_HHMMSS_XXXX)"
+    },
+    "cast_id": {
+      "type": "string",
+      "pattern": "^cast_[0-9]{8}_[0-9]{6}$",
+      "description": "Reference to the parent cast"
+    },
+    "goal": {
+      "type": "string",
+      "description": "The goal this blueprint addresses"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of blueprint creation"
+    },
+    "gathered_requirements": {
+      "type": "object",
+      "description": "Requirements gathered through conversational questioning before analysis",
+      "required": ["gathered_at", "scope", "success_criteria", "atomic_pieces", "user_confirmations"],
+      "properties": {
+        "gathered_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When requirements gathering was completed"
+        },
+        "scope": {
+          "type": "object",
+          "required": ["included", "excluded"],
+          "properties": {
+            "included": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Features explicitly included in scope"
+            },
+            "excluded": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Features explicitly excluded from scope"
+            }
+          }
+        },
+        "success_criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "How the user will know when this is complete"
+        },
+        "actors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["role"],
+            "properties": {
+              "role": { "type": "string" },
+              "permissions": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        },
+        "data_requirements": {
+          "type": "object",
+          "properties": {
+            "inputs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "type"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "type": { "type": "string" },
+                  "required": { "type": "boolean" },
+                  "validation": { "type": "string" }
+                }
+              }
+            },
+            "outputs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "type"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "type": { "type": "string" },
+                  "format": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "domain_specific": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "enum": ["api", "database", "ui", "security", "performance", "business_logic", "full_stack", "devops", "other"]
+            },
+            "details": { "type": "object" }
+          }
+        },
+        "quality_requirements": {
+          "type": "object",
+          "properties": {
+            "testing": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "security": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "performance": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "atomic_pieces": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "description"],
+            "properties": {
+              "id": { "type": "string" },
+              "description": { "type": "string" },
+              "dependencies": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          },
+          "description": "Task broken into smallest implementable pieces"
+        },
+        "risks_identified": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["risk", "mitigation"],
+            "properties": {
+              "risk": { "type": "string" },
+              "mitigation": { "type": "string" }
+            }
+          }
+        },
+        "assumptions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "user_confirmations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["question", "response"],
+            "properties": {
+              "question": { "type": "string" },
+              "response": { "type": "string" },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "description": "Record of user confirmations during requirements gathering"
+        }
+      }
+    },
+    "estimated_steps": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Total number of steps in the blueprint"
+    },
+    "estimated_complexity": {
+      "type": "string",
+      "enum": ["trivial", "simple", "moderate", "complex", "ambitious"],
+      "description": "Overall complexity assessment"
+    },
+    "analysis": {
+      "type": "object",
+      "required": ["summary"],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "description": "Brief summary of the approach"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "description"],
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "source": { "type": "string" },
+              "required": { "type": "boolean", "default": true }
+            }
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "description", "location"],
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "location": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": ["file", "data", "state", "artifact"]
+              }
+            }
+          }
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "description"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["technical", "architectural", "resource", "quality"]
+              },
+              "description": { "type": "string" },
+              "impact": { "type": "string" }
+            }
+          }
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "description", "probability", "impact", "mitigation"],
+            "properties": {
+              "id": { "type": "string" },
+              "description": { "type": "string" },
+              "probability": { "type": "string", "enum": ["low", "medium", "high"] },
+              "impact": { "type": "string", "enum": ["low", "medium", "high"] },
+              "mitigation": { "type": "string" },
+              "contingency": { "type": "string" }
+            }
+          }
+        },
+        "assumptions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "action", "success_criteria"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^step_[0-9]+[a-z]?$",
+            "description": "Step identifier (e.g., step_1, step_2a)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Short descriptive name"
+          },
+          "action": {
+            "type": "string",
+            "description": "Detailed description of what to do"
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Why this step is necessary"
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name"],
+              "properties": {
+                "name": { "type": "string" },
+                "from": { "type": "string" },
+                "required": { "type": "boolean", "default": true }
+              }
+            }
+          },
+          "outputs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "type"],
+              "properties": {
+                "name": { "type": "string" },
+                "type": { "type": "string", "enum": ["file", "data", "state"] },
+                "location": { "type": "string" }
+              }
+            }
+          },
+          "success_criteria": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["criterion", "verification"],
+              "properties": {
+                "criterion": { "type": "string" },
+                "verification": { "type": "string" }
+              }
+            }
+          },
+          "failure_modes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["mode", "detection", "recovery"],
+              "properties": {
+                "mode": { "type": "string" },
+                "detection": { "type": "string" },
+                "recovery": { "type": "string" }
+              }
+            }
+          },
+          "depends_on": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of step IDs this step depends on"
+          },
+          "estimated_complexity": {
+            "type": "string",
+            "enum": ["trivial", "simple", "moderate", "complex"]
+          },
+          "tools_required": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "checkpoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["after_step", "name", "verification"],
+        "properties": {
+          "after_step": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "verification": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "rollback_to": { "type": "string" }
+        }
+      }
+    },
+    "tempering_criteria": {
+      "type": "object",
+      "required": ["must_verify"],
+      "properties": {
+        "must_verify": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["criterion", "evidence"],
+            "properties": {
+              "criterion": { "type": "string" },
+              "evidence": { "type": "string" },
+              "severity": {
+                "type": "string",
+                "enum": ["critical", "important"]
+              }
+            }
+          }
+        },
+        "quality_checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["check", "method"],
+            "properties": {
+              "check": { "type": "string" },
+              "method": { "type": "string" },
+              "threshold": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "total_steps": { "type": "integer" },
+        "critical_steps": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "estimated_duration": { "type": "string" },
+        "complexity_factors": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

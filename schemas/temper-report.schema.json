@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/temper-report.schema.json",
+  "title": "STUDIO Temper Report",
+  "description": "Complete temper verification report with cross-references",
+  "type": "object",
+  "required": ["id", "cast_id", "blueprint_id", "tempered_at", "goal_verification", "step_verifications", "verdict"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^tr_[0-9]{8}_[0-9]{6}$",
+      "description": "Unique temper report identifier (format: tr_YYYYMMDD_HHMMSS)"
+    },
+    "cast_id": {
+      "type": "string",
+      "pattern": "^cast_[0-9]{8}_[0-9]{6}$",
+      "description": "Reference to the parent cast"
+    },
+    "blueprint_id": {
+      "type": "string",
+      "pattern": "^bp_[0-9]{8}_[0-9]{6}_[a-f0-9]{4}$",
+      "description": "Reference to the blueprint being verified"
+    },
+    "forge_log_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "SHA256 hash of the forge log for integrity verification"
+    },
+    "tempered_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of verification"
+    },
+    "attempt_number": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Which tempering attempt this is"
+    },
+    "goal_verification": {
+      "type": "object",
+      "required": ["original_goal", "achieved", "evidence"],
+      "properties": {
+        "original_goal": {
+          "type": "string",
+          "description": "The original goal from the blueprint"
+        },
+        "achieved": {
+          "type": "string",
+          "enum": ["yes", "no", "partial"],
+          "description": "Whether the goal was achieved"
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Evidence supporting the achievement assessment"
+        },
+        "gaps": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Gaps identified in goal achievement"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes on goal verification"
+        }
+      }
+    },
+    "step_verifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["step_id", "blueprint_ref", "forge_ref", "status"],
+        "properties": {
+          "step_id": {
+            "type": "string",
+            "description": "The step identifier"
+          },
+          "blueprint_ref": {
+            "type": "string",
+            "pattern": "^bp_[0-9]{8}_[0-9]{6}_[a-f0-9]{4}#step_[0-9]+[a-z]?$",
+            "description": "Reference to the blueprint step"
+          },
+          "forge_ref": {
+            "type": "string",
+            "pattern": "^cast_[0-9]{8}_[0-9]{6}#exec_[0-9]+$",
+            "description": "Reference to the forge execution record"
+          },
+          "step_name": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["verified", "failed", "skipped", "partial"],
+            "description": "Verification status"
+          },
+          "success_criteria": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["criterion", "passed"],
+              "properties": {
+                "criterion": { "type": "string" },
+                "passed": { "type": "boolean" },
+                "evidence": { "type": "string" },
+                "error": { "type": "string" }
+              }
+            }
+          },
+          "notes": { "type": "string" }
+        }
+      },
+      "description": "Verification results for each step"
+    },
+    "output_verifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["output_name", "expected_location", "present", "correct"],
+        "properties": {
+          "output_name": { "type": "string" },
+          "expected_location": { "type": "string" },
+          "present": { "type": "boolean" },
+          "correct": {
+            "type": "string",
+            "enum": ["yes", "no", "partial"]
+          },
+          "verification_method": { "type": "string" },
+          "issues": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "description": "Verification of expected outputs"
+    },
+    "quality_check_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["check", "method", "result"],
+        "properties": {
+          "check": { "type": "string" },
+          "method": { "type": "string" },
+          "result": {
+            "type": "string",
+            "enum": ["pass", "fail", "skip", "error"]
+          },
+          "output": { "type": "string" },
+          "exit_code": { "type": "integer" }
+        }
+      },
+      "description": "Results of quality checks"
+    },
+    "drift_analysis": {
+      "type": "object",
+      "required": ["scope_drift", "approach_drift", "quality_drift", "acceptable"],
+      "properties": {
+        "scope_drift": {
+          "type": "string",
+          "enum": ["none", "expansion", "reduction"]
+        },
+        "scope_drift_details": { "type": "string" },
+        "approach_drift": {
+          "type": "string",
+          "enum": ["none", "minor", "significant"]
+        },
+        "approach_drift_details": { "type": "string" },
+        "quality_drift": {
+          "type": "string",
+          "enum": ["none", "above", "below"]
+        },
+        "quality_drift_details": { "type": "string" },
+        "acceptable": { "type": "boolean" },
+        "rationale": { "type": "string" }
+      },
+      "description": "Analysis of drift from original intent"
+    },
+    "verdict": {
+      "$ref": "verdict.schema.json",
+      "description": "The final verdict decision"
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "steps_verified": { "type": "integer" },
+        "steps_total": { "type": "integer" },
+        "outputs_verified": { "type": "integer" },
+        "outputs_total": { "type": "integer" },
+        "quality_checks_passed": { "type": "integer" },
+        "quality_checks_total": { "type": "integer" },
+        "issues_critical": { "type": "integer" },
+        "issues_important": { "type": "integer" },
+        "issues_minor": { "type": "integer" }
+      },
+      "description": "Summary statistics"
+    }
+  }
+}

@@ -1,0 +1,334 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "execution-ready-blueprint.schema.json",
+  "title": "STUDIO Execution-Ready Blueprint",
+  "description": "Schema for CAST-READY blueprints - Complete, Atomic, Self-validating, Traceable, Retry-aware, Environment-aware, Assumption-free, Deterministic, Yield-focused",
+  "type": "object",
+  "required": [
+    "id",
+    "cast_id",
+    "goal",
+    "created_at",
+    "blueprint_standard",
+    "embedded_context",
+    "steps",
+    "validation_hooks"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^bp_[0-9]{8}_[0-9]{6}_[a-f0-9]{4}$",
+      "description": "Blueprint ID in format bp_YYYYMMDD_HHMMSS_XXXX"
+    },
+    "cast_id": {
+      "type": "string",
+      "pattern": "^cast_[0-9]{8}_[0-9]{6}$",
+      "description": "Associated cast ID"
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Clear statement of the goal"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp"
+    },
+    "blueprint_standard": {
+      "type": "string",
+      "const": "CAST-READY",
+      "description": "Must be CAST-READY for consolidated pipeline"
+    },
+
+    "embedded_context": {
+      "type": "object",
+      "required": ["scribe_rules", "discovered_patterns"],
+      "description": "All context embedded - executor never reloads",
+      "properties": {
+        "scribe_rules": {
+          "type": "object",
+          "properties": {
+            "global": {
+              "type": "string",
+              "description": "Full text of global.md rules"
+            },
+            "domains": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Domain-specific rules keyed by domain name"
+            }
+          }
+        },
+        "discovered_patterns": {
+          "type": "object",
+          "description": "Patterns discovered from codebase analysis",
+          "properties": {
+            "import_style": { "type": "string" },
+            "component_structure": { "type": "string" },
+            "state_management": { "type": "string" },
+            "api_pattern": { "type": "string" },
+            "testing_framework": { "type": "string" },
+            "naming_convention": { "type": "string" }
+          },
+          "additionalProperties": { "type": "string" }
+        },
+        "constraints": {
+          "type": "object",
+          "description": "Environment constraints",
+          "additionalProperties": true
+        }
+      }
+    },
+
+    "gathered_requirements": {
+      "type": "object",
+      "description": "Requirements gathered during Phase 1",
+      "properties": {
+        "gathered_at": { "type": "string", "format": "date-time" },
+        "scope": {
+          "type": "object",
+          "properties": {
+            "included": { "type": "array", "items": { "type": "string" } },
+            "excluded": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "success_criteria": { "type": "array", "items": { "type": "string" } },
+        "atomic_pieces": { "type": "array", "items": { "type": "object" } },
+        "user_confirmations": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+
+    "analysis": {
+      "type": "object",
+      "description": "Analysis summary",
+      "properties": {
+        "summary": { "type": "string" },
+        "inputs": { "type": "array", "items": { "type": "object" } },
+        "outputs": { "type": "array", "items": { "type": "object" } },
+        "risks": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/executionReadyStep"
+      },
+      "description": "Execution-ready steps with micro-actions and validation"
+    },
+
+    "validation_hooks": {
+      "type": "object",
+      "required": ["quality_gate"],
+      "description": "Hook configurations for real-time validation",
+      "properties": {
+        "pre_execution": {
+          "type": "object",
+          "properties": {
+            "description": { "type": "string" },
+            "checks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "command"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "command": { "type": "string" },
+                  "required": { "type": "boolean", "default": true }
+                }
+              }
+            }
+          }
+        },
+        "post_step": {
+          "type": "object",
+          "properties": {
+            "description": { "type": "string" },
+            "trigger": { "type": "string" },
+            "action": { "type": "string" }
+          }
+        },
+        "quality_gate": {
+          "type": "object",
+          "required": ["checks"],
+          "properties": {
+            "description": { "type": "string" },
+            "trigger": { "type": "string", "default": "Stop" },
+            "checks": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["name", "command"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "command": { "type": "string" },
+                  "required": { "type": "boolean", "default": true },
+                  "on_failure": {
+                    "type": "string",
+                    "enum": ["BLOCK", "WARN"],
+                    "default": "BLOCK"
+                  }
+                }
+              }
+            },
+            "verdict_mapping": {
+              "type": "object",
+              "properties": {
+                "all_required_pass": { "type": "string", "default": "STRONG" },
+                "all_required_pass_optional_warn": { "type": "string", "default": "SOUND" },
+                "any_required_fail": { "type": "string", "default": "BLOCK_COMPLETION" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "completion_criteria": {
+      "type": "object",
+      "description": "What defines cast completion",
+      "properties": {
+        "all_steps_success": { "type": "boolean", "default": true },
+        "quality_gate_pass": { "type": "boolean", "default": true },
+        "outputs_verified": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+
+  "$defs": {
+    "executionReadyStep": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "action",
+        "success_criteria",
+        "retry_behavior"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^step_[0-9]+[a-z]?$",
+          "description": "Step ID in format step_N or step_Na"
+        },
+        "name": {
+          "type": "string",
+          "description": "Short descriptive name"
+        },
+        "action": {
+          "type": "object",
+          "required": ["description"],
+          "properties": {
+            "description": { "type": "string" },
+            "primary_tool": {
+              "type": "string",
+              "enum": ["Write", "Edit", "Bash", "Read", "Glob", "Grep"]
+            },
+            "parameters": { "type": "object" }
+          }
+        },
+        "micro_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["sequence", "tool", "purpose"],
+            "properties": {
+              "sequence": { "type": "integer", "minimum": 1 },
+              "tool": {
+                "type": "string",
+                "enum": ["Write", "Edit", "Bash", "Read", "Glob", "Grep"]
+              },
+              "purpose": { "type": "string" },
+              "command": { "type": "string" },
+              "file_path": { "type": "string" },
+              "content": { "type": "string" },
+              "params": { "type": "object" }
+            }
+          },
+          "description": "Explicit micro-actions in execution order"
+        },
+        "success_criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["criterion", "validation_command", "expected_output"],
+            "properties": {
+              "criterion": {
+                "type": "string",
+                "description": "Human-readable criterion description"
+              },
+              "validation_command": {
+                "type": "string",
+                "description": "Shell command that returns PASS/FAIL or exit code"
+              },
+              "expected_output": {
+                "type": "string",
+                "description": "Expected output string or EXIT:0"
+              },
+              "on_failure": {
+                "type": "string",
+                "enum": ["retry", "skip", "halt"],
+                "default": "retry"
+              }
+            }
+          },
+          "description": "Self-validating criteria with executable commands"
+        },
+        "retry_behavior": {
+          "type": "object",
+          "required": ["max_attempts", "strategy"],
+          "properties": {
+            "max_attempts": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 3
+            },
+            "strategy": {
+              "type": "string",
+              "enum": ["fix_and_retry", "skip_if_optional", "halt_with_context"],
+              "default": "fix_and_retry"
+            },
+            "fix_hints": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Hints for fixing common failure modes"
+            },
+            "escalation": {
+              "type": "string",
+              "enum": ["halt_with_context", "skip_if_optional"],
+              "default": "halt_with_context"
+            }
+          },
+          "description": "Embedded retry logic - replaces manual replanning"
+        },
+        "depends_on": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Step IDs this step depends on"
+        },
+        "produces": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Outputs/artifacts this step produces"
+        },
+        "scribe_rules_applied": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Scribe rules that influenced this step's design"
+        },
+        "estimated_complexity": {
+          "type": "string",
+          "enum": ["trivial", "simple", "moderate", "complex"],
+          "description": "Complexity estimate"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "description": "STUDIO Intelligent Hook System - Self-correcting autonomous workflow",
+  "version": "2.0.0",
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/session-start.sh",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/restore-context.sh"
+          }
+        ]
+      }
+    ],
+
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/save-context.sh"
+          }
+        ]
+      }
+    ],
+
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/inject-context.sh"
+          }
+        ]
+      }
+    ],
+
+    "SubagentStart": [
+      {
+        "matcher": "builder",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Pre-flight check before building. Verify: 1) A valid plan.json exists in the current task directory 2) The plan has status READY_TO_BUILD or challenge_results.overall_verdict is APPROVED 3) All dependencies mentioned in the plan are available. If ANY check fails, return {\"ok\": false, \"reason\": \"Cannot start build: [specific issue]\"}. If all checks pass, return {\"ok\": true}.",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are a plan alignment checker. The builder should only make changes that align with the current plan. Check if this file operation aligns with the plan steps. Tool: $TOOL_NAME, File: $FILE_PATH. If this appears to be an unauthorized change or drift from the plan, return {\"ok\": false, \"reason\": \"This change doesn't align with the current plan step. Please follow the plan.\"}. If it aligns or there's no active plan, return {\"ok\": true}.",
+            "model": "haiku"
+          }
+        ]
+      }
+    ],
+
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/track-progress.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+
+    "PostToolUseFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "A tool call failed. Analyze the failure: 1) What tool failed and why? 2) Is this a recurring pattern in this project? 3) Should we remember this to avoid in the future? If this is a project-specific gotcha worth remembering, append a note to studio/memory/failures.md. Return {\"ok\": true} after analysis.",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+
+    "SubagentStop": [
+      {
+        "matcher": "planner",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Validate the planner's output. Check: 1) A plan.json was written 2) The plan has all required sections (embedded_context, gathered_requirements, challenge_results, steps, validation_hooks) 3) challenge_results.overall_verdict is APPROVED 4) Each step has executable success_criteria with validation_command. If ANY check fails, return {\"ok\": false, \"reason\": \"Plan incomplete: [specific issue]\"}. If valid, return {\"ok\": true}.",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "builder",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Validate the builder's output. Read the plan.json and manifest.json. For each step in the plan: 1) Run the validation_command from success_criteria 2) Verify output matches expected_output 3) Check manifest shows step completed. If ANY validation fails, return {\"ok\": false, \"reason\": \"Build incomplete: Step [X] failed validation - [details]\"}. If all pass, return {\"ok\": true}.",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/check-stop.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}

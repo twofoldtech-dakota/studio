@@ -1,0 +1,20 @@
+{
+  "name": "studio",
+  "version": "2.0.0",
+  "description": "STUDIO - Autonomous software development workflow: Plan then Build with embedded context and quality gates",
+  "author": {
+    "name": "STUDIO Contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "autonomous",
+    "workflow",
+    "planning",
+    "building",
+    "quality-gates",
+    "plan-and-solve",
+    "enterprise"
+  ],
+  "hooks": "./hooks/hooks.json",
+  "outputStyles": "./styles/"
+}

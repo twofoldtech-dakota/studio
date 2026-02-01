@@ -1,0 +1,33 @@
+{
+  "name": "studio-marketplace",
+  "owner": {
+    "name": "STUDIO Contributors"
+  },
+  "metadata": {
+    "description": "STUDIO plugin marketplace - Autonomous workflow orchestration for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "studio",
+      "source": "./",
+      "description": "Autonomous workflow orchestration through metallurgy-inspired phases: Blueprinting, Forging, and Tempering",
+      "version": "1.1.0",
+      "author": {
+        "name": "STUDIO Contributors"
+      },
+      "homepage": "https://github.com/twofoldtech-dakota/studio",
+      "repository": "https://github.com/twofoldtech-dakota/studio",
+      "license": "MIT",
+      "keywords": [
+        "autonomous",
+        "workflow",
+        "planning",
+        "execution",
+        "verification",
+        "plan-and-solve",
+        "reflection"
+      ],
+      "category": "productivity"
+    }
+  ]
+}

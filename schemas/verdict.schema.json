@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/verdict.schema.json",
+  "title": "STUDIO Verdict",
+  "description": "Verdict decision structure for temper verification",
+  "type": "object",
+  "required": ["verdict", "confidence", "rationale"],
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": ["STRONG", "SOUND", "BRITTLE", "CRACKED"],
+      "description": "The temper verdict determining cast completion status"
+    },
+    "confidence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Confidence percentage in the verdict (0-100)"
+    },
+    "rationale": {
+      "type": "string",
+      "description": "Detailed explanation of why this verdict was chosen"
+    },
+    "issues": {
+      "type": "object",
+      "properties": {
+        "critical": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["description"],
+            "properties": {
+              "description": { "type": "string" },
+              "step_id": { "type": "string" },
+              "impact": { "type": "string" }
+            }
+          },
+          "description": "Critical issues that block completion"
+        },
+        "important": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["description"],
+            "properties": {
+              "description": { "type": "string" },
+              "step_id": { "type": "string" },
+              "suggested_fix": { "type": "string" }
+            }
+          },
+          "description": "Important issues that should be fixed"
+        },
+        "minor": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["description"],
+            "properties": {
+              "description": { "type": "string" },
+              "step_id": { "type": "string" }
+            }
+          },
+          "description": "Minor issues noted but not blocking"
+        }
+      },
+      "description": "Categorized issues found during tempering"
+    },
+    "required_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action", "priority"],
+        "properties": {
+          "action": { "type": "string" },
+          "priority": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low"]
+          },
+          "related_step_id": { "type": "string" }
+        }
+      },
+      "description": "Actions required before cast can complete (for BRITTLE/CRACKED)"
+    }
+  }
+}
