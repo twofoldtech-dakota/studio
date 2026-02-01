@@ -43,7 +43,8 @@ npm install -g @anthropic-ai/claude-code
 claude
 
 # Add STUDIO plugin
-/plugin marketplace add twofoldtech-dakota/studio
+/plugin marketplace add https://github.com/twofoldtech-dakota/studio.git
+/plugin install twofoldtech-dakota/studio
 ```
 
 ### Your First Build
