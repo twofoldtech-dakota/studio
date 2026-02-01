@@ -111,7 +111,7 @@ cmd_phase() {
     local color icon num
 
     case "$phase" in
-        planing|1)
+        planning|planing|1)
             color="$BRIGHT_BLUE"
             icon="🔷"
             num="1"
