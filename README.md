@@ -9,7 +9,7 @@
 ║                                                                               ║
 ║   🎯 GOAL              📋 PLAN              🔨 BUILD              ✅ VERIFIED  ║
 ║                                                                               ║
-║   "Add user     ───▶   Atomic steps   ───▶   Execute &    ───▶   Quality     ║
+║   "Add user     ───▶   Atomic steps   ───▶   Execute &    ───▶   Quality      ║
 ║    auth"               with validation       validate            gate passed  ║
 ║                                                                               ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
@@ -123,7 +123,7 @@ Complete a 5-phase guided interview to establish:
 ```
 ┌─────────────────────┬─────────────────────┬─────────────────────────────┐
 │                     │                     │                             │
-│   🔵 THE PLANNER    │   🟡 THE BUILDER    │   🟣 THE CONTENT WRITER     │
+│   🔵 THE PLANNER    │   🟡 THE BUILDER     │   🟣 THE CONTENT WRITER     │
 │                     │                     │                             │
 │   Creates plans     │   Executes plans    │   Creates content           │
 │   Embeds context    │   Validates steps   │   Applies brand voice       │
@@ -240,18 +240,18 @@ studio/
                               STUDIO SYSTEM
     ┌────────────────────────────────────────────────────────────────────┐
     │                                                                    │
-    │   ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌─────────┐  │
-    │   │   USER   │────▶│ PLANNER  │────▶│ BUILDER  │────▶│ VERIFIED│  │
-    │   │   GOAL   │     │  AGENT   │     │  AGENT   │     │  OUTPUT │  │
-    │   └──────────┘     └────┬─────┘     └────┬─────┘     └─────────┘  │
-    │                         │                │                        │
-    │                    ┌────┴────────────────┴────┐                   │
-    │                    │                          │                   │
-    │              ┌─────┴─────┐            ┌───────┴───────┐           │
-    │              │  MEMORY   │            │    HOOKS      │           │
-    │              │  SYSTEM   │            │    SYSTEM     │           │
-    │              │ (Learning)│            │ (Validation)  │           │
-    │              └───────────┘            └───────────────┘           │
+    │   ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌─────────┐   │
+    │   │   USER   │────▶│ PLANNER  │────▶│ BUILDER  │────▶│ VERIFIED│   │
+    │   │   GOAL   │     │  AGENT   │     │  AGENT   │     │  OUTPUT │   │
+    │   └──────────┘     └────┬─────┘     └────┬─────┘     └─────────┘   │
+    │                         │                │                         │
+    │                    ┌────┴────────────────┴────┐                    │
+    │                    │                          │                    │
+    │              ┌─────┴─────┐            ┌───────┴───────┐            │
+    │              │  MEMORY   │            │    HOOKS      │            │
+    │              │  SYSTEM   │            │    SYSTEM     │            │
+    │              │ (Learning)│            │ (Validation)  │            │
+    │              └───────────┘            └───────────────┘            │
     │                                                                    │
     └────────────────────────────────────────────────────────────────────┘
 ```
