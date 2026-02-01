@@ -44,7 +44,7 @@ claude
 
 # Add STUDIO plugin
 /plugin marketplace add https://github.com/twofoldtech-dakota/studio.git
-/plugin install twofoldtech-dakota/studio
+/plugin install studio@studio-marketplace
 ```
 
 ### Your First Build
