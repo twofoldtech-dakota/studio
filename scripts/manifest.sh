@@ -486,16 +486,366 @@ cmd_task() {
     esac
 }
 
+# Trace command - show requirements traceability matrix
+cmd_trace() {
+    local task_dir
+    task_dir=$(find_active_task "${1:-}")
+    local manifest="${task_dir}/manifest.json"
+    local plan="${task_dir}/plan.json"
+
+    if [[ ! -f "$manifest" ]]; then
+        echo -e "${RED}No manifest found${NC}"
+        return 1
+    fi
+
+    local task_id
+    task_id=$(jq -r '.id' "$manifest")
+
+    echo ""
+    echo -e "${BOLD}╔═══════════════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BOLD}║${NC}  REQUIREMENTS TRACEABILITY: ${CYAN}${task_id}${NC}"
+    echo -e "${BOLD}╠═══════════════════════════════════════════════════════════════════════════════╣${NC}"
+    echo ""
+
+    # Functional requirements
+    echo -e "${BOLD}FUNCTIONAL REQUIREMENTS${NC}"
+    echo -e "${DIM}═══════════════════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    printf "${BOLD}│ %-9s │ %-29s │ %-13s │ %-18s │${NC}\n" "REQ ID" "Description" "Steps" "Verification"
+    echo "├───────────┼───────────────────────────────┼───────────────┼────────────────────┤"
+
+    local func_total=0
+    local func_verified=0
+
+    # Parse functional requirements
+    while IFS= read -r req; do
+        if [[ -n "$req" ]] && [[ "$req" != "null" ]]; then
+            local id desc steps verify status
+            id=$(echo "$req" | jq -r '.id // "?"')
+            desc=$(echo "$req" | jq -r '.description // ""' | cut -c1-27)
+            steps=$(echo "$req" | jq -r '(.linked_steps // []) | join(",")' | cut -c1-11)
+            verify=$(echo "$req" | jq -r '.verification.test_file // ""')
+            status=$(echo "$req" | jq -r '.status // "pending"')
+
+            ((func_total++))
+
+            local verify_icon=""
+            if [[ -n "$verify" ]] && [[ "$verify" != "null" ]]; then
+                verify_icon="${GREEN}✓${NC}"
+                ((func_verified++))
+                verify="${verify}:$(echo "$req" | jq -r '.verification.test_line // ""')"
+            else
+                verify_icon="${YELLOW}⚠${NC}"
+                verify="No test found"
+            fi
+
+            printf "│ %-9s │ %-29s │ %-13s │ ${verify_icon} %-16s │\n" \
+                "$id" "$desc" "$steps" "${verify:0:16}"
+        fi
+    done < <(jq -c '.requirements.functional[]?' "$manifest" 2>/dev/null)
+
+    echo ""
+
+    # Non-functional requirements
+    echo -e "${BOLD}NON-FUNCTIONAL REQUIREMENTS${NC}"
+    echo -e "${DIM}═══════════════════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    printf "${BOLD}│ %-9s │ %-29s │ %-13s │ %-18s │${NC}\n" "REQ ID" "Description" "Steps" "Verification"
+    echo "├───────────┼───────────────────────────────┼───────────────┼────────────────────┤"
+
+    local nfr_total=0
+    local nfr_verified=0
+
+    while IFS= read -r req; do
+        if [[ -n "$req" ]] && [[ "$req" != "null" ]]; then
+            local id desc steps verify
+            id=$(echo "$req" | jq -r '.id // "?"')
+            desc=$(echo "$req" | jq -r '.description // ""' | cut -c1-27)
+            steps=$(echo "$req" | jq -r '(.linked_steps // []) | join(",")' | cut -c1-11)
+            verify=$(echo "$req" | jq -r '.verification.test_file // ""')
+
+            ((nfr_total++))
+
+            local verify_icon=""
+            if [[ -n "$verify" ]] && [[ "$verify" != "null" ]]; then
+                verify_icon="${GREEN}✓${NC}"
+                ((nfr_verified++))
+                verify="${verify}:$(echo "$req" | jq -r '.verification.test_line // ""')"
+            else
+                verify_icon="${YELLOW}⚠${NC}"
+                verify="No test found"
+            fi
+
+            printf "│ %-9s │ %-29s │ %-13s │ ${verify_icon} %-16s │\n" \
+                "$id" "$desc" "$steps" "${verify:0:16}"
+        fi
+    done < <(jq -c '.requirements.non_functional[]?' "$manifest" 2>/dev/null)
+
+    echo ""
+
+    # Coverage summary
+    local total=$((func_total + nfr_total))
+    local verified=$((func_verified + nfr_verified))
+
+    echo -e "${BOLD}COVERAGE SUMMARY${NC}"
+    echo -e "${DIM}═══════════════════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+
+    if [[ $total -gt 0 ]]; then
+        local impl_pct=$((total * 100 / total))
+        local verify_pct=$((verified * 100 / total))
+
+        echo -e "  Implemented:  ${total}/${total} requirements (${impl_pct}%)"
+        echo -e "  Verified:     ${verified}/${total} requirements (${verify_pct}%)"
+    else
+        echo "  No requirements found in manifest."
+    fi
+
+    # Show gaps
+    local unverified=$((total - verified))
+    if [[ $unverified -gt 0 ]]; then
+        echo ""
+        echo -e "  ${YELLOW}⚠ Gaps found:${NC}"
+
+        # List unverified requirements
+        while IFS= read -r req; do
+            if [[ -n "$req" ]] && [[ "$req" != "null" ]]; then
+                local verify
+                verify=$(echo "$req" | jq -r '.verification.test_file // ""')
+                if [[ -z "$verify" ]] || [[ "$verify" == "null" ]]; then
+                    local id
+                    id=$(echo "$req" | jq -r '.id // "?"')
+                    echo -e "    - ${id}: Missing test verification"
+                fi
+            fi
+        done < <(jq -c '.requirements.functional[]?, .requirements.non_functional[]?' "$manifest" 2>/dev/null)
+    fi
+
+    echo ""
+
+    # Recommendation
+    if [[ $verified -eq $total ]] && [[ $total -gt 0 ]]; then
+        echo -e "${GREEN}All requirements verified. Ready to complete.${NC}"
+    elif [[ $unverified -gt 0 ]]; then
+        echo -e "${YELLOW}Recommendation: Add tests for unverified requirements before completing build.${NC}"
+    fi
+
+    echo ""
+}
+
+# Confidence command - calculate and display plan confidence score
+cmd_confidence() {
+    local task_dir
+    task_dir=$(find_active_task "${1:-}")
+    local plan="${task_dir}/plan.json"
+
+    if [[ ! -f "$plan" ]]; then
+        echo -e "${RED}No plan found${NC}"
+        return 1
+    fi
+
+    # Calculate scores
+    local req_score=0
+    local step_score=0
+    local ctx_score=0
+    local risk_score=0
+    local warnings=()
+
+    # Requirements score (25 points)
+    local personas_count
+    personas_count=$(jq '.gathered_requirements.personas_consulted // [] | length' "$plan" 2>/dev/null || echo 0)
+    if [[ $personas_count -ge 3 ]]; then
+        ((req_score += 10))
+    else
+        warnings+=("Only $personas_count personas consulted (need 3+)")
+    fi
+
+    local confirmations
+    confirmations=$(jq '.gathered_requirements.user_confirmations // [] | length' "$plan" 2>/dev/null || echo 0)
+    if [[ $confirmations -ge 1 ]]; then
+        ((req_score += 10))
+    else
+        warnings+=("No user confirmations recorded")
+    fi
+
+    local edge_cases
+    edge_cases=$(jq '.gathered_requirements.edge_cases // [] | length' "$plan" 2>/dev/null || echo 0)
+    if [[ $edge_cases -ge 2 ]]; then
+        ((req_score += 5))
+    else
+        warnings+=("Only $edge_cases edge cases identified (need 2+)")
+    fi
+
+    # Step quality score (25 points)
+    local total_steps
+    total_steps=$(jq '.steps // [] | length' "$plan" 2>/dev/null || echo 0)
+
+    local validated_steps
+    validated_steps=$(jq '[.steps[]? | select(.success_criteria != null and (.success_criteria | length) > 0)] | length' "$plan" 2>/dev/null || echo 0)
+
+    if [[ $total_steps -gt 0 ]] && [[ $validated_steps -eq $total_steps ]]; then
+        ((step_score += 10))
+    else
+        warnings+=("${validated_steps}/${total_steps} steps have validation commands")
+    fi
+
+    local atomic_steps
+    atomic_steps=$(jq '[.steps[]? | select(.micro_actions != null and (.micro_actions | length) <= 5)] | length' "$plan" 2>/dev/null || echo 0)
+
+    if [[ $total_steps -gt 0 ]] && [[ $atomic_steps -eq $total_steps ]]; then
+        ((step_score += 10))
+    else
+        warnings+=("Some steps may not be atomic")
+    fi
+
+    local has_deps
+    has_deps=$(jq 'all(.steps[]?; .depends_on != null)' "$plan" 2>/dev/null || echo "false")
+    if [[ "$has_deps" == "true" ]]; then
+        ((step_score += 5))
+    else
+        warnings+=("Dependencies not defined for all steps")
+    fi
+
+    # Context score (25 points)
+    local memory_count
+    memory_count=$(jq '.embedded_context.memory_rules // {} | keys | length' "$plan" 2>/dev/null || echo 0)
+    if [[ $memory_count -gt 0 ]]; then
+        ((ctx_score += 10))
+    else
+        warnings+=("No Memory rules embedded")
+    fi
+
+    local pattern_count
+    pattern_count=$(jq '.embedded_context.discovered_patterns // {} | keys | length' "$plan" 2>/dev/null || echo 0)
+    if [[ $pattern_count -ge 3 ]]; then
+        ((ctx_score += 10))
+    else
+        warnings+=("Only $pattern_count patterns discovered (need 3+)")
+    fi
+
+    local constraint_count
+    constraint_count=$(jq '.embedded_context.constraints // {} | keys | length' "$plan" 2>/dev/null || echo 0)
+    if [[ $constraint_count -gt 0 ]]; then
+        ((ctx_score += 5))
+    else
+        warnings+=("No constraints documented")
+    fi
+
+    # Risk score (25 points)
+    local failure_modes
+    failure_modes=$(jq '.challenge_results.failure_modes.notes // [] | length' "$plan" 2>/dev/null || echo 0)
+    if [[ $failure_modes -gt 0 ]]; then
+        ((risk_score += 10))
+    else
+        warnings+=("No failure modes analyzed")
+    fi
+
+    local retry_steps
+    retry_steps=$(jq '[.steps[]? | select(.retry_behavior.fix_hints != null and (.retry_behavior.fix_hints | length) > 0)] | length' "$plan" 2>/dev/null || echo 0)
+    if [[ $total_steps -gt 0 ]] && [[ $retry_steps -eq $total_steps ]]; then
+        ((risk_score += 10))
+    else
+        warnings+=("Retry hints not defined for all steps")
+    fi
+
+    local has_rollback
+    has_rollback=$(jq '.rollback_strategy != null or .create_snapshot == true' "$plan" 2>/dev/null || echo "false")
+    if [[ "$has_rollback" == "true" ]]; then
+        ((risk_score += 5))
+    else
+        warnings+=("No rollback strategy defined")
+    fi
+
+    # Total score
+    local total=$((req_score + step_score + ctx_score + risk_score))
+
+    # Determine recommendation
+    local recommendation color
+    if [[ $total -ge 90 ]]; then
+        recommendation="PROCEED_WITH_CONFIDENCE"
+        color="$GREEN"
+    elif [[ $total -ge 70 ]]; then
+        recommendation="PROCEED_WITH_CAUTION"
+        color="$YELLOW"
+    elif [[ $total -ge 50 ]]; then
+        recommendation="REVIEW_WARNINGS"
+        color="$YELLOW"
+    else
+        recommendation="DO_NOT_BUILD"
+        color="$RED"
+    fi
+
+    # Display
+    echo ""
+    echo -e "${BOLD}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BOLD}║${NC}  PLAN CONFIDENCE: ${color}${total}%${NC}"
+    echo -e "${BOLD}╠══════════════════════════════════════════════════════════════╣${NC}"
+    echo -e "${BOLD}║${NC}"
+
+    # Requirements bar
+    local req_pct=$((req_score * 100 / 25))
+    echo -e "${BOLD}║${NC}  Requirements:    $(build_mini_bar $req_pct) ${req_score}/25"
+
+    # Step quality bar
+    local step_pct=$((step_score * 100 / 25))
+    echo -e "${BOLD}║${NC}  Step Quality:    $(build_mini_bar $step_pct) ${step_score}/25"
+
+    # Context bar
+    local ctx_pct=$((ctx_score * 100 / 25))
+    echo -e "${BOLD}║${NC}  Context:         $(build_mini_bar $ctx_pct) ${ctx_score}/25"
+
+    # Risk bar
+    local risk_pct=$((risk_score * 100 / 25))
+    echo -e "${BOLD}║${NC}  Risk:            $(build_mini_bar $risk_pct) ${risk_score}/25"
+
+    echo -e "${BOLD}║${NC}"
+
+    # Warnings
+    if [[ ${#warnings[@]} -gt 0 ]]; then
+        echo -e "${BOLD}║${NC}  ${YELLOW}Warnings:${NC}"
+        for warning in "${warnings[@]}"; do
+            echo -e "${BOLD}║${NC}    ⚠ $warning"
+        done
+        echo -e "${BOLD}║${NC}"
+    fi
+
+    echo -e "${BOLD}║${NC}  Recommendation: ${color}${recommendation//_/ }${NC}"
+    echo -e "${BOLD}║${NC}"
+    echo -e "${BOLD}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+}
+
+# Helper: build mini progress bar
+build_mini_bar() {
+    local pct=$1
+    local width=10
+    local filled=$((pct * width / 100))
+    local bar=""
+
+    for ((i=0; i<filled; i++)); do bar+="█"; done
+    for ((i=filled; i<width; i++)); do bar+="░"; done
+
+    if [[ $pct -ge 80 ]]; then
+        echo -e "[${GREEN}${bar}${NC}]"
+    elif [[ $pct -ge 50 ]]; then
+        echo -e "[${YELLOW}${bar}${NC}]"
+    else
+        echo -e "[${RED}${bar}${NC}]"
+    fi
+}
+
 # Main dispatcher
 main() {
     local cmd="${1:-status}"
     shift || true
 
     case "$cmd" in
-        init)     cmd_init "$@" ;;
-        status)   cmd_status "$@" ;;
-        board)    cmd_board "$@" ;;
-        timeline) cmd_timeline "$@" ;;
+        init)       cmd_init "$@" ;;
+        status)     cmd_status "$@" ;;
+        board)      cmd_board "$@" ;;
+        timeline)   cmd_timeline "$@" ;;
+        trace)      cmd_trace "$@" ;;
+        confidence) cmd_confidence "$@" ;;
         req)
             local subcmd="${1:-list}"
             shift || true
@@ -509,7 +859,7 @@ main() {
         progress) cmd_progress "$@" ;;
         *)
             echo "Unknown command: $cmd"
-            echo "Usage: manifest.sh {init|status|board|timeline|req|task|event|progress}"
+            echo "Usage: manifest.sh {init|status|board|timeline|trace|confidence|req|task|event|progress}"
             exit 1
             ;;
     esac

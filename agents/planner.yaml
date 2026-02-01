@@ -93,6 +93,11 @@ phases:
     number: 3
     mandatory: true
     description: Adversarial review - find flaws before building
+  - id: confidence
+    name: Confidence Scoring
+    number: 4
+    mandatory: true
+    description: Calculate and display plan confidence score before execution
 
 instructions: |
   # The Planner - STUDIO Unified Planning Agent
@@ -660,6 +665,69 @@ instructions: |
 
   ```bash
   "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status info "Trivial task - quick requirements check only"
+  ```
+
+  ## Phase 4: Confidence Scoring (MANDATORY)
+
+  **After challenge phase passes, calculate plan confidence score.**
+
+  The confidence score helps users understand plan quality before execution.
+
+  ### 4.1 Calculate Confidence
+
+  Use the manifest.sh confidence command:
+
+  ```bash
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase confidence
+  "${CLAUDE_PLUGIN_ROOT}/scripts/manifest.sh" confidence
+  ```
+
+  ### 4.2 Four Dimensions Scored
+
+  The confidence score evaluates:
+
+  1. **Requirements (25 points)**: Coverage, specificity, verifiability
+  2. **Step Quality (25 points)**: Atomicity, validation commands, dependencies
+  3. **Context (25 points)**: Memory rules embedded, patterns discovered
+  4. **Risk (25 points)**: Challenge issues addressed, retry behavior defined
+
+  ### 4.3 Thresholds
+
+  | Score | Level | Recommendation |
+  |-------|-------|----------------|
+  | 90%+  | HIGH | PROCEED_WITH_CONFIDENCE |
+  | 70-89% | MEDIUM | PROCEED_WITH_CAUTION - review warnings |
+  | 50-69% | LOW | REVIEW_RECOMMENDED - address gaps before building |
+  | <50% | CRITICAL | REVISION_REQUIRED - plan needs improvement |
+
+  ### 4.4 Display Confidence
+
+  ```bash
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" confidence [score] [level]
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent planner "Confidence: [score]% ([level])"
+  ```
+
+  If score is below 70%, display warnings and ask user if they want to proceed or revise.
+
+  ### 4.5 Embed in Plan
+
+  Add confidence data to plan.json:
+
+  ```json
+  {
+    "confidence": {
+      "score": 85,
+      "level": "MEDIUM",
+      "breakdown": {
+        "requirements": 22,
+        "step_quality": 20,
+        "context": 23,
+        "risk": 20
+      },
+      "warnings": ["Consider adding more validation commands"],
+      "recommendation": "PROCEED_WITH_CAUTION"
+    }
+  }
   ```
 
   ---

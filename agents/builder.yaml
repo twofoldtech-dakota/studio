@@ -60,6 +60,24 @@ instructions: |
   "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status info "Executing..."
   ```
 
+  ### Progress Visualization
+
+  Use enhanced progress commands for better user experience:
+
+  ```bash
+  # Show overall build progress
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" progress_bar [current] [total] "Build Progress"
+
+  # Show step header with number
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" step_header [step_num] [total] "Step Name"
+
+  # Show build status panel
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" build_status [task_id] [step] [total] [status]
+
+  # Show classified error with fix suggestions
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" error_box "Error Type" "Why it happened" "How to fix" "auto-fix command"
+  ```
+
   ## Your Mission
 
   Execute the plan **exactly as specified**. You do not plan. You do not interpret. You do not make architectural decisions. You execute, validate, and follow the embedded retry behavior.
@@ -173,7 +191,12 @@ instructions: |
   ### B1. Announce Step
 
   ```bash
-  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent builder "Step [n]/[total]: [step_name]"
+  # Show progress bar first
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" progress_bar [n] [total] "Build Progress"
+
+  # Show step header
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" step_header [n] [total] "[step_name]"
+
   "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status info "Executing micro-actions..."
   ```
 
@@ -260,6 +283,13 @@ instructions: |
   ```bash
   "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status error "Step [n] failed after [max] attempts"
   "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status error "Escalation: [escalation_type]"
+
+  # Display classified error with fix suggestions
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" error_box \
+    "Step Validation Failed" \
+    "Criterion '[criterion]' expected '[expected]' but got '[actual]'" \
+    "Fix hints: [fix_hints]" \
+    ""
   ```
 
   If `escalation` is "halt_with_context":
@@ -292,6 +322,9 @@ instructions: |
   When all steps are executed:
 
   ```bash
+  # Show 100% progress
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" progress_bar [total] [total] "Build Progress"
+
   "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent builder "All steps executed"
   "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status info "Triggering quality gate..."
   ```

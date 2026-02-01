@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "studio.plugin/schemas/confidence.schema.json",
+  "title": "STUDIO Confidence Score",
+  "description": "Plan confidence score for quality assessment before execution",
+  "type": "object",
+  "required": ["total", "breakdown", "recommendation"],
+  "properties": {
+    "total": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Overall confidence score (0-100)"
+    },
+    "breakdown": {
+      "type": "object",
+      "description": "Score breakdown by category",
+      "required": ["requirements", "step_quality", "context", "risk"],
+      "properties": {
+        "requirements": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 25,
+          "description": "Requirements completeness score (0-25)"
+        },
+        "step_quality": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 25,
+          "description": "Step quality score (0-25)"
+        },
+        "context": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 25,
+          "description": "Context coverage score (0-25)"
+        },
+        "risk": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 25,
+          "description": "Risk assessment score (0-25)"
+        }
+      }
+    },
+    "details": {
+      "type": "object",
+      "description": "Detailed scoring information",
+      "properties": {
+        "requirements": {
+          "type": "object",
+          "properties": {
+            "personas_consulted": {
+              "type": "object",
+              "properties": {
+                "passed": { "type": "boolean" },
+                "count": { "type": "integer" },
+                "required": { "type": "integer" }
+              }
+            },
+            "user_confirmed": {
+              "type": "object",
+              "properties": {
+                "passed": { "type": "boolean" },
+                "confirmations": { "type": "integer" }
+              }
+            },
+            "edge_cases_identified": {
+              "type": "object",
+              "properties": {
+                "passed": { "type": "boolean" },
+                "count": { "type": "integer" },
+                "required": { "type": "integer" }
+              }
+            }
+          }
+        },
+        "step_quality": {
+          "type": "object",
+          "properties": {
+            "all_atomic": {
+              "type": "object",
+              "properties": {
+                "passed": { "type": "boolean" },
+                "total_steps": { "type": "integer" },
+                "atomic_steps": { "type": "integer" }
+              }
+            },
+            "all_validated": {
+              "type": "object",
+              "properties": {
+                "passed": { "type": "boolean" },
+                "total_steps": { "type": "integer" },
+                "validated_steps": { "type": "integer" }
+              }
+            },
+            "dependencies_clear": {
+              "type": "object",
+              "properties": {
+                "passed": { "type": "boolean" },
+                "has_cycles": { "type": "boolean" }
+              }
+            }
+          }
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "memory_rules_embedded": {
+              "type": "object",
+              "properties": {
+                "passed": { "type": "boolean" },
+                "count": { "type": "integer" }
+              }
+            },
+            "patterns_discovered": {
+              "type": "object",
+              "properties": {
+                "passed": { "type": "boolean" },
+                "count": { "type": "integer" },
+                "required": { "type": "integer" }
+              }
+            },
+            "constraints_documented": {
+              "type": "object",
+              "properties": {
+                "passed": { "type": "boolean" },
+                "count": { "type": "integer" }
+              }
+            }
+          }
+        },
+        "risk": {
+          "type": "object",
+          "properties": {
+            "failure_modes_identified": {
+              "type": "object",
+              "properties": {
+                "passed": { "type": "boolean" },
+                "count": { "type": "integer" }
+              }
+            },
+            "retry_behavior_defined": {
+              "type": "object",
+              "properties": {
+                "passed": { "type": "boolean" },
+                "steps_with_retry": { "type": "integer" },
+                "total_steps": { "type": "integer" }
+              }
+            },
+            "rollback_possible": {
+              "type": "object",
+              "properties": {
+                "passed": { "type": "boolean" },
+                "strategy": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "description": "List of warnings/issues found",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recommendation": {
+      "type": "string",
+      "enum": ["PROCEED_WITH_CONFIDENCE", "PROCEED_WITH_CAUTION", "REVIEW_WARNINGS", "DO_NOT_BUILD"],
+      "description": "Recommended action based on score"
+    },
+    "calculated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the confidence score was calculated"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
-  "description": "STUDIO Intelligent Hook System - Self-correcting autonomous workflow with progress visualization and error classification",
-  "version": "2.1.0",
+  "description": "STUDIO Intelligent Hook System - Self-correcting autonomous workflow with progress visualization, error classification, and self-review",
+  "version": "2.2.0",
 
   "hooks": {
     "SessionStart": [
@@ -117,8 +117,8 @@
         "hooks": [
           {
             "type": "agent",
-            "prompt": "Validate the planner's output. Check: 1) A plan.json was written 2) The plan has all required sections (embedded_context, gathered_requirements, challenge_results, steps, validation_hooks) 3) challenge_results.overall_verdict is APPROVED 4) Each step has executable success_criteria with validation_command. If ANY check fails, return {\"ok\": false, \"reason\": \"Plan incomplete: [specific issue]\"}. If valid, return {\"ok\": true}.",
-            "timeout": 60
+            "prompt": "Validate the planner's output and calculate confidence score.\n\n1. PLAN VALIDATION:\n   - Check plan.json was written with all sections\n   - Verify challenge_results.overall_verdict is APPROVED\n   - Confirm all steps have validation_commands\n\n2. CONFIDENCE SCORING:\n   Run: ${CLAUDE_PLUGIN_ROOT}/scripts/manifest.sh confidence\n   \n   If confidence < 70%, warn the user and ask if they want to:\n   - Improve the plan (add more requirements, edge cases)\n   - Proceed anyway\n   - Abort\n\n3. RESPONSE:\n   If plan invalid: {\"ok\": false, \"reason\": \"Plan incomplete: [issue]\"}\n   If confidence < 70%: {\"ok\": true, \"warning\": \"Low confidence ([X]%). Consider improving plan.\"}\n   If all good: {\"ok\": true, \"confidence\": [score]}",
+            "timeout": 90
           }
         ]
       },
@@ -127,8 +127,8 @@
         "hooks": [
           {
             "type": "agent",
-            "prompt": "Validate the builder's output. Read the plan.json and manifest.json. For each step in the plan: 1) Run the validation_command from success_criteria 2) Verify output matches expected_output 3) Check manifest shows step completed. If ANY validation fails, return {\"ok\": false, \"reason\": \"Build incomplete: Step [X] failed validation - [details]\"}. If all pass, return {\"ok\": true}.",
-            "timeout": 120
+            "prompt": "Perform SELF-REVIEW of the build before completion.\n\n1. VALIDATION CHECK:\n   For each step in plan.json:\n   - Run validation_command from success_criteria\n   - Verify output matches expected_output\n   - Check manifest shows step completed\n\n2. SELF-REVIEW (compare against plan):\n   For each file created/modified:\n   - Does it match the specification in the plan?\n   - Does it follow embedded_context.memory_rules?\n   - Are there obvious security issues? (injection, XSS, exposed secrets)\n   - Does the code match discovered_patterns?\n\n3. REVIEW SUMMARY:\n   Generate a review like:\n   ```json\n   {\n     \"reviewed_files\": [\"file1.ts\", \"file2.ts\"],\n     \"requirements_met\": [\"REQ-001\", \"REQ-002\"],\n     \"requirements_missing\": [],\n     \"suggestions\": [\"Consider adding rate limiting\"],\n     \"security_concerns\": [],\n     \"verdict\": \"APPROVED|NEEDS_REVIEW|REJECTED\"\n   }\n   ```\n\n4. RESPONSE:\n   If validation fails: {\"ok\": false, \"reason\": \"Build incomplete: [details]\"}\n   If review finds issues: {\"ok\": true, \"review\": {...}, \"warning\": \"Review found [N] suggestions\"}\n   If all good: {\"ok\": true, \"review\": {...}}",
+            "timeout": 180
           }
         ]
       }
