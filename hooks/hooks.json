@@ -1,6 +1,6 @@
 {
-  "description": "STUDIO Intelligent Hook System - Self-correcting autonomous workflow",
-  "version": "2.0.0",
+  "description": "STUDIO Intelligent Hook System - Self-correcting autonomous workflow with progress visualization and error classification",
+  "version": "2.1.0",
 
   "hooks": {
     "SessionStart": [
@@ -83,6 +83,11 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/track-progress.sh",
             "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/emit-progress.sh",
+            "timeout": 3000
           }
         ]
       }
@@ -93,8 +98,13 @@
         "matcher": "",
         "hooks": [
           {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/classify-error.sh",
+            "timeout": 5000
+          },
+          {
             "type": "agent",
-            "prompt": "A tool call failed. Analyze the failure: 1) What tool failed and why? 2) Is this a recurring pattern in this project? 3) Should we remember this to avoid in the future? If this is a project-specific gotcha worth remembering, append a note to studio/memory/failures.md. Return {\"ok\": true} after analysis.",
+            "prompt": "A tool call failed. The error has been classified above (if a pattern matched). Review the classification and: 1) If an auto-fix is available, ask the user if they want to apply it 2) If no auto-fix, provide the suggested manual fixes 3) Check if this is a recurring pattern worth remembering in studio/memory/failures.md. Return {\"ok\": true} after analysis.",
             "timeout": 30
           }
         ]

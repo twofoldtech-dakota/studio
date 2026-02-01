@@ -1,0 +1,254 @@
+{
+  "version": "1.0.0",
+  "description": "Error classification patterns for contextual error messages",
+  "patterns": [
+    {
+      "id": "missing_module",
+      "match": "Cannot find module ['\"]([^'\"]+)['\"]",
+      "type": "Missing Dependency",
+      "why": "The code tried to import '$1' but it's not installed in this project.",
+      "fix": [
+        "Install the package: npm install $1",
+        "For TypeScript types: npm install -D @types/$1",
+        "Check if the package name is spelled correctly"
+      ],
+      "auto_fix": "npm install $1",
+      "category": "dependency"
+    },
+    {
+      "id": "missing_module_node",
+      "match": "Error: Cannot find module ['\"]([^'\"]+)['\"]",
+      "type": "Missing Node Module",
+      "why": "Node.js couldn't find the module '$1' when running the code.",
+      "fix": [
+        "Run: npm install",
+        "Or install specifically: npm install $1",
+        "Check if node_modules exists"
+      ],
+      "auto_fix": "npm install",
+      "category": "dependency"
+    },
+    {
+      "id": "property_not_exist",
+      "match": "Property ['\"]([^'\"]+)['\"] does not exist on type ['\"]([^'\"]+)['\"]",
+      "type": "TypeScript Property Error",
+      "why": "TypeScript doesn't recognize property '$1' on type '$2'.",
+      "fix": [
+        "Check if the property name is spelled correctly",
+        "Verify the type definition includes this property",
+        "Use optional chaining: obj?.$1",
+        "Add the property to the type definition"
+      ],
+      "category": "typescript"
+    },
+    {
+      "id": "type_not_assignable",
+      "match": "Type ['\"]([^'\"]+)['\"] is not assignable to type ['\"]([^'\"]+)['\"]",
+      "type": "Type Mismatch",
+      "why": "TypeScript expected type '$2' but received type '$1'.",
+      "fix": [
+        "Check if you're passing the correct value",
+        "Use type assertion if you're sure: value as $2",
+        "Update the type definition to accept both types"
+      ],
+      "category": "typescript"
+    },
+    {
+      "id": "enoent",
+      "match": "ENOENT: no such file or directory.*['\"]([^'\"]+)['\"]",
+      "type": "File Not Found",
+      "why": "The file or directory '$1' doesn't exist.",
+      "fix": [
+        "Create the missing directory: mkdir -p $(dirname '$1')",
+        "Verify the file path is correct",
+        "Check if the file was deleted or moved"
+      ],
+      "auto_fix": "mkdir -p $(dirname '$1')",
+      "category": "filesystem"
+    },
+    {
+      "id": "enoent_open",
+      "match": "ENOENT:.*open ['\"]([^'\"]+)['\"]",
+      "type": "Cannot Open File",
+      "why": "Could not open file '$1' because it doesn't exist.",
+      "fix": [
+        "Create the file first",
+        "Check the file path for typos",
+        "Ensure parent directories exist"
+      ],
+      "category": "filesystem"
+    },
+    {
+      "id": "syntax_error_unexpected",
+      "match": "SyntaxError: Unexpected token ['\"]?([^'\"\\s]+)['\"]?",
+      "type": "Syntax Error",
+      "why": "JavaScript/TypeScript parser encountered unexpected token '$1'.",
+      "fix": [
+        "Check for missing brackets, braces, or parentheses",
+        "Look for missing commas or semicolons",
+        "Verify string quotes are properly closed"
+      ],
+      "category": "syntax"
+    },
+    {
+      "id": "syntax_error_unexpected_end",
+      "match": "SyntaxError: Unexpected end of",
+      "type": "Incomplete Code",
+      "why": "The code ended unexpectedly - likely missing a closing bracket or brace.",
+      "fix": [
+        "Check for missing closing brackets: } ] )",
+        "Look for unclosed string literals",
+        "Verify all code blocks are complete"
+      ],
+      "category": "syntax"
+    },
+    {
+      "id": "reference_not_defined",
+      "match": "ReferenceError: ([A-Za-z_$][A-Za-z0-9_$]*) is not defined",
+      "type": "Undefined Reference",
+      "why": "The variable or function '$1' was used but never declared.",
+      "fix": [
+        "Import the module: import { $1 } from '...'",
+        "Declare the variable before using it",
+        "Check for typos in the variable name"
+      ],
+      "category": "runtime"
+    },
+    {
+      "id": "test_failed",
+      "match": "FAIL\\s+([^\\s]+)",
+      "type": "Test Failure",
+      "why": "Test file '$1' has failing tests.",
+      "fix": [
+        "Run tests with verbose output: npm test -- --verbose",
+        "Check the test assertions",
+        "Verify the expected values match actual behavior"
+      ],
+      "category": "testing"
+    },
+    {
+      "id": "eslint_error",
+      "match": "error\\s+([^\\s]+)\\s+([^\\s]+)",
+      "type": "Lint Error",
+      "why": "ESLint found a violation of rule '$2' in '$1'.",
+      "fix": [
+        "Fix the lint error manually",
+        "Auto-fix if possible: npm run lint -- --fix",
+        "Disable the rule if intentional: // eslint-disable-next-line $2"
+      ],
+      "auto_fix": "npm run lint -- --fix",
+      "category": "linting"
+    },
+    {
+      "id": "port_in_use",
+      "match": "EADDRINUSE.*:([0-9]+)",
+      "type": "Port In Use",
+      "why": "Port $1 is already being used by another process.",
+      "fix": [
+        "Find what's using the port: lsof -i :$1",
+        "Kill the process: kill $(lsof -t -i:$1)",
+        "Use a different port"
+      ],
+      "auto_fix": "kill $(lsof -t -i:$1) 2>/dev/null || true",
+      "category": "network"
+    },
+    {
+      "id": "permission_denied",
+      "match": "EACCES: permission denied.*['\"]([^'\"]+)['\"]",
+      "type": "Permission Denied",
+      "why": "Don't have permission to access '$1'.",
+      "fix": [
+        "Check file permissions: ls -la $1",
+        "Change ownership: sudo chown $USER $1",
+        "Change permissions: chmod 644 $1"
+      ],
+      "category": "filesystem"
+    },
+    {
+      "id": "git_conflict",
+      "match": "CONFLICT \\(content\\): Merge conflict in ([^\\s]+)",
+      "type": "Git Merge Conflict",
+      "why": "File '$1' has conflicting changes that need manual resolution.",
+      "fix": [
+        "Open the file and resolve conflicts between <<<<<<< and >>>>>>>",
+        "Choose which version to keep",
+        "Remove conflict markers and stage: git add $1"
+      ],
+      "category": "git"
+    },
+    {
+      "id": "npm_peer_dep",
+      "match": "npm WARN.*peer dep missing: ([^,]+)",
+      "type": "Missing Peer Dependency",
+      "why": "A package requires '$1' as a peer dependency.",
+      "fix": [
+        "Install the peer dependency: npm install $1",
+        "Check if you need a specific version"
+      ],
+      "auto_fix": "npm install $1",
+      "category": "dependency"
+    },
+    {
+      "id": "typescript_strict",
+      "match": "error TS([0-9]+):",
+      "type": "TypeScript Error",
+      "why": "TypeScript compiler error (TS$1).",
+      "fix": [
+        "Check the TypeScript documentation for error TS$1",
+        "Fix the type issues in your code",
+        "Consider if the error can be suppressed with @ts-ignore"
+      ],
+      "category": "typescript"
+    },
+    {
+      "id": "json_parse",
+      "match": "SyntaxError: JSON\\.parse:.*at position ([0-9]+)",
+      "type": "Invalid JSON",
+      "why": "JSON parsing failed at position $1.",
+      "fix": [
+        "Validate the JSON file: cat file.json | jq .",
+        "Check for trailing commas",
+        "Ensure strings are properly quoted"
+      ],
+      "category": "syntax"
+    },
+    {
+      "id": "memory_heap",
+      "match": "FATAL ERROR:.*heap",
+      "type": "Out of Memory",
+      "why": "Node.js ran out of heap memory.",
+      "fix": [
+        "Increase memory: NODE_OPTIONS=--max_old_space_size=4096",
+        "Check for memory leaks in your code",
+        "Reduce data size being processed"
+      ],
+      "auto_fix": "export NODE_OPTIONS=--max_old_space_size=4096",
+      "category": "runtime"
+    },
+    {
+      "id": "connection_refused",
+      "match": "ECONNREFUSED.*:([0-9]+)",
+      "type": "Connection Refused",
+      "why": "Could not connect to service on port $1.",
+      "fix": [
+        "Ensure the service is running",
+        "Check if the port is correct",
+        "Verify firewall settings"
+      ],
+      "category": "network"
+    },
+    {
+      "id": "prisma_migration",
+      "match": "P[0-9]+.*migration",
+      "type": "Prisma Migration Error",
+      "why": "Database schema is out of sync with Prisma schema.",
+      "fix": [
+        "Run migrations: npx prisma migrate dev",
+        "Reset if needed: npx prisma migrate reset",
+        "Generate client: npx prisma generate"
+      ],
+      "auto_fix": "npx prisma migrate dev",
+      "category": "database"
+    }
+  ]
+}
