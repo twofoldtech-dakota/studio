@@ -86,6 +86,10 @@ cmd_header() {
             color="$BRIGHT_CYAN"
             title="THE VERIFIER"
             ;;
+        executor|execution|executing)
+            color="$BRIGHT_MAGENTA"
+            title="THE EXECUTOR"
+            ;;
         complete)
             color="$BRIGHT_GREEN"
             title="TASK COMPLETE"
@@ -129,6 +133,12 @@ cmd_phase() {
             num="3"
             phase="VERIFYING"
             ;;
+        execution|executing|4)
+            color="$BRIGHT_MAGENTA"
+            icon="⚡"
+            num="4"
+            phase="EXECUTION"
+            ;;
         requirements|0)
             color="$BRIGHT_BLUE"
             icon="📋"
@@ -165,6 +175,10 @@ cmd_agent() {
         verifier|Verifier)
             color="$BRIGHT_CYAN"
             agent="Verifier"
+            ;;
+        executor|Executor)
+            color="$BRIGHT_MAGENTA"
+            agent="Executor"
             ;;
         memory|Memory)
             color="$BRIGHT_MAGENTA"
@@ -594,9 +608,9 @@ main() {
             echo "Usage: output.sh <command> [args...]"
             echo ""
             echo "Basic Commands:"
-            echo "  header <type>              Display header (task/init/planner/builder/verifier/complete/failed)"
-            echo "  phase <phase>              Display phase banner (requirements/planning/building/verifying)"
-            echo "  agent <agent> <message>    Display agent message (planner/builder/verifier/memory)"
+            echo "  header <type>              Display header (task/init/planner/builder/verifier/executor/complete/failed)"
+            echo "  phase <phase>              Display phase banner (requirements/planning/building/verifying/execution)"
+            echo "  agent <agent> <message>    Display agent message (planner/builder/verifier/executor/memory)"
             echo "  status <type> <message>    Display status (success/error/warning/info/pending/checkpoint)"
             echo "  verdict <verdict>          Display verdict (STRONG/SOUND/UNSTABLE/FAILED)"
             echo "  banner <type> [message]    Display completion banner"
