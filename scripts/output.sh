@@ -17,7 +17,7 @@
 #
 # Environment:
 #   NO_COLOR=1    Disable colors
-#   STUDIO_PHASE   Current phase (planing/building/verifying)
+#   STUDIO_PHASE   Current phase (requirements/planning/building/verifying)
 #
 
 set -euo pipefail
@@ -74,7 +74,7 @@ cmd_header() {
             color="$BRIGHT_WHITE"
             title="STUDIO INIT"
             ;;
-        planner|planing)
+        planner|planning|planing)
             color="$BRIGHT_BLUE"
             title="THE PLANNER"
             ;;
@@ -595,7 +595,7 @@ main() {
             echo ""
             echo "Basic Commands:"
             echo "  header <type>              Display header (task/init/planner/builder/verifier/complete/failed)"
-            echo "  phase <phase>              Display phase banner (requirements/planing/building/verifying)"
+            echo "  phase <phase>              Display phase banner (requirements/planning/building/verifying)"
             echo "  agent <agent> <message>    Display agent message (planner/builder/verifier/memory)"
             echo "  status <type> <message>    Display status (success/error/warning/info/pending/checkpoint)"
             echo "  verdict <verdict>          Display verdict (STRONG/SOUND/UNSTABLE/FAILED)"
