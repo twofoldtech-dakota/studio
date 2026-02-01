@@ -1,0 +1,141 @@
+{
+  "name": "react-component",
+  "description": "React component with tests and Storybook story",
+  "version": "1.0.0",
+
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "Create {{component}} component",
+      "step_type": "component",
+      "outputs": ["src/components/{{component}}/{{component}}.tsx"],
+      "depends_on": [],
+      "requires_input": ["component_name", "props"],
+      "micro_actions_template": [
+        {"sequence": 1, "tool": "Bash", "command": "mkdir -p src/components/{{component}}"},
+        {"sequence": 2, "tool": "Write", "file_path": "src/components/{{component}}/{{component}}.tsx"},
+        {"sequence": 3, "tool": "Write", "file_path": "src/components/{{component}}/index.ts"}
+      ],
+      "validation_commands": [
+        "test -f src/components/{{component}}/{{component}}.tsx && echo 'PASS' || echo 'FAIL'",
+        "grep -q 'export.*{{component}}' src/components/{{component}}/{{component}}.tsx && echo 'PASS' || echo 'FAIL'"
+      ]
+    },
+    {
+      "id": "step_2",
+      "name": "Create {{component}} styles",
+      "step_type": "styles",
+      "outputs": ["src/components/{{component}}/{{component}}.module.css"],
+      "depends_on": ["step_1"],
+      "requires_input": ["component_name", "styling_approach"],
+      "micro_actions_template": [
+        {"sequence": 1, "tool": "Write", "file_path": "src/components/{{component}}/{{component}}.module.css"}
+      ],
+      "validation_commands": [
+        "test -f src/components/{{component}}/{{component}}.module.css && echo 'PASS' || echo 'FAIL'"
+      ],
+      "conditional": "styling_approach == 'css-modules'"
+    },
+    {
+      "id": "step_3",
+      "name": "Create {{component}} hooks",
+      "step_type": "hooks",
+      "outputs": ["src/components/{{component}}/use{{component}}.ts"],
+      "depends_on": ["step_1"],
+      "requires_input": ["component_name", "has_state"],
+      "micro_actions_template": [
+        {"sequence": 1, "tool": "Write", "file_path": "src/components/{{component}}/use{{component}}.ts"}
+      ],
+      "validation_commands": [
+        "test -f src/components/{{component}}/use{{component}}.ts && echo 'PASS' || echo 'FAIL'"
+      ],
+      "conditional": "has_state == true"
+    },
+    {
+      "id": "step_4",
+      "name": "Create {{component}} tests",
+      "step_type": "test",
+      "outputs": ["src/components/{{component}}/{{component}}.test.tsx"],
+      "depends_on": ["step_1"],
+      "requires_input": ["component_name", "props"],
+      "micro_actions_template": [
+        {"sequence": 1, "tool": "Write", "file_path": "src/components/{{component}}/{{component}}.test.tsx"}
+      ],
+      "validation_commands": [
+        "test -f src/components/{{component}}/{{component}}.test.tsx && echo 'PASS' || echo 'FAIL'",
+        "npm test -- --testPathPattern={{component}} 2>&1; echo \"EXIT:$?\""
+      ]
+    },
+    {
+      "id": "step_5",
+      "name": "Create {{component}} story",
+      "step_type": "story",
+      "outputs": ["src/components/{{component}}/{{component}}.stories.tsx"],
+      "depends_on": ["step_1"],
+      "requires_input": ["component_name", "props"],
+      "micro_actions_template": [
+        {"sequence": 1, "tool": "Write", "file_path": "src/components/{{component}}/{{component}}.stories.tsx"}
+      ],
+      "validation_commands": [
+        "test -f src/components/{{component}}/{{component}}.stories.tsx && echo 'PASS' || echo 'FAIL'"
+      ],
+      "conditional": "has_storybook == true"
+    }
+  ],
+
+  "execution_batches": [
+    {"batch_id": 1, "steps": ["step_1"], "parallel": false},
+    {"batch_id": 2, "steps": ["step_2", "step_3", "step_4", "step_5"], "parallel": true, "depends_on_batches": [1]}
+  ],
+
+  "questions": [
+    {
+      "id": "component_name",
+      "question": "What is the component name?",
+      "example": "Button, UserCard, Modal, Sidebar",
+      "required": true,
+      "validation": "Must be PascalCase"
+    },
+    {
+      "id": "props",
+      "question": "What props should the component accept?",
+      "example": "label: string, onClick: () => void, disabled?: boolean",
+      "required": true,
+      "format": "propName: type (comma separated)"
+    },
+    {
+      "id": "has_state",
+      "question": "Does this component need local state management?",
+      "options": ["yes", "no"],
+      "default": "no",
+      "required": false
+    },
+    {
+      "id": "styling_approach",
+      "question": "What styling approach should be used?",
+      "options": ["css-modules", "tailwind", "styled-components", "none"],
+      "default": "tailwind",
+      "required": false
+    },
+    {
+      "id": "has_storybook",
+      "question": "Should we create a Storybook story?",
+      "options": ["yes", "no"],
+      "default": "yes",
+      "required": false
+    }
+  ],
+
+  "quality_checks": [
+    {"name": "TypeScript compiles", "command": "npx tsc --noEmit", "required": true},
+    {"name": "Tests pass", "command": "npm test -- --testPathPattern={{component}}", "required": true},
+    {"name": "ESLint passes", "command": "npm run lint -- src/components/{{component}}", "required": false}
+  ],
+
+  "memory_rules_suggest": [
+    "Use functional components with hooks",
+    "Define props interface explicitly",
+    "Export component as default and named",
+    "Include accessibility attributes"
+  ]
+}

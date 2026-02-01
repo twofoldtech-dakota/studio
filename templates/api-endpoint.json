@@ -1,0 +1,137 @@
+{
+  "name": "api-endpoint",
+  "description": "REST API endpoint with full CRUD operations",
+  "version": "1.0.0",
+
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "Create {{entity}} validation schema",
+      "step_type": "schema",
+      "outputs": ["src/schemas/{{entity_lower}}.ts"],
+      "depends_on": [],
+      "requires_input": ["entity_name", "fields"],
+      "micro_actions_template": [
+        {"sequence": 1, "tool": "Bash", "command": "mkdir -p src/schemas"},
+        {"sequence": 2, "tool": "Write", "file_path": "src/schemas/{{entity_lower}}.ts"}
+      ],
+      "validation_commands": [
+        "test -f src/schemas/{{entity_lower}}.ts && echo 'PASS' || echo 'FAIL'",
+        "grep -q 'export.*{{entity}}Schema' src/schemas/{{entity_lower}}.ts && echo 'PASS' || echo 'FAIL'"
+      ]
+    },
+    {
+      "id": "step_2",
+      "name": "Create {{entity}} service layer",
+      "step_type": "service",
+      "outputs": ["src/services/{{entity_lower}}.service.ts"],
+      "depends_on": ["step_1"],
+      "requires_input": ["entity_name", "operations"],
+      "micro_actions_template": [
+        {"sequence": 1, "tool": "Bash", "command": "mkdir -p src/services"},
+        {"sequence": 2, "tool": "Write", "file_path": "src/services/{{entity_lower}}.service.ts"}
+      ],
+      "validation_commands": [
+        "test -f src/services/{{entity_lower}}.service.ts && echo 'PASS' || echo 'FAIL'",
+        "npx tsc --noEmit src/services/{{entity_lower}}.service.ts 2>&1; echo \"EXIT:$?\""
+      ]
+    },
+    {
+      "id": "step_3",
+      "name": "Create {{entity}} controller",
+      "step_type": "controller",
+      "outputs": ["src/controllers/{{entity_lower}}.controller.ts"],
+      "depends_on": ["step_2"],
+      "requires_input": ["entity_name", "operations"],
+      "micro_actions_template": [
+        {"sequence": 1, "tool": "Bash", "command": "mkdir -p src/controllers"},
+        {"sequence": 2, "tool": "Write", "file_path": "src/controllers/{{entity_lower}}.controller.ts"}
+      ],
+      "validation_commands": [
+        "test -f src/controllers/{{entity_lower}}.controller.ts && echo 'PASS' || echo 'FAIL'"
+      ]
+    },
+    {
+      "id": "step_4",
+      "name": "Create {{entity}} routes",
+      "step_type": "routes",
+      "outputs": ["src/routes/{{entity_lower}}.routes.ts"],
+      "depends_on": ["step_3"],
+      "requires_input": ["entity_name"],
+      "micro_actions_template": [
+        {"sequence": 1, "tool": "Bash", "command": "mkdir -p src/routes"},
+        {"sequence": 2, "tool": "Write", "file_path": "src/routes/{{entity_lower}}.routes.ts"}
+      ],
+      "validation_commands": [
+        "test -f src/routes/{{entity_lower}}.routes.ts && echo 'PASS' || echo 'FAIL'"
+      ]
+    },
+    {
+      "id": "step_5",
+      "name": "Create {{entity}} tests",
+      "step_type": "test",
+      "outputs": ["tests/{{entity_lower}}.test.ts"],
+      "depends_on": ["step_4"],
+      "requires_input": ["entity_name", "operations"],
+      "micro_actions_template": [
+        {"sequence": 1, "tool": "Bash", "command": "mkdir -p tests"},
+        {"sequence": 2, "tool": "Write", "file_path": "tests/{{entity_lower}}.test.ts"}
+      ],
+      "validation_commands": [
+        "test -f tests/{{entity_lower}}.test.ts && echo 'PASS' || echo 'FAIL'",
+        "npm test -- --testPathPattern={{entity_lower}} 2>&1; echo \"EXIT:$?\""
+      ]
+    }
+  ],
+
+  "execution_batches": [
+    {"batch_id": 1, "steps": ["step_1"], "parallel": false},
+    {"batch_id": 2, "steps": ["step_2"], "parallel": false},
+    {"batch_id": 3, "steps": ["step_3", "step_4"], "parallel": true, "depends_on_batches": [2]},
+    {"batch_id": 4, "steps": ["step_5"], "parallel": false, "depends_on_batches": [3]}
+  ],
+
+  "questions": [
+    {
+      "id": "entity_name",
+      "question": "What entity is this endpoint for?",
+      "example": "User, Product, Order, Customer",
+      "required": true,
+      "validation": "Must be a valid TypeScript class name (PascalCase)"
+    },
+    {
+      "id": "fields",
+      "question": "What fields should the entity have?",
+      "example": "name: string, email: string, active: boolean, createdAt: Date",
+      "required": true,
+      "format": "fieldName: type (comma separated)"
+    },
+    {
+      "id": "operations",
+      "question": "Which CRUD operations are needed?",
+      "options": ["create", "read", "update", "delete", "list"],
+      "default": ["create", "read", "update", "delete", "list"],
+      "required": false
+    },
+    {
+      "id": "auth_required",
+      "question": "Does this endpoint require authentication?",
+      "options": ["yes", "no", "mixed"],
+      "default": "yes",
+      "required": false
+    }
+  ],
+
+  "quality_checks": [
+    {"name": "TypeScript compiles", "command": "npx tsc --noEmit", "required": true},
+    {"name": "Tests pass", "command": "npm test -- --testPathPattern={{entity_lower}}", "required": true},
+    {"name": "No lint errors", "command": "npm run lint -- src/**/*{{entity_lower}}*", "required": false}
+  ],
+
+  "memory_rules_suggest": [
+    "Use Zod for validation schemas",
+    "Include request/response DTOs",
+    "Add OpenAPI/Swagger decorators",
+    "Implement pagination for list endpoints"
+  ]
+}

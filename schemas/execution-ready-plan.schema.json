@@ -189,6 +189,73 @@
       }
     },
 
+    "execution_batches": {
+      "type": "array",
+      "description": "Grouped steps for parallel execution based on dependency analysis",
+      "items": {
+        "type": "object",
+        "required": ["batch_id", "steps"],
+        "properties": {
+          "batch_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Sequential batch number"
+          },
+          "steps": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Step IDs in this batch"
+          },
+          "parallel": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether steps in this batch can run in parallel"
+          },
+          "depends_on_batches": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "description": "Batch IDs that must complete before this batch"
+          }
+        }
+      }
+    },
+
+    "confidence": {
+      "type": "object",
+      "description": "Plan confidence score calculated before execution",
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Overall confidence score (0-100)"
+        },
+        "level": {
+          "type": "string",
+          "enum": ["HIGH", "MEDIUM", "LOW", "CRITICAL"],
+          "description": "Confidence level based on score thresholds"
+        },
+        "breakdown": {
+          "type": "object",
+          "properties": {
+            "requirements": { "type": "integer", "minimum": 0, "maximum": 25 },
+            "step_quality": { "type": "integer", "minimum": 0, "maximum": 25 },
+            "context": { "type": "integer", "minimum": 0, "maximum": 25 },
+            "risk": { "type": "integer", "minimum": 0, "maximum": 25 }
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Warnings about low-scoring areas"
+        },
+        "recommendation": {
+          "type": "string",
+          "enum": ["PROCEED_WITH_CONFIDENCE", "PROCEED_WITH_CAUTION", "REVIEW_RECOMMENDED", "REVISION_REQUIRED"]
+        }
+      }
+    },
+
     "completion_criteria": {
       "type": "object",
       "description": "What defines task completion",
@@ -327,6 +394,16 @@
           "type": "string",
           "enum": ["trivial", "simple", "moderate", "complex"],
           "description": "Complexity estimate"
+        },
+        "parallelizable": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this step can run in parallel with other independent steps"
+        },
+        "linked_requirements": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Requirement IDs this step implements (for traceability)"
         }
       }
     }

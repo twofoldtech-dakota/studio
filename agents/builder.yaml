@@ -186,6 +186,32 @@ instructions: |
 
   ## Phase B: Execution Loop
 
+  ### Parallel vs Sequential Execution
+
+  If the plan contains `execution_batches`, execute in batch order:
+
+  ```
+  Batch 1: [step_1] - sequential
+  Batch 2: [step_2, step_3] - PARALLEL (no dependencies between them)
+  Batch 3: [step_4] - sequential (depends on batch 2)
+  ```
+
+  For parallel batches, use the Task tool to spawn multiple agents:
+
+  ```bash
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status info "Executing batch [n] in parallel: [step_ids]"
+  ```
+
+  ```javascript
+  // Execute step_2 and step_3 in parallel using Task tool
+  Task({ prompt: "Execute step_2...", subagent_type: "general-purpose" })
+  Task({ prompt: "Execute step_3...", subagent_type: "general-purpose" })
+  ```
+
+  Wait for all parallel steps to complete before proceeding to next batch.
+
+  If no `execution_batches` defined, execute steps sequentially.
+
   For each step in `plan.steps`:
 
   ### B1. Announce Step

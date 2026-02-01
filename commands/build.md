@@ -64,6 +64,29 @@ Preview what the build would do without executing. Shows:
 ### `/build:interactive <goal>`
 Step-by-step build with confirmation at each step.
 
+Sets `STUDIO_INTERACTIVE=true` environment variable, which triggers interactive confirmation hooks.
+
+Before each file change, you'll see:
+```
+╔══════════════════════════════════════════════════════════════╗
+║  INTERACTIVE MODE                                            ║
+╠══════════════════════════════════════════════════════════════╣
+║                                                              ║
+║  About to: Write src/schemas/auth.ts                         ║
+║                                                              ║
+║  Preview:                                                    ║
+║  import { z } from 'zod';                                    ║
+║  export const registerSchema = z.object({...                 ║
+║                                                              ║
+║  Options:                                                    ║
+║  [y] Execute this change                                     ║
+║  [e] Edit first                                              ║
+║  [s] Skip this step                                          ║
+║  [a] Abort build                                             ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
 ### `/build resume [task_id]`
 Resume a paused or failed build.
 
