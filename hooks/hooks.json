@@ -72,16 +72,6 @@
             "model": "haiku"
           }
         ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "condition": "env.STUDIO_INTERACTIVE == 'true'",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "INTERACTIVE MODE: About to execute $TOOL_NAME on $FILE_PATH.\n\nPreview the change and ask for user confirmation:\n\nOptions:\n[y] Execute this change\n[e] Edit the change first\n[s] Skip this step\n[a] Abort the build\n\nWait for user input. If user chooses:\n- 'y': return {\"ok\": true}\n- 'e': ask what to modify, apply changes, then return {\"ok\": true}\n- 's': return {\"ok\": false, \"reason\": \"User chose to skip this step\"}\n- 'a': return {\"ok\": false, \"reason\": \"User aborted the build\"}"
-          }
-        ]
       }
     ],
 
