@@ -20,6 +20,42 @@ set -euo pipefail
 
 STUDIO_DIR="${STUDIO_DIR:-studio}"
 PROJECTS_DIR="${STUDIO_DIR}/projects"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Log completed build to analytics
+log_to_analytics() {
+    local manifest="$1"
+    local verdict="$2"
+    local status="${3:-COMPLETE}"
+
+    local task_id duration_ms steps retries
+
+    # Get task ID from manifest
+    task_id=$(jq -r '.id // "unknown"' "$manifest")
+
+    # Calculate duration from started_at to now
+    local started
+    started=$(jq -r '.started_at // empty' "$manifest")
+    if [[ -n "$started" ]]; then
+        local start_epoch end_epoch
+        # Try GNU date first, then BSD date
+        start_epoch=$(date -d "$started" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$started" +%s 2>/dev/null || echo 0)
+        end_epoch=$(date +%s)
+        duration_ms=$(( (end_epoch - start_epoch) * 1000 ))
+    else
+        duration_ms=0
+    fi
+
+    # Get step count and retry count
+    steps=$(jq -r '.completed_steps | length // 0' "$manifest" 2>/dev/null || echo 0)
+    retries=$(jq -r '.retry_count // 0' "$manifest" 2>/dev/null || echo 0)
+
+    # Call analytics.sh log
+    local analytics_script="${SCRIPT_DIR}/../analytics.sh"
+    if [[ -x "$analytics_script" ]]; then
+        "$analytics_script" log "$task_id" "$status" "$duration_ms" "$steps" "$retries" "$verdict" 2>/dev/null || true
+    fi
+}
 
 # Read hook input
 INPUT=$(cat)
@@ -148,6 +184,9 @@ main() {
             tmp_state=$(mktemp)
             jq '.status = "COMPLETE" | .quality_gate.result = "STRONG" | .quality_gate.triggered = true | .completed_at = now | .updated_at = now' "$manifest_file" > "$tmp_state" && mv "$tmp_state" "$manifest_file"
 
+            # Log to analytics
+            log_to_analytics "$manifest_file" "STRONG" "COMPLETE"
+
             # Allow stop
             exit 0
             ;;
@@ -158,6 +197,9 @@ main() {
             tmp_state=$(mktemp)
             jq '.status = "COMPLETE" | .quality_gate.result = "SOUND" | .quality_gate.triggered = true | .completed_at = now | .updated_at = now' "$manifest_file" > "$tmp_state" && mv "$tmp_state" "$manifest_file"
 
+            # Log to analytics
+            log_to_analytics "$manifest_file" "SOUND" "COMPLETE"
+
             # Allow stop
             exit 0
             ;;
@@ -167,6 +209,9 @@ main() {
             local tmp_state
             tmp_state=$(mktemp)
             jq '.quality_gate.result = "FAILED" | .quality_gate.triggered = true | .updated_at = now' "$manifest_file" > "$tmp_state" && mv "$tmp_state" "$manifest_file"
+
+            # Log to analytics
+            log_to_analytics "$manifest_file" "BLOCK" "FAILED"
 
             # Get failed checks for feedback
             local failed_checks
