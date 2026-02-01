@@ -10,21 +10,21 @@ The centralized output script handles all terminal formatting:
 
 ```bash
 # Headers
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" header cast
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" header smith
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" header forgemaster
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" header temperer
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" header task
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" header planner
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" header builder
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" header verifier
 
 # Phase transitions
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase blueprinting
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase forging
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase tempering
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase planing
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase building
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase verifying
 
 # Agent messages
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent smith "Analyzing goal..."
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent forgemaster "Executing step 1..."
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent temperer "Verifying outputs..."
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent scribe "Loaded rules..."
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent planner "Analyzing goal..."
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent builder "Executing step 1..."
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent verifier "Verifying outputs..."
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent memory "Loaded rules..."
 
 # Status messages
 "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status success "Step complete"
@@ -37,8 +37,8 @@ The centralized output script handles all terminal formatting:
 # Verdicts
 "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" verdict STRONG
 "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" verdict SOUND
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" verdict BRITTLE
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" verdict CRACKED
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" verdict UNSTABLE
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" verdict FAILED
 
 # Banners
 "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" banner complete
@@ -54,10 +54,10 @@ The centralized output script handles all terminal formatting:
 
 | Phase | Agent | Color |
 |-------|-------|-------|
-| **Blueprinting** | The Smith | Blue |
-| **Forging** | The Forgemaster | Yellow/Gold |
-| **Tempering** | The Temperer | Cyan |
-| **Scribe** | The Scribe | Magenta |
+| **Planing** | The Planner | Blue |
+| **Building** | The Builder | Yellow/Gold |
+| **Verifying** | The Verifier | Cyan |
+| **Memory** | The Memory | Magenta |
 
 ## Status Colors
 
@@ -76,8 +76,8 @@ The centralized output script handles all terminal formatting:
 |---------|-------|
 | **STRONG** | Green (bold) |
 | **SOUND** | Green (bold) |
-| **BRITTLE** | Yellow (bold) |
-| **CRACKED** | Red (bold) |
+| **UNSTABLE** | Yellow (bold) |
+| **FAILED** | Red (bold) |
 
 ## Implementation Notes
 

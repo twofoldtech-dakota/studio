@@ -1,5 +1,5 @@
 ---
-name: scribe
+name: memory
 description: Self-learning memory system for persistent user preferences and technical constraints
 triggers:
   - "remember"
@@ -11,18 +11,18 @@ triggers:
   - "learn"
 ---
 
-# The Scribe: Self-Learning Memory System
+# The Memory: Self-Learning Memory System
 
-This skill teaches the methodology for **persistent preference learning** across sessions. The Scribe enables STUDIO to remember user preferences, project conventions, and technical constraints without requiring a database.
+This skill teaches the methodology for **persistent preference learning** across sessions. The Memory enables STUDIO to remember user preferences, project conventions, and technical constraints without requiring a database.
 
 ## The Core Philosophy
 
 > "What is written shall be remembered. What is remembered shall guide."
 
-Most AI assistants suffer from session amnesia - they learn preferences during a session only to forget them completely the next time. The Scribe addresses this through file-based long-term memory.
+Most AI assistants suffer from session amnesia - they learn preferences during a session only to forget them completely the next time. The Memory addresses this through file-based long-term memory.
 
 ```
-Traditional Approach:          The Scribe Approach:
+Traditional Approach:          The Memory Approach:
 ──────────────────────          ──────────────────────
 
 Session 1: Learn preference     Session 1: Learn preference
@@ -35,11 +35,11 @@ Session 3: Forget, relearn      Session 2: Read rules, apply
 
 ## The Two Operations
 
-The Scribe performs exactly two operations:
+The Memory performs exactly two operations:
 
 ### 1. Context Injection (Reading)
 
-Before any agent work begins, The Scribe:
+Before any agent work begins, The Memory:
 
 1. **Detects** relevant domains from the task goal
 2. **Reads** the global rules and domain-specific rules
@@ -48,7 +48,7 @@ Before any agent work begins, The Scribe:
 
 ### 2. Learning Loop (Writing)
 
-After user feedback occurs, The Scribe:
+After user feedback occurs, The Memory:
 
 1. **Detects** a learning trigger (rejection, correction, explicit teaching)
 2. **Prompts** the user to confirm if this is a permanent preference
@@ -67,7 +67,7 @@ studio/rules/
 ├── testing.md     QA requirements, coverage rules
 ├── security.md    Security constraints, auth patterns
 ├── devops.md      Deployment, infrastructure preferences
-└── .scribe-meta.json  Metadata and history
+└── .memory-meta.json  Metadata and history
 ```
 
 ### Why Markdown?
@@ -101,7 +101,7 @@ Each domain file follows a consistent structure:
 
 ## Domain Detection
 
-The Scribe automatically detects which domains are relevant based on goal keywords:
+The Memory automatically detects which domains are relevant based on goal keywords:
 
 ### Detection Matrix
 
@@ -146,7 +146,7 @@ cat studio/rules/backend.md
 ```markdown
 ═══════════════════════════════════════════════════════════════════════════════
                      MANDATORY USER PREFERENCES
-                        (From The Scribe's Memory)
+                        (From The Memory's Memory)
 ═══════════════════════════════════════════════════════════════════════════════
 
 ## Global Rules
@@ -167,21 +167,21 @@ explicitly overrides them for this specific task.
 ### 3. Acknowledge to User
 
 ```
-[Scribe] Loaded 4 global rules + 3 frontend rules
+[Memory] Loaded 4 global rules + 3 frontend rules
 ```
 
 ## Learning Triggers
 
-The Scribe activates learning when it detects:
+The Memory activates learning when it detects:
 
 ### Trigger 1: User Rejects Proposal
 
-When the Temperer returns BRITTLE or CRACKED and the user provides feedback:
+When the Verifier returns UNSTABLE or FAILED and the user provides feedback:
 
 ```
-[Temperer] Verdict: BRITTLE - Component uses class-based pattern
+[Verifier] Verdict: UNSTABLE - Component uses class-based pattern
 
-[Scribe] You indicated a preference. Is this a permanent rule?
+[Memory] You indicated a preference. Is this a permanent rule?
          "Use functional components instead of class components"
          [y/N]:
 ```
@@ -191,7 +191,7 @@ When the Temperer returns BRITTLE or CRACKED and the user provides feedback:
 When a user edits a file that was just generated:
 
 ```
-[Scribe] Change detected in src/components/Profile.tsx
+[Memory] Change detected in src/components/Profile.tsx
 
   You changed: class ProfileComponent extends React.Component
   To:          function Profile(): JSX.Element
@@ -218,7 +218,7 @@ When user says "remember" or "add rule":
 ```
 User: Remember that we always use Prisma for database access
 
-[Scribe] Got it. Adding to backend rules:
+[Memory] Got it. Adding to backend rules:
          "Use Prisma for all database access"
 
          Category? [1] Data Layer  [2] General  [3] Other:
@@ -228,10 +228,10 @@ User: Remember that we always use Prisma for database access
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    📜 THE SCRIBE - LEARNING LOOP                │
+│                    📜 THE MEMORY - LEARNING LOOP                │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  [Scribe] Change detected. Is this a new permanent rule?        │
+│  [Memory] Change detected. Is this a new permanent rule?        │
 │                                                                 │
 │  Context: You changed `useState` to `useReducer` in             │
 │           UserProfile.tsx                                       │
@@ -243,7 +243,7 @@ User: Remember that we always use Prisma for database access
                               │ If 'Y'
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  [Scribe] Which domain does this rule belong to?                │
+│  [Memory] Which domain does this rule belong to?                │
 │                                                                 │
 │  [1] Global (all code)     [4] Security                         │
 │  [2] Frontend              [5] DevOps                           │
@@ -253,7 +253,7 @@ User: Remember that we always use Prisma for database access
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  [Scribe] Please describe this rule concisely:                  │
+│  [Memory] Please dememory this rule concisely:                  │
 │                                                                 │
 │  > Use useReducer instead of useState for complex state         │
 │                                                                 │
@@ -261,11 +261,11 @@ User: Remember that we always use Prisma for database access
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  [Scribe] ✓ Rule added to frontend.md                           │
+│  [Memory] ✓ Rule added to frontend.md                           │
 │                                                                 │
 │  "Use useReducer instead of useState for complex state"         │
 │                                                                 │
-│  This preference will be applied to all future casts.           │
+│  This preference will be applied to all future tasks.           │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -329,12 +329,12 @@ For a backend service, the global rule applies (explicit types).
 
 ## Override Syntax
 
-Users can override rules for a specific cast:
+Users can override rules for a specific task:
 
 ```
-/cast:ignore-rules Create a quick prototype component
+/task:ignore-rules Create a quick prototype component
 
-[Scribe] Rules suspended for this cast only
+[Memory] Rules suspended for this task only
 ```
 
 Or inline:
@@ -345,7 +345,7 @@ User: Create a component [override: can use inline styles for this one]
 
 ## Metadata Tracking
 
-The `.scribe-meta.json` tracks:
+The `.memory-meta.json` tracks:
 
 - **Version**: Schema version for migrations
 - **Created/Modified**: Timestamps for auditing
@@ -361,7 +361,7 @@ The `.scribe-meta.json` tracks:
   "action": "add",
   "rule": "Use useReducer for complex state",
   "category": "State Management",
-  "cast_id": "cast_20250131_143022",
+  "task_id": "task_20250131_143022",
   "trigger": "user_correction"
 }
 ```
@@ -370,7 +370,7 @@ The `.scribe-meta.json` tracks:
 
 Each STUDIO agent must:
 
-1. **Check for Scribe rules** before beginning work
+1. **Check for Memory rules** before beginning work
 2. **Acknowledge loaded rules** in output
 3. **Follow rules as mandatory** unless overridden
 4. **Prompt for learning** after significant corrections
@@ -384,42 +384,42 @@ Each STUDIO agent must:
 2. Detect relevant domains from task
 3. Read global.md + detected domain files
 4. If rules found, prepend to working context
-5. Acknowledge: "[Scribe] Loaded X global + Y domain rules"
+5. Acknowledge: "[Memory] Loaded X global + Y domain rules"
 ```
 
-## The Scribe Color
+## The Memory Color
 
-The Scribe uses **Magenta** for all output. Use the output.sh script:
+The Memory uses **Magenta** for all output. Use the output.sh script:
 
 ```bash
-# Display scribe messages
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent scribe "Loaded 5 global rules + 3 frontend rules"
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent scribe "Change detected. Is this a new permanent rule?"
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent scribe "Rule added to frontend.md"
+# Display memory messages
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent memory "Loaded 5 global rules + 3 frontend rules"
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent memory "Change detected. Is this a new permanent rule?"
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent memory "Rule added to frontend.md"
 ```
 
 ## Shell Utilities
 
-The `scripts/scribe.sh` provides command-line access. Use the plugin root path and set `STUDIO_DIR` to point to the local rules directory:
+The `scripts/memory.sh` provides command-line access. Use the plugin root path and set `STUDIO_DIR` to point to the local rules directory:
 
 ```bash
 # Initialize rules directory
-STUDIO_DIR=studio "${CLAUDE_PLUGIN_ROOT}/scripts/scribe.sh" init
+STUDIO_DIR=studio "${CLAUDE_PLUGIN_ROOT}/scripts/memory.sh" init
 
 # Add a rule
-STUDIO_DIR=studio "${CLAUDE_PLUGIN_ROOT}/scripts/scribe.sh" add frontend "Use Tailwind" "Styling"
+STUDIO_DIR=studio "${CLAUDE_PLUGIN_ROOT}/scripts/memory.sh" add frontend "Use Tailwind" "Styling"
 
 # List all rules
-STUDIO_DIR=studio "${CLAUDE_PLUGIN_ROOT}/scripts/scribe.sh" list
+STUDIO_DIR=studio "${CLAUDE_PLUGIN_ROOT}/scripts/memory.sh" list
 
 # Generate injection block
-STUDIO_DIR=studio "${CLAUDE_PLUGIN_ROOT}/scripts/scribe.sh" inject frontend backend
+STUDIO_DIR=studio "${CLAUDE_PLUGIN_ROOT}/scripts/memory.sh" inject frontend backend
 
 # Detect domains from goal
-STUDIO_DIR=studio "${CLAUDE_PLUGIN_ROOT}/scripts/scribe.sh" detect "Create a React login form"
+STUDIO_DIR=studio "${CLAUDE_PLUGIN_ROOT}/scripts/memory.sh" detect "Create a React login form"
 
 # View history
-STUDIO_DIR=studio "${CLAUDE_PLUGIN_ROOT}/scripts/scribe.sh" history 10
+STUDIO_DIR=studio "${CLAUDE_PLUGIN_ROOT}/scripts/memory.sh" history 10
 ```
 
 ## Common Patterns
@@ -475,4 +475,4 @@ If all answers are "yes" or "project convention," the rule should be recorded.
 
 ---
 
-*"The Scribe remembers so you don't have to repeat." - The Scribe Principle*
+*"The Memory remembers so you don't have to repeat." - The Memory Principle*

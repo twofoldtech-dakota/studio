@@ -1,15 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "execution-ready-blueprint.schema.json",
-  "title": "STUDIO Execution-Ready Blueprint",
-  "description": "Schema for CAST-READY blueprints - Complete, Atomic, Self-validating, Traceable, Retry-aware, Environment-aware, Assumption-free, Deterministic, Yield-focused",
+  "$id": "execution-ready-plan.schema.json",
+  "title": "STUDIO Execution-Ready Plan",
+  "description": "Schema for TASK-READY plans - Complete, Atomic, Self-validating, Traceable, Retry-aware, Environment-aware, Assumption-free, Deterministic, Yield-focused",
   "type": "object",
   "required": [
     "id",
-    "cast_id",
+    "task_id",
     "goal",
     "created_at",
-    "blueprint_standard",
+    "plan_standard",
     "embedded_context",
     "steps",
     "validation_hooks"
@@ -18,12 +18,12 @@
     "id": {
       "type": "string",
       "pattern": "^bp_[0-9]{8}_[0-9]{6}_[a-f0-9]{4}$",
-      "description": "Blueprint ID in format bp_YYYYMMDD_HHMMSS_XXXX"
+      "description": "Plan ID in format bp_YYYYMMDD_HHMMSS_XXXX"
     },
-    "cast_id": {
+    "task_id": {
       "type": "string",
-      "pattern": "^cast_[0-9]{8}_[0-9]{6}$",
-      "description": "Associated cast ID"
+      "pattern": "^task_[0-9]{8}_[0-9]{6}$",
+      "description": "Associated task ID"
     },
     "goal": {
       "type": "string",
@@ -35,18 +35,18 @@
       "format": "date-time",
       "description": "ISO 8601 timestamp"
     },
-    "blueprint_standard": {
+    "plan_standard": {
       "type": "string",
-      "const": "CAST-READY",
-      "description": "Must be CAST-READY for consolidated pipeline"
+      "const": "TASK-READY",
+      "description": "Must be TASK-READY for consolidated pipeline"
     },
 
     "embedded_context": {
       "type": "object",
-      "required": ["scribe_rules", "discovered_patterns"],
+      "required": ["memory_rules", "discovered_patterns"],
       "description": "All context embedded - executor never reloads",
       "properties": {
-        "scribe_rules": {
+        "memory_rules": {
           "type": "object",
           "properties": {
             "global": {
@@ -191,7 +191,7 @@
 
     "completion_criteria": {
       "type": "object",
-      "description": "What defines cast completion",
+      "description": "What defines task completion",
       "properties": {
         "all_steps_success": { "type": "boolean", "default": true },
         "quality_gate_pass": { "type": "boolean", "default": true },
@@ -318,10 +318,10 @@
           "items": { "type": "string" },
           "description": "Outputs/artifacts this step produces"
         },
-        "scribe_rules_applied": {
+        "memory_rules_applied": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Scribe rules that influenced this step's design"
+          "description": "Memory rules that influenced this step's design"
         },
         "estimated_complexity": {
           "type": "string",

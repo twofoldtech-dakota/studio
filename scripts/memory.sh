@@ -641,7 +641,7 @@ cmd_clean() {
 # Show help
 cmd_help() {
     cat << 'EOF'
-STUDIO Scribe Utilities - The Self-Learning Memory Module
+STUDIO Memory Utilities - The Self-Learning Memory Module
 =========================================================
 
 "What is written shall be remembered. What is remembered shall guide."

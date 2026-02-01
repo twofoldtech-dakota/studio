@@ -1,9 +1,9 @@
 ---
-name: tempering
+name: verifying
 description: Reflection methodology for verification and quality assurance
 triggers:
   - "verify"
-  - "temper"
+  - "verify"
   - "reflect"
   - "check"
   - "validate"
@@ -11,7 +11,7 @@ triggers:
   - "reflexion"
 ---
 
-# Tempering Skill: Reflection Methodology
+# Verifying Skill: Reflection Methodology
 
 This skill teaches the **Reflection** methodology for systematic verification of completed work. It is based on research from "Reflexion: Language Agents with Verbal Reinforcement Learning" (Shinn et al., 2023).
 
@@ -70,7 +70,7 @@ Before verifying, gather everything needed:
 **Original Intent**
 - The stated goal
 - All requirements (explicit and implicit)
-- Success criteria defined in blueprint
+- Success criteria defined in plan
 - Quality standards specified
 
 **Execution Record**
@@ -88,11 +88,11 @@ Before verifying, gather everything needed:
 ### Gathering Methods
 
 ```
-Gather Blueprint:
-  → Read studio/casts/[id]/blueprint.yaml
+Gather Plan:
+  → Read studio/tasks/[id]/plan.yaml
 
-Gather Forge Log:
-  → Read studio/casts/[id]/forge_log.jsonl
+Gather Build Log:
+  → Read studio/tasks/[id]/build_log.jsonl
 
 Gather Artifacts:
   → List all files in artifacts list
@@ -135,7 +135,7 @@ goal_check:
 
 ### Step Completion Check
 
-For each step in the blueprint:
+For each step in the plan:
 
 ```yaml
 step_check:
@@ -308,7 +308,7 @@ All outputs verified.
 All quality checks pass.
 No issues of any severity.
 
-→ Cast completes successfully.
+→ Task completes successfully.
 → Work is production-ready.
 ```
 
@@ -320,11 +320,11 @@ All critical outputs verified.
 Quality checks pass.
 Only minor issues present.
 
-→ Cast completes with notes.
+→ Task completes with notes.
 → Work is acceptable, improvements optional.
 ```
 
-**BRITTLE**
+**UNSTABLE**
 ```
 Most requirements met.
 Some steps incomplete or problematic.
@@ -332,12 +332,12 @@ Some outputs missing or incorrect.
 Some quality checks fail.
 Important (non-critical) issues present.
 
-→ Cast returns to forge.
+→ Task returns to build.
 → Specific fixes required.
-→ Re-temper after fixes.
+→ Re-verify after fixes.
 ```
 
-**CRACKED**
+**FAILED**
 ```
 Requirements not met.
 Multiple steps failed.
@@ -345,7 +345,7 @@ Critical outputs missing.
 Quality checks fail significantly.
 Critical issues present.
 
-→ Cast may need re-blueprinting.
+→ Task may need re-planing.
 → Fundamental problems exist.
 → Cannot proceed without major changes.
 ```
@@ -355,10 +355,10 @@ Critical issues present.
 ```
                     │ No Issues │ Minor Only │ Important │ Critical │
 ────────────────────┼───────────┼────────────┼───────────┼──────────┤
-All Criteria Met    │  STRONG   │   SOUND    │  BRITTLE  │ CRACKED  │
-Most Criteria Met   │  SOUND    │   SOUND    │  BRITTLE  │ CRACKED  │
-Some Criteria Met   │  BRITTLE  │  BRITTLE   │  BRITTLE  │ CRACKED  │
-Few Criteria Met    │  CRACKED  │  CRACKED   │  CRACKED  │ CRACKED  │
+All Criteria Met    │  STRONG   │   SOUND    │  UNSTABLE  │ FAILED  │
+Most Criteria Met   │  SOUND    │   SOUND    │  UNSTABLE  │ FAILED  │
+Some Criteria Met   │  UNSTABLE  │  UNSTABLE   │  UNSTABLE  │ FAILED  │
+Few Criteria Met    │  FAILED  │  FAILED   │  FAILED  │ FAILED  │
 ```
 
 ### Confidence Level
@@ -375,18 +375,18 @@ Assign a confidence percentage based on:
 Below 60%: Incomplete verification, significant uncertainty
 ```
 
-## The Temper Report
+## The Verify Report
 
-Every temper produces a comprehensive report:
+Every verify produces a comprehensive report:
 
 ```
 ═══════════════════════════════════════════════════════════════════════════════
-                              TEMPER REPORT
+                              VERIFY REPORT
 ═══════════════════════════════════════════════════════════════════════════════
 
-Cast ID: cast_20250115_143022
-Blueprint ID: bp_20250115_143022_a7f3
-Tempered At: 2025-01-15T14:48:00Z
+Task ID: task_20250115_143022
+Plan ID: bp_20250115_143022_a7f3
+Verified At: 2025-01-15T14:48:00Z
 
 ───────────────────────────────────────────────────────────────────────────────
                               VERDICT: SOUND
@@ -449,7 +449,7 @@ Quality: 3/3 checks passing (100%)
 DRIFT ANALYSIS
 ──────────────
 Scope: None detected
-  Work matches scope defined in blueprint
+  Work matches scope defined in plan
 
 Approach: Minor positive deviation
   Used more comprehensive email validation library than minimum required
@@ -478,14 +478,14 @@ opportunities noted. The work is production-ready.
 
 COMPLETION APPROVED
 ───────────────────
-This cast may proceed to completion.
+This task may proceed to completion.
 
 ═══════════════════════════════════════════════════════════════════════════════
 ```
 
-## Re-tempering After Fixes
+## Re-verifying After Fixes
 
-When work returns after BRITTLE verdict:
+When work returns after UNSTABLE verdict:
 
 ### Process
 
@@ -498,10 +498,10 @@ When work returns after BRITTLE verdict:
 ### Focused Verification
 
 ```
-RE-TEMPERING
+RE-VERIFYING
 ════════════
 
-Previous Verdict: BRITTLE
+Previous Verdict: UNSTABLE
 Issues to Verify Fixed:
   1. Password hashing cost factor (was 10, should be 12)
   2. Missing rate limiting on endpoint
@@ -606,13 +606,13 @@ Good: "Systematically verified each criterion, STRONG"
 ### Pitfall 5: Being Too Harsh
 
 ```
-Bad:  "Minor style issue exists, BRITTLE"
+Bad:  "Minor style issue exists, UNSTABLE"
 Good: "Minor style issue noted, doesn't affect function, SOUND"
 ```
 
 ## The Verification Mindset
 
-When tempering, adopt this mindset:
+When verifying, adopt this mindset:
 
 1. **Evidence, not assumption** - Verify, don't trust
 2. **Systematic, not random** - Check everything methodically
@@ -625,15 +625,15 @@ When tempering, adopt this mindset:
 Before rendering verdict, confirm:
 
 - [ ] Have I verified goal achievement with evidence?
-- [ ] Have I checked every step in the blueprint?
+- [ ] Have I checked every step in the plan?
 - [ ] Have I verified every expected output?
 - [ ] Have I run all quality checks?
 - [ ] Have I checked for drift from original intent?
 - [ ] Have I classified all issues by severity correctly?
 - [ ] Is my verdict supported by the evidence?
 - [ ] Is my confidence level accurate?
-- [ ] If BRITTLE/CRACKED, are required actions clear?
+- [ ] If UNSTABLE/FAILED, are required actions clear?
 
 ---
 
-*"A blade untested is a blade untrusted. The tempering is where truth is revealed." - Tempering Principle*
+*"A blade untested is a blade untrusted. The verifying is where truth is revealed." - Verifying Principle*

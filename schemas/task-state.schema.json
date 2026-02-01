@@ -1,15 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://studio.plugin/schemas/cast-state.schema.json",
-  "title": "STUDIO Cast State",
-  "description": "Current state of an STUDIO cast with cross-references to related documents",
+  "$id": "https://studio.plugin/schemas/task-state.schema.json",
+  "title": "STUDIO Task State",
+  "description": "Current state of an STUDIO task with cross-references to related documents",
   "type": "object",
-  "required": ["cast_id", "goal", "status", "phase", "started_at", "updated_at"],
+  "required": ["task_id", "goal", "status", "phase", "started_at", "updated_at"],
   "properties": {
-    "cast_id": {
+    "task_id": {
       "type": "string",
-      "pattern": "^cast_[0-9]{8}_[0-9]{6}$",
-      "description": "Unique identifier for the cast (format: cast_YYYYMMDD_HHMMSS)"
+      "pattern": "^task_[0-9]{8}_[0-9]{6}$",
+      "description": "Unique identifier for the task (format: task_YYYYMMDD_HHMMSS)"
     },
     "goal": {
       "type": "string",
@@ -17,18 +17,18 @@
     },
     "status": {
       "type": "string",
-      "enum": ["INITIALIZING", "BLUEPRINTING", "FORGING", "TEMPERING", "COMPLETE", "FAILED", "ABORTED"],
-      "description": "Current status of the cast"
+      "enum": ["INITIALIZING", "PLANNING", "BUILDING", "VERIFYING", "COMPLETE", "FAILED", "ABORTED"],
+      "description": "Current status of the task"
     },
     "phase": {
       "type": "integer",
       "enum": [0, 1, 2, 3],
-      "description": "Current phase number (0=init, 1=blueprinting, 2=forging, 3=tempering)"
+      "description": "Current phase number (0=init, 1=planing, 2=building, 3=verifying)"
     },
     "started_at": {
       "type": "string",
       "format": "date-time",
-      "description": "ISO 8601 timestamp when the cast was started"
+      "description": "ISO 8601 timestamp when the task was started"
     },
     "updated_at": {
       "type": "string",
@@ -38,26 +38,26 @@
     "completed_at": {
       "type": ["string", "null"],
       "format": "date-time",
-      "description": "ISO 8601 timestamp when the cast completed (null if not complete)"
+      "description": "ISO 8601 timestamp when the task completed (null if not complete)"
     },
-    "blueprint_id": {
+    "plan_id": {
       "type": ["string", "null"],
       "pattern": "^bp_[0-9]{8}_[0-9]{6}_[a-f0-9]{4}$",
-      "description": "Reference to the blueprint document (format: bp_YYYYMMDD_HHMMSS_XXXX)"
+      "description": "Reference to the plan document (format: bp_YYYYMMDD_HHMMSS_XXXX)"
     },
-    "forge_log_hash": {
+    "build_log_hash": {
       "type": ["string", "null"],
       "pattern": "^sha256:[a-f0-9]{64}$",
-      "description": "SHA256 hash of the forge log for integrity verification"
+      "description": "SHA256 hash of the build log for integrity verification"
     },
-    "temper_report_id": {
+    "verify_report_id": {
       "type": ["string", "null"],
       "pattern": "^tr_[0-9]{8}_[0-9]{6}$",
-      "description": "Reference to the temper report (format: tr_YYYYMMDD_HHMMSS)"
+      "description": "Reference to the verify report (format: tr_YYYYMMDD_HHMMSS)"
     },
     "current_step": {
       "type": ["string", "null"],
-      "description": "ID of the currently executing step (null if not in forging)"
+      "description": "ID of the currently executing step (null if not in building)"
     },
     "completed_steps": {
       "type": "array",
@@ -77,17 +77,17 @@
     "replan_count": {
       "type": "integer",
       "minimum": 0,
-      "description": "Number of replans executed during forging"
+      "description": "Number of replans executed during building"
     },
-    "temper_attempts": {
+    "verify_attempts": {
       "type": "integer",
       "minimum": 0,
-      "description": "Number of tempering attempts"
+      "description": "Number of verifying attempts"
     },
     "last_verdict": {
       "type": ["string", "null"],
-      "enum": ["STRONG", "SOUND", "BRITTLE", "CRACKED", null],
-      "description": "Most recent temper verdict"
+      "enum": ["STRONG", "SOUND", "UNSTABLE", "FAILED", null],
+      "description": "Most recent verify verdict"
     },
     "checkpoints": {
       "type": "array",

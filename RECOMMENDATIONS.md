@@ -14,16 +14,16 @@ Prioritized recommendations for improving developer experience, quality, perform
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║  CASTING: user-registration-api                              ║
+║  BUILDING: user-registration-api                              ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Progress: [████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 30%    ║
-║  Phase:    CAST (step 3/10)                                  ║
+║  Phase:    TASK (step 3/10)                                  ║
 ║  Current:  Creating auth service                             ║
 ║  ETA:      ~2 minutes                                        ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
 
-**Implementation:** Update `output.sh` with progress bar function, update caster to emit progress events.
+**Implementation:** Update `output.sh` with progress bar function, update builder to emit progress events.
 
 ---
 
@@ -31,10 +31,10 @@ Prioritized recommendations for improving developer experience, quality, perform
 
 **Current:** No way to preview what will happen before execution.
 
-**Recommendation:** Add `/cast:preview` command.
+**Recommendation:** Add `/task:preview` command.
 
 ```bash
-/cast:preview Create user registration API
+/task:preview Create user registration API
 
 # Output:
 PREVIEW MODE - No changes will be made
@@ -81,11 +81,11 @@ Estimated steps: 5-8
 ║                                                              ║
 ║  How to fix:                                                 ║
 ║  1. Run: npm install bcrypt @types/bcrypt                    ║
-║  2. Then retry: /cast resume                                 ║
+║  2. Then retry: /task resume                                 ║
 ║                                                              ║
 ║  Or let me fix it:                                           ║
 ║  [y] Auto-install and retry                                  ║
-║  [n] Abort cast                                              ║
+║  [n] Abort task                                              ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
@@ -96,25 +96,25 @@ Estimated steps: 5-8
 
 ### 1.4 Session Persistence
 
-**Current:** Cast state is saved, but resuming requires knowing cast ID.
+**Current:** Task state is saved, but resuming requires knowing task ID.
 
-**Recommendation:** Auto-resume last active cast.
+**Recommendation:** Auto-resume last active task.
 
 ```bash
-# On session start, if there's an incomplete cast:
+# On session start, if there's an incomplete task:
 ╔══════════════════════════════════════════════════════════════╗
-║  UNFINISHED CAST DETECTED                                    ║
+║  UNFINISHED TASK DETECTED                                    ║
 ╠══════════════════════════════════════════════════════════════╣
-║  ID: cast_20260201_143022                                    ║
+║  ID: task_20260201_143022                                    ║
 ║  Goal: Create user registration API                          ║
 ║  Status: BLOCKED at step 4/6                                 ║
 ║  Last activity: 2 hours ago                                  ║
 ║                                                              ║
-║  [r] Resume    [a] Abort    [n] New cast                     ║
+║  [r] Resume    [a] Abort    [n] New task                     ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
 
-**Implementation:** SessionStart hook checks for incomplete casts.
+**Implementation:** SessionStart hook checks for incomplete tasks.
 
 ---
 
@@ -122,20 +122,20 @@ Estimated steps: 5-8
 
 ### 2.1 Confidence Scoring
 
-**Current:** Blueprint quality is not assessed before execution.
+**Current:** Plan quality is not assessed before execution.
 
-**Recommendation:** Rate blueprint quality with confidence score.
+**Recommendation:** Rate plan quality with confidence score.
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║  BLUEPRINT CONFIDENCE: 87%                                   ║
+║  PLAN CONFIDENCE: 87%                                   ║
 ╠══════════════════════════════════════════════════════════════╣
 ║                                                              ║
 ║  ✓ Requirements: 6 gathered, all confirmed                   ║
 ║  ✓ Steps: 5 atomic, all have validation commands             ║
 ║  ✓ Dependencies: Clear chain, no cycles                      ║
 ║  ⚠ Coverage: 3 edge cases not addressed                      ║
-║  ✓ Scribe: 4 rules applied                                   ║
+║  ✓ Memory: 4 rules applied                                   ║
 ║                                                              ║
 ║  Recommendation: Proceed with confidence                     ║
 ║                                                              ║
@@ -147,20 +147,20 @@ Estimated steps: 5-8
 - Step atomicity (single responsibility?)
 - Validation coverage (every step has checks?)
 - Dependency clarity (no circular deps?)
-- Scribe alignment (rules applied?)
+- Memory alignment (rules applied?)
 - Risk coverage (failure modes addressed?)
 
 ---
 
 ### 2.2 Auto-Generated Tests
 
-**Current:** Tests must be manually specified in blueprint.
+**Current:** Tests must be manually specified in plan.
 
 **Recommendation:** Generate test skeletons from requirements.
 
 ```typescript
 // Auto-generated from REQ-001: User registration with email validation
-describe('User Registration', () => {
+dememory('User Registration', () => {
   it('should register user with valid email and password', async () => {
     // REQ-001: Happy path
     // TODO: Implement
@@ -178,7 +178,7 @@ describe('User Registration', () => {
 });
 ```
 
-**Implementation:** Add test generation step to blueprint that creates test skeletons linked to requirements.
+**Implementation:** Add test generation step to plan that creates test skeletons linked to requirements.
 
 ---
 
@@ -195,13 +195,13 @@ describe('User Registration', () => {
 ║                                                              ║
 ║  Reviewing against:                                          ║
 ║  - Original requirements                                     ║
-║  - Blueprint specifications                                  ║
-║  - Scribe rules                                              ║
+║  - Plan specifications                                  ║
+║  - Memory rules                                              ║
 ║  - Security best practices                                   ║
 ║                                                              ║
 ║  Findings:                                                   ║
 ║  ✓ All requirements implemented                              ║
-║  ✓ Code matches blueprint                                    ║
+║  ✓ Code matches plan                                    ║
 ║  ⚠ Consider: Add rate limiting to registration endpoint      ║
 ║  ⚠ Consider: Add input sanitization for name field           ║
 ║                                                              ║
@@ -235,7 +235,7 @@ describe('User Registration', () => {
 Coverage: 4/4 requirements implemented and verified (100%)
 ```
 
-**Implementation:** Already in manifest schema - add `/cast trace` command to display.
+**Implementation:** Already in manifest schema - add `/task trace` command to display.
 
 ---
 
@@ -248,7 +248,7 @@ Coverage: 4/4 requirements implemented and verified (100%)
 **Recommendation:** Execute independent steps in parallel.
 
 ```
-Blueprint Analysis:
+Plan Analysis:
   step_1 → step_2 → step_3
               ↘ step_4 ↗
                   ↓
@@ -259,7 +259,7 @@ Parallel Execution Plan:
   Batch 2: step_2, step_4 (parallel - no dependencies)
   Batch 3: step_3, step_5 (parallel after batch 2)
 
-Time savings: ~40% for this blueprint
+Time savings: ~40% for this plan
 ```
 
 **Implementation:**
@@ -278,8 +278,8 @@ Time savings: ~40% for this blueprint
 ```yaml
 cache:
   skills:
-    blueprinting: <cached content>
-    scribe: <cached content>
+    planing: <cached content>
+    memory: <cached content>
   personas:
     business-analyst: <cached content>
     tech-lead: <cached content>
@@ -292,9 +292,9 @@ cache:
 
 ---
 
-### 3.3 Incremental Blueprints
+### 3.3 Incremental Plans
 
-**Current:** Entire blueprint regenerated for any change.
+**Current:** Entire plan regenerated for any change.
 
 **Recommendation:** Update only affected steps when requirements change.
 
@@ -351,7 +351,7 @@ Regenerating 2/5 steps...
 **Recommendation:** Step-by-step confirmation mode.
 
 ```bash
-/cast:interactive Create user registration API
+/task:interactive Create user registration API
 
 # After each step:
 ╔══════════════════════════════════════════════════════════════╗
@@ -375,14 +375,14 @@ Regenerating 2/5 steps...
 
 ---
 
-### 4.3 Blueprint Templates
+### 4.3 Plan Templates
 
-**Current:** Every blueprint starts from scratch.
+**Current:** Every plan starts from scratch.
 
 **Recommendation:** Pre-built templates for common patterns.
 
 ```bash
-/cast:template api-endpoint Create user profile endpoint
+/task:template api-endpoint Create user profile endpoint
 
 # Uses template: api-endpoint
 # Pre-filled structure:
@@ -408,24 +408,24 @@ Regenerating 2/5 steps...
 
 **Current:** No visibility into historical performance.
 
-**Recommendation:** Track and display cast analytics.
+**Recommendation:** Track and display task analytics.
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
 ║  STUDIO ANALYTICS (Last 30 days)                              ║
 ╠══════════════════════════════════════════════════════════════╣
 ║                                                              ║
-║  Casts:     47 total   42 complete   3 failed   2 aborted   ║
+║  Tasks:     47 total   42 complete   3 failed   2 aborted   ║
 ║  Success:   89%                                              ║
 ║                                                              ║
 ║  Avg Duration:    12 minutes                                 ║
 ║  Avg Steps:       6.2                                        ║
-║  Avg Retries:     0.8 per cast                               ║
+║  Avg Retries:     0.8 per task                               ║
 ║                                                              ║
 ║  Quality Verdicts:                                           ║
 ║  ████████████████████░░░░░░░░  STRONG: 28 (67%)              ║
 ║  ██████░░░░░░░░░░░░░░░░░░░░░░  SOUND:  11 (26%)              ║
-║  ██░░░░░░░░░░░░░░░░░░░░░░░░░░  BRITTLE: 3 (7%)               ║
+║  ██░░░░░░░░░░░░░░░░░░░░░░░░░░  UNSTABLE: 3 (7%)               ║
 ║                                                              ║
 ║  Most Common Failures:                                       ║
 ║  1. Type errors (8)                                          ║
@@ -439,21 +439,21 @@ Regenerating 2/5 steps...
 
 ## Priority 5: Advanced Features (Higher Effort, Differentiating)
 
-### 5.1 Multi-Cast Orchestration
+### 5.1 Multi-Task Orchestration
 
-**Current:** Single cast at a time.
+**Current:** Single task at a time.
 
-**Recommendation:** Orchestrate related casts as a project.
+**Recommendation:** Orchestrate related tasks as a project.
 
 ```bash
 /project:init E-commerce Platform
 
-/project:cast User authentication
-/project:cast Product catalog
-/project:cast Shopping cart
-/project:cast Checkout flow
+/project:task User authentication
+/project:task Product catalog
+/project:task Shopping cart
+/project:task Checkout flow
 
-# Shows dependency graph between casts
+# Shows dependency graph between tasks
 # Manages shared context
 # Tracks overall project progress
 ```
@@ -462,7 +462,7 @@ Regenerating 2/5 steps...
 
 ### 5.2 Learning from Corrections
 
-**Current:** Scribe records explicit rules only.
+**Current:** Memory records explicit rules only.
 
 **Recommendation:** Learn from user corrections automatically.
 
@@ -488,38 +488,38 @@ Inferred rule: "Always use select to limit returned fields"
 
 ### 5.3 Rollback System
 
-**Current:** No easy way to undo a cast.
+**Current:** No easy way to undo a task.
 
 **Recommendation:** Git-based rollback with snapshot.
 
 ```bash
-/cast rollback
+/task rollback
 
 ╔══════════════════════════════════════════════════════════════╗
 ║  ROLLBACK OPTIONS                                            ║
 ╠══════════════════════════════════════════════════════════════╣
 ║                                                              ║
-║  1. cast_20260201_150000 - User registration API             ║
+║  1. task_20260201_150000 - User registration API             ║
 ║     Files changed: 5 created, 2 modified                     ║
 ║     [Rollback] [View diff]                                   ║
 ║                                                              ║
-║  2. cast_20260201_140000 - Database schema update            ║
+║  2. task_20260201_140000 - Database schema update            ║
 ║     Files changed: 1 modified                                ║
 ║     [Rollback] [View diff]                                   ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
 
-**Implementation:** Create git commit before each cast, tag with cast ID.
+**Implementation:** Create git commit before each task, tag with task ID.
 
 ---
 
 ## Implementation Roadmap
 
 ### Phase 1: Foundation (This Sprint)
-- [x] Cast Manifest schema
+- [x] Task Manifest schema
 - [x] Manifest management script
-- [ ] Update architect/caster to use manifest
+- [ ] Update architect/builder to use manifest
 - [ ] Progress visualization
 
 ### Phase 2: Quality (Next Sprint)
@@ -532,15 +532,15 @@ Inferred rule: "Always use select to limit returned fields"
 - [ ] Dry-run mode
 - [ ] Interactive confirmation mode
 - [ ] Rich terminal UI
-- [ ] Blueprint templates
+- [ ] Plan templates
 
 ### Phase 4: Performance (Optimization Sprint)
 - [ ] Parallel execution
 - [ ] Context caching
-- [ ] Incremental blueprints
+- [ ] Incremental plans
 
 ### Phase 5: Advanced (Future)
-- [ ] Multi-cast orchestration
+- [ ] Multi-task orchestration
 - [ ] Learning from corrections
 - [ ] Rollback system
 - [ ] Analytics dashboard

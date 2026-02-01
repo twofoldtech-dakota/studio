@@ -7,7 +7,7 @@
 # This script is called by the SubagentStop hook.
 #
 # Arguments:
-#   $1 - Agent name (smith, forgemaster, temperer)
+#   $1 - Agent name (planner, builder, verifier)
 #
 # Exit codes:
 #   0 - Approved (JSON files written correctly)
@@ -17,24 +17,24 @@
 set -euo pipefail
 
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-CASTS_DIR="${STUDIO_DIR}/casts"
+TASKS_DIR="${STUDIO_DIR}/tasks"
 
-# Find the active cast directory
-find_active_cast() {
-    if [[ ! -d "$CASTS_DIR" ]]; then
+# Find the active task directory
+find_active_task() {
+    if [[ ! -d "$TASKS_DIR" ]]; then
         return 1
     fi
 
-    # Find cast with non-complete status
-    local cast_dir
-    for cast_dir in "$CASTS_DIR"/cast_*/; do
-        if [[ -d "$cast_dir" ]]; then
-            local state_file="${cast_dir}state.json"
+    # Find task with non-complete status
+    local task_dir
+    for task_dir in "$TASKS_DIR"/task_*/; do
+        if [[ -d "$task_dir" ]]; then
+            local state_file="${task_dir}state.json"
             if [[ -f "$state_file" ]]; then
                 local status
                 status=$(grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' "$state_file" 2>/dev/null | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
                 if [[ "$status" != "COMPLETE" && "$status" != "FAILED" && "$status" != "ABORTED" ]]; then
-                    echo "${cast_dir%/}"
+                    echo "${task_dir%/}"
                     return 0
                 fi
             fi
@@ -44,76 +44,76 @@ find_active_cast() {
     return 1
 }
 
-# Validate Smith (Blueprinting) output
-validate_smith() {
-    local cast_dir="$1"
-    local blueprint_file="${cast_dir}/blueprint.json"
-    local state_file="${cast_dir}/state.json"
+# Validate Planner (Planing) output
+validate_planner() {
+    local task_dir="$1"
+    local plan_file="${task_dir}/plan.json"
+    local state_file="${task_dir}/state.json"
 
-    # Check if blueprint.json exists
-    if [[ ! -f "$blueprint_file" ]]; then
-        echo '{"decision": "block", "reason": "Blueprint JSON not written: blueprint.json is missing"}'
+    # Check if plan.json exists
+    if [[ ! -f "$plan_file" ]]; then
+        echo '{"decision": "block", "reason": "Plan JSON not written: plan.json is missing"}'
         exit 0
     fi
 
-    # Check if blueprint has required fields
-    if ! grep -q '"id"' "$blueprint_file" || ! grep -q '"cast_id"' "$blueprint_file"; then
-        echo '{"decision": "block", "reason": "Blueprint JSON invalid: missing id or cast_id"}'
+    # Check if plan has required fields
+    if ! grep -q '"id"' "$plan_file" || ! grep -q '"task_id"' "$plan_file"; then
+        echo '{"decision": "block", "reason": "Plan JSON invalid: missing id or task_id"}'
         exit 0
     fi
 
-    # Check if state.json has blueprint_id
-    if [[ -f "$state_file" ]] && ! grep -q '"blueprint_id"' "$state_file"; then
-        echo '{"decision": "block", "reason": "State not updated: blueprint_id not set"}'
+    # Check if state.json has plan_id
+    if [[ -f "$state_file" ]] && ! grep -q '"plan_id"' "$state_file"; then
+        echo '{"decision": "block", "reason": "State not updated: plan_id not set"}'
         exit 0
     fi
 
-    # Blueprint valid, allow stopping
+    # Plan valid, allow stopping
     exit 0
 }
 
-# Validate Forgemaster output
-validate_forgemaster() {
-    local cast_dir="$1"
-    local forge_log="${cast_dir}/forge-log.json"
+# Validate Builder output
+validate_builder() {
+    local task_dir="$1"
+    local build_log="${task_dir}/build-log.json"
 
-    # Check if forge-log.json exists
-    if [[ ! -f "$forge_log" ]]; then
-        echo '{"decision": "block", "reason": "Forge log JSON not written: forge-log.json is missing"}'
+    # Check if build-log.json exists
+    if [[ ! -f "$build_log" ]]; then
+        echo '{"decision": "block", "reason": "Build log JSON not written: build-log.json is missing"}'
         exit 0
     fi
 
-    # Check if forge log has required fields
-    if ! grep -q '"blueprint_id"' "$forge_log" || ! grep -q '"records"' "$forge_log"; then
-        echo '{"decision": "block", "reason": "Forge log JSON invalid: missing blueprint_id or records"}'
+    # Check if build log has required fields
+    if ! grep -q '"plan_id"' "$build_log" || ! grep -q '"records"' "$build_log"; then
+        echo '{"decision": "block", "reason": "Build log JSON invalid: missing plan_id or records"}'
         exit 0
     fi
 
-    # Forge log valid, allow stopping
+    # Build log valid, allow stopping
     exit 0
 }
 
-# Validate Temperer output
-validate_temperer() {
-    local cast_dir="$1"
-    local temper_report="${cast_dir}/temper-report.json"
+# Validate Verifier output
+validate_verifier() {
+    local task_dir="$1"
+    local verify_report="${task_dir}/verify-report.json"
 
-    # Check if temper-report.json exists
-    if [[ ! -f "$temper_report" ]]; then
-        echo '{"decision": "block", "reason": "Temper report JSON not written: temper-report.json is missing"}'
+    # Check if verify-report.json exists
+    if [[ ! -f "$verify_report" ]]; then
+        echo '{"decision": "block", "reason": "Verify report JSON not written: verify-report.json is missing"}'
         exit 0
     fi
 
-    # Check if temper report has verdict
+    # Check if verify report has verdict
     local verdict
-    verdict=$(grep -o '"verdict"[[:space:]]*:[[:space:]]*"[^"]*"' "$temper_report" 2>/dev/null | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+    verdict=$(grep -o '"verdict"[[:space:]]*:[[:space:]]*"[^"]*"' "$verify_report" 2>/dev/null | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
 
     if [[ -z "$verdict" ]]; then
-        echo '{"decision": "block", "reason": "Temper report JSON invalid: missing verdict"}'
+        echo '{"decision": "block", "reason": "Verify report JSON invalid: missing verdict"}'
         exit 0
     fi
 
-    # Temper report valid, allow stopping
+    # Verify report valid, allow stopping
     exit 0
 }
 
@@ -124,22 +124,22 @@ main() {
     # Normalize agent name to lowercase
     agent_name=$(echo "$agent_name" | tr '[:upper:]' '[:lower:]')
 
-    # Find active cast
-    local cast_dir
-    if ! cast_dir=$(find_active_cast); then
-        # No active cast found, allow stopping
+    # Find active task
+    local task_dir
+    if ! task_dir=$(find_active_task); then
+        # No active task found, allow stopping
         exit 0
     fi
 
     case "$agent_name" in
-        smith)
-            validate_smith "$cast_dir"
+        planner)
+            validate_planner "$task_dir"
             ;;
-        forgemaster)
-            validate_forgemaster "$cast_dir"
+        builder)
+            validate_builder "$task_dir"
             ;;
-        temperer)
-            validate_temperer "$cast_dir"
+        verifier)
+            validate_verifier "$task_dir"
             ;;
         *)
             # Unknown agent, allow stopping

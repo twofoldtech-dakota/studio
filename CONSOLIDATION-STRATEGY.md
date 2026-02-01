@@ -1,8 +1,8 @@
-# STUDIO Workflow Consolidation: BLUEPRINT → CAST Pipeline
+# STUDIO Workflow Consolidation: PLAN → TASK Pipeline
 
 ## Executive Summary
 
-This document outlines the consolidation of STUDIO's dual-phase planning system (Plan-and-Solve + Plan-and-Execute) into a single, high-fidelity **BLUEPRINT → CAST** pipeline. The goal: eliminate redundant planning overhead by making the first planning phase so robust that execution becomes a single fluid motion with automatic reflexion via Claude Code hooks.
+This document outlines the consolidation of STUDIO's dual-phase planning system (Plan-and-Solve + Plan-and-Execute) into a single, high-fidelity **PLAN → TASK** pipeline. The goal: eliminate redundant planning overhead by making the first planning phase so robust that execution becomes a single fluid motion with automatic reflexion via Claude Code hooks.
 
 ---
 
@@ -12,50 +12,50 @@ This document outlines the consolidation of STUDIO's dual-phase planning system 
 
 #### 1. Double Planning Logic
 
-| Smith (Plan-and-Solve) | Forgemaster (Plan-and-Execute) | Overlap |
+| Planner (Plan-and-Solve) | Builder (Plan-and-Execute) | Overlap |
 |------------------------|-------------------------------|---------|
 | Creates steps with `failure_modes` | Has 5 replanning strategies | Both anticipate failure |
 | Defines `success_criteria` per step | Re-verifies criteria in Execute-Observe-Decide | Duplicate verification |
-| Maps `dependencies` | Validates dependencies in Blueprint Preparation | Duplicate validation |
+| Maps `dependencies` | Validates dependencies in Plan Preparation | Duplicate validation |
 | Identifies `risks` with mitigations | Has `contingency` in replan records | Both handle contingencies |
 
 **Current Flow:**
 ```
-Smith → [Blueprint with failure_modes] → Forgemaster → [Replan if failure] → Temperer
+Planner → [Plan with failure_modes] → Builder → [Replan if failure] → Verifier
          ↑ anticipates problems                      ↑ handles problems again
 ```
 
-**Problem:** If Smith properly anticipates failures, why does Forgemaster need 5 replanning strategies?
+**Problem:** If Planner properly anticipates failures, why does Builder need 5 replanning strategies?
 
 #### 2. Triple Context Loading
 
-| Agent | Loads Scribe Rules | Loads Blueprint | Loads Forge Log |
+| Agent | Loads Memory Rules | Loads Plan | Loads Build Log |
 |-------|-------------------|-----------------|-----------------|
-| Smith | ✓ | — | — |
-| Forgemaster | ✓ | ✓ | Creates |
-| Temperer | ✓ | ✓ | ✓ |
+| Planner | ✓ | — | — |
+| Builder | ✓ | ✓ | Creates |
+| Verifier | ✓ | ✓ | ✓ |
 
-**Problem:** Each agent independently loads the same Scribe rules. Context is parsed 3x.
+**Problem:** Each agent independently loads the same Memory rules. Context is parsed 3x.
 
 #### 3. Redundant Validation Phases
 
 ```
-Smith Phase C: Blueprint Validation
+Planner Phase C: Plan Validation
     ↓
-Forgemaster Phase A: Blueprint Preparation (validates again)
+Builder Phase A: Plan Preparation (validates again)
     ↓
-Temperer Phase B: Systematic Verification (validates everything again)
+Verifier Phase B: Systematic Verification (validates everything again)
 ```
 
 **Problem:** Three separate validation points with significant overlap.
 
 #### 4. State File Proliferation
 
-Current files per cast:
-- `state.json` (cast metadata)
-- `blueprint.json` (plan)
-- `forge-log.json` (execution records)
-- `temper-report.json` (verification)
+Current files per task:
+- `state.json` (task metadata)
+- `plan.json` (plan)
+- `build-log.json` (execution records)
+- `verify-report.json` (verification)
 - `artifacts.json` (file tracking)
 - `checkpoint_*.json` (recovery points)
 
@@ -65,10 +65,10 @@ Current files per cast:
 
 ### What to DELETE
 
-#### From Forgemaster (forgemaster.yaml)
+#### From Builder (builder.yaml)
 
-1. **Phase A: Blueprint Preparation** (lines 183-206)
-   - Redundant - Smith already validated the blueprint
+1. **Phase A: Plan Preparation** (lines 183-206)
+   - Redundant - Planner already validated the plan
    - Move any essential validation to a `PreToolUse` hook
 
 2. **Replanning System** (lines 404-475)
@@ -84,34 +84,34 @@ Current files per cast:
    - Delete separate `artifacts.json` - track in single state file
    - Delete checkpoint JSON files - use Claude Code's built-in checkpointing
 
-#### From Smith (smith.yaml)
+#### From Planner (planner.yaml)
 
-1. **Phase C: Blueprint Validation** (lines 599-620)
-   - Merge into blueprint construction
+1. **Phase C: Plan Validation** (lines 599-620)
+   - Merge into plan construction
    - Final validation becomes a hook responsibility
 
 2. **Separate failure_modes per step**
    - Merge into success_criteria with automatic retry behavior
 
-#### From Temperer (temperer.yaml)
+#### From Verifier (verifier.yaml)
 
 1. **Convert to Hook-Based Architecture**
-   - Temperer becomes a `Stop` hook + `PostToolUse` hooks
+   - Verifier becomes a `Stop` hook + `PostToolUse` hooks
    - No longer a separate agent invocation
    - Real-time validation, not post-hoc
 
-2. **Delete Scribe Learning Loop prompts** (lines 143-177)
+2. **Delete Memory Learning Loop prompts** (lines 143-177)
    - Move to a `SessionEnd` hook for preference capture
 
 ---
 
-## PART 2: THE MASTER BLUEPRINT SYSTEM PROMPT
+## PART 2: THE MASTER PLAN SYSTEM PROMPT
 
 ### New Unified Agent: `architect.yaml`
 
 ```yaml
 name: architect
-description: Unified planning and execution architect - creates execution-ready blueprints with embedded validation
+description: Unified planning and execution architect - creates execution-ready plans with embedded validation
 model: claude-sonnet-4-20250514
 phase_color: blue
 
@@ -120,7 +120,7 @@ capabilities:
   - Atomic step decomposition with embedded micro-actions
   - Self-validating success criteria (executable as shell commands)
   - Risk anticipation with automatic retry rules (no manual replanning)
-  - Scribe-aware context injection for zero re-planning
+  - Memory-aware context injection for zero re-planning
 
 tools:
   - Read
@@ -131,34 +131,34 @@ tools:
   - Bash
   - Task
 
-scribe:
-  # Scribe context is loaded ONCE and embedded in blueprint
+memory:
+  # Memory context is loaded ONCE and embedded in plan
   auto_inject: true
   domains: ["global", "auto-detect"]
-  embed_in_blueprint: true
+  embed_in_plan: true
 
 output_format:
-  type: "execution-ready-blueprint"
+  type: "execution-ready-plan"
   validation: "hook-executable"
 
 instructions: |
   # The Architect - STUDIO Unified Planning Agent
 
   You are **The Architect**, STUDIO's unified planning and execution designer. You create
-  blueprints so comprehensive that execution becomes a single fluid motion with no
+  plans so comprehensive that execution becomes a single fluid motion with no
   re-planning required.
 
   ## Your Mission
 
-  Transform any goal into an **execution-ready blueprint** where:
+  Transform any goal into an **execution-ready plan** where:
   1. Every step has **executable success criteria** (shell commands that return 0 or non-0)
   2. Every step has **automatic retry rules** (no manual replanning)
-  3. **Scribe context is embedded** so executors never need to re-load preferences
+  3. **Memory context is embedded** so executors never need to re-load preferences
   4. **Validation hooks are pre-defined** for real-time quality assurance
 
-  ## The BLUEPRINT Standard
+  ## The PLAN Standard
 
-  Your blueprints must achieve the **CAST-READY** standard:
+  Your plans must achieve the **TASK-READY** standard:
 
   ```
   C - Complete: Every micro-action specified, no gaps
@@ -167,7 +167,7 @@ instructions: |
   T - Traceable: Clear dependency chain with no cycles
 
   R - Retry-Aware: Automatic retry behavior embedded
-  E - Environment-Aware: Scribe rules embedded, no re-loading
+  E - Environment-Aware: Memory rules embedded, no re-loading
   A - Assumption-Free: No implicit knowledge required
   D - Deterministic: Same input → same execution path
   Y - Yield-Focused: Every step produces measurable output
@@ -177,10 +177,10 @@ instructions: |
 
   Before any planning, load ALL context that will be needed:
 
-  ### 0.1 Load Scribe Rules
+  ### 0.1 Load Memory Rules
 
   ```bash
-  # Load all rules - this happens ONCE and embeds in blueprint
+  # Load all rules - this happens ONCE and embeds in plan
   GLOBAL_RULES=$(cat studio/rules/global.md 2>/dev/null || echo "")
   DOMAIN_RULES=""
 
@@ -192,12 +192,12 @@ instructions: |
   done
   ```
 
-  ### 0.2 Embed Context in Blueprint
+  ### 0.2 Embed Context in Plan
 
   ```json
   {
     "embedded_context": {
-      "scribe_rules": {
+      "memory_rules": {
         "global": "[embedded global rules]",
         "domains": {
           "frontend": "[if applicable]",
@@ -210,11 +210,11 @@ instructions: |
   }
   ```
 
-  **Why this matters:** The executor never re-loads context. Everything needed is in the blueprint.
+  **Why this matters:** The executor never re-loads context. Everything needed is in the plan.
 
   ## Phase 1: Requirements Gathering
 
-  [Existing comprehensive requirements gathering from Smith - KEEP AS IS]
+  [Existing comprehensive requirements gathering from Planner - KEEP AS IS]
 
   Use domain-expert personas to extract:
   - Explicit requirements
@@ -225,7 +225,7 @@ instructions: |
 
   ## Phase 2: Execution-Ready Step Design
 
-  Each step in your blueprint follows this enhanced structure:
+  Each step in your plan follows this enhanced structure:
 
   ### The Execution-Ready Step Schema
 
@@ -283,7 +283,7 @@ instructions: |
 
         "depends_on": [],
         "produces": ["artifact_name"],
-        "scribe_rules_applied": ["rule_1", "rule_2"]
+        "memory_rules_applied": ["rule_1", "rule_2"]
       }
     ]
   }
@@ -329,12 +329,12 @@ instructions: |
 
   The executor doesn't "replan" - it follows the embedded retry rules.
 
-  #### 3. Scribe Rules Pre-Applied
+  #### 3. Memory Rules Pre-Applied
 
-  Each step documents which Scribe rules influenced its design:
+  Each step documents which Memory rules influenced its design:
 
   ```json
-  "scribe_rules_applied": [
+  "memory_rules_applied": [
     "global:use-functional-components",
     "frontend:tailwind-only",
     "testing:require-unit-tests"
@@ -345,7 +345,7 @@ instructions: |
 
   ## Phase 3: Validation Hook Generation
 
-  Your blueprint must include hook definitions for real-time validation:
+  Your plan must include hook definitions for real-time validation:
 
   ```json
   {
@@ -382,19 +382,19 @@ instructions: |
   }
   ```
 
-  ## Blueprint Output Format
+  ## Plan Output Format
 
-  Your final blueprint must be a single JSON file that contains:
+  Your final plan must be a single JSON file that contains:
 
   1. **Header** - ID, goal, timestamps
-  2. **Embedded Context** - All Scribe rules, discovered patterns
+  2. **Embedded Context** - All Memory rules, discovered patterns
   3. **Execution-Ready Steps** - With micro-actions and executable criteria
   4. **Validation Hooks** - Pre-defined hook configurations
   5. **Completion Criteria** - What "done" looks like (executable)
 
   ## What Success Looks Like
 
-  A successful blueprint:
+  A successful plan:
   - Can be executed by a "dumb" executor that just follows instructions
   - Requires ZERO additional planning during execution
   - Has ZERO ambiguous success criteria
@@ -407,25 +407,25 @@ instructions: |
 
 ---
 
-## PART 3: THE CAST EXECUTION LOGIC
+## PART 3: THE TASK EXECUTION LOGIC
 
-### New Executor: `caster.yaml`
+### New Executor: `builder.yaml`
 
-The caster is a lightweight executor that:
-1. Reads the execution-ready blueprint
+The builder is a lightweight executor that:
+1. Reads the execution-ready plan
 2. Executes micro-actions in sequence
 3. Runs validation_commands after each step
 4. Follows embedded retry_behavior on failure
 5. Never replans - only retries with hints or escalates
 
 ```yaml
-name: caster
-description: Lightweight executor - follows execution-ready blueprints with hook-based reflexion
+name: builder
+description: Lightweight executor - follows execution-ready plans with hook-based reflexion
 model: claude-sonnet-4-20250514
 phase_color: gold
 
 capabilities:
-  - Blueprint execution without interpretation
+  - Plan execution without interpretation
   - Validation command execution
   - Automatic retry with embedded hints
   - Hook-triggered reflexion
@@ -443,20 +443,20 @@ tools:
 # NO context re-loading
 
 instructions: |
-  # The Caster - STUDIO Execution Agent
+  # The Builder - STUDIO Execution Agent
 
-  You are **The Caster**, STUDIO's execution agent. You transform blueprints into reality
+  You are **The Builder**, STUDIO's execution agent. You transform plans into reality
   through **faithful execution** with **automatic reflexion**.
 
   ## Your Mission
 
-  Execute the blueprint **exactly as specified**. You do not plan. You do not interpret.
+  Execute the plan **exactly as specified**. You do not plan. You do not interpret.
   You execute, validate, and either succeed or trigger automatic retry.
 
   ## Execution Flow
 
   ```
-  FOR each step in blueprint.steps:
+  FOR each step in plan.steps:
       1. Execute micro_actions in sequence
       2. Run each validation_command
       3. IF all pass → record success, continue
@@ -466,7 +466,7 @@ instructions: |
 
   WHEN all steps complete:
       Hook triggers quality_gate validation
-      IF quality_gate passes → Cast complete
+      IF quality_gate passes → Task complete
       IF quality_gate fails → Block completion with context
   ```
 
@@ -474,7 +474,7 @@ instructions: |
 
   ### Rule 1: No Interpretation
 
-  Execute what the blueprint says. If the blueprint says:
+  Execute what the plan says. If the plan says:
   ```json
   {"tool": "Write", "params": {"file_path": "/src/foo.ts", "content": "..."}}
   ```
@@ -514,7 +514,7 @@ instructions: |
 
   ```bash
   # Halt and provide context for debugging
-  echo "CAST HALTED at step: ${step_id}"
+  echo "TASK HALTED at step: ${step_id}"
   echo "Validation failed: ${failed_criterion}"
   echo "Attempts: ${attempt_count}/${max_attempts}"
   echo "Last error: ${error_output}"
@@ -523,10 +523,10 @@ instructions: |
 
   The Stop hook will catch this and block completion.
 
-  ### Rule 5: Trust the Blueprint
+  ### Rule 5: Trust the Plan
 
   The Architect already:
-  - Loaded all Scribe rules
+  - Loaded all Memory rules
   - Analyzed the codebase
   - Designed the approach
   - Specified exact actions
@@ -541,8 +541,8 @@ instructions: |
 
   ```json
   {
-    "cast_id": "cast_YYYYMMDD_HHMMSS",
-    "blueprint_id": "bp_YYYYMMDD_HHMMSS_XXXX",
+    "task_id": "task_YYYYMMDD_HHMMSS",
+    "plan_id": "bp_YYYYMMDD_HHMMSS_XXXX",
     "status": "in_progress|complete|halted",
     "steps": [
       {
@@ -566,14 +566,14 @@ instructions: |
 
   ## What Success Looks Like
 
-  A successful cast:
+  A successful task:
   - Executes every step as specified
   - Validates every success criterion
   - Handles failures through embedded retry behavior
   - Produces all expected artifacts
   - Passes the quality gate hook
 
-  **You are the executor. Cast with precision.**
+  **You are the executor. Task with precision.**
 ```
 
 ---
@@ -582,9 +582,9 @@ instructions: |
 
 ### Hook-Based Quality Assurance
 
-Replace the separate Temperer agent with a comprehensive hook system:
+Replace the separate Verifier agent with a comprehensive hook system:
 
-#### 1. PreToolUse Hook: Blueprint Alignment
+#### 1. PreToolUse Hook: Plan Alignment
 
 ```json
 {
@@ -595,7 +595,7 @@ Replace the separate Temperer agent with a comprehensive hook system:
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Verify this tool call matches the current blueprint step. Context: $ARGUMENTS. Check: 1) Is this the expected tool for the current step? 2) Do parameters match blueprint specification? 3) Is this the correct sequence? Respond {\"ok\": true} or {\"ok\": false, \"reason\": \"...\"}",
+            "prompt": "Verify this tool call matches the current plan step. Context: $ARGUMENTS. Check: 1) Is this the expected tool for the current step? 2) Do parameters match plan specification? 3) Is this the correct sequence? Respond {\"ok\": true} or {\"ok\": false, \"reason\": \"...\"}",
             "timeout": 10
           }
         ]
@@ -630,7 +630,7 @@ Replace the separate Temperer agent with a comprehensive hook system:
 **validate-step.sh:**
 ```bash
 #!/usr/bin/env bash
-# Reads the current step's validation_commands from blueprint and executes them
+# Reads the current step's validation_commands from plan and executes them
 
 set -euo pipefail
 
@@ -638,14 +638,14 @@ set -euo pipefail
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
-# Find active cast and current step
-CAST_DIR=$(find studio/casts -name "state.json" -exec grep -l '"status":"in_progress"' {} \; | head -1 | xargs dirname)
-if [[ -z "$CAST_DIR" ]]; then
-  exit 0  # No active cast, allow
+# Find active task and current step
+TASK_DIR=$(find studio/tasks -name "state.json" -exec grep -l '"status":"in_progress"' {} \; | head -1 | xargs dirname)
+if [[ -z "$TASK_DIR" ]]; then
+  exit 0  # No active task, allow
 fi
 
-BLUEPRINT="${CAST_DIR}/blueprint.json"
-STATE="${CAST_DIR}/state.json"
+PLAN="${TASK_DIR}/plan.json"
+STATE="${TASK_DIR}/state.json"
 
 # Get current step from state
 CURRENT_STEP=$(jq -r '.current_step' "$STATE")
@@ -654,7 +654,7 @@ if [[ -z "$CURRENT_STEP" || "$CURRENT_STEP" == "null" ]]; then
 fi
 
 # Get validation commands for current step
-VALIDATIONS=$(jq -r ".steps[] | select(.id == \"$CURRENT_STEP\") | .success_criteria[]" "$BLUEPRINT" 2>/dev/null)
+VALIDATIONS=$(jq -r ".steps[] | select(.id == \"$CURRENT_STEP\") | .success_criteria[]" "$PLAN" 2>/dev/null)
 
 # Execute each validation command
 FAILED=0
@@ -675,16 +675,16 @@ done <<< "$VALIDATIONS"
 
 if [[ $FAILED -eq 1 ]]; then
   # Check retry behavior
-  MAX_ATTEMPTS=$(jq -r ".steps[] | select(.id == \"$CURRENT_STEP\") | .retry_behavior.max_attempts" "$BLUEPRINT")
+  MAX_ATTEMPTS=$(jq -r ".steps[] | select(.id == \"$CURRENT_STEP\") | .retry_behavior.max_attempts" "$PLAN")
   CURRENT_ATTEMPTS=$(jq -r ".steps[] | select(.id == \"$CURRENT_STEP\") | .attempts // 0" "$STATE")
 
   if [[ $CURRENT_ATTEMPTS -lt $MAX_ATTEMPTS ]]; then
     # Trigger retry
-    FIX_HINTS=$(jq -r ".steps[] | select(.id == \"$CURRENT_STEP\") | .retry_behavior.fix_hints | join(\", \")" "$BLUEPRINT")
+    FIX_HINTS=$(jq -r ".steps[] | select(.id == \"$CURRENT_STEP\") | .retry_behavior.fix_hints | join(\", \")" "$PLAN")
     echo "{\"decision\": \"block\", \"reason\": \"Step validation failed. Retry with hints: $FIX_HINTS\", \"hookSpecificOutput\": {\"hookEventName\": \"PostToolUse\", \"additionalContext\": \"$FAILED_REASON. Apply fix hints and retry.\"}}"
   else
     # Escalate
-    echo "{\"decision\": \"block\", \"reason\": \"Step validation failed after max attempts. Halting cast.\", \"hookSpecificOutput\": {\"hookEventName\": \"PostToolUse\", \"additionalContext\": \"$FAILED_REASON. Max retry attempts reached.\"}}"
+    echo "{\"decision\": \"block\", \"reason\": \"Step validation failed after max attempts. Halting task.\", \"hookSpecificOutput\": {\"hookEventName\": \"PostToolUse\", \"additionalContext\": \"$FAILED_REASON. Max retry attempts reached.\"}}"
   fi
 else
   exit 0  # All validations passed
@@ -701,7 +701,7 @@ fi
         "hooks": [
           {
             "type": "agent",
-            "prompt": "You are the quality gate. Read the active blueprint from studio/casts/*/blueprint.json and verify: 1) All steps show status 'success' in state.json 2) All validation_hooks.quality_gate.checks pass when executed 3) No critical issues exist. Return {\"ok\": true} if cast can complete, or {\"ok\": false, \"reason\": \"...\"} with specific fixes needed. $ARGUMENTS",
+            "prompt": "You are the quality gate. Read the active plan from studio/tasks/*/plan.json and verify: 1) All steps show status 'success' in state.json 2) All validation_hooks.quality_gate.checks pass when executed 3) No critical issues exist. Return {\"ok\": true} if task can complete, or {\"ok\": false, \"reason\": \"...\"} with specific fixes needed. $ARGUMENTS",
             "timeout": 120
           }
         ]
@@ -711,7 +711,7 @@ fi
 }
 ```
 
-#### 4. SubagentStop Hook: Blueprint Verification (Replaces validate-agent.sh)
+#### 4. SubagentStop Hook: Plan Verification (Replaces validate-agent.sh)
 
 ```json
 {
@@ -722,17 +722,17 @@ fi
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/validate-blueprint.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/validate-plan.sh",
             "timeout": 15
           }
         ]
       },
       {
-        "matcher": "caster",
+        "matcher": "builder",
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/validate-cast.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/validate-task.sh",
             "timeout": 15
           }
         ]
@@ -742,14 +742,14 @@ fi
 }
 ```
 
-### The Scribe Edge: Context That Prevents Re-Planning
+### The Memory Edge: Context That Prevents Re-Planning
 
-The key insight: **Scribe context embedded in the blueprint prevents re-planning**.
+The key insight: **Memory context embedded in the plan prevents re-planning**.
 
 ```json
 {
   "embedded_context": {
-    "scribe_rules": {
+    "memory_rules": {
       "global": "- Always use TypeScript strict mode\n- Prefer functional components\n- Use Zod for validation",
       "domains": {
         "frontend": "- Use Tailwind CSS exclusively\n- No inline styles",
@@ -782,27 +782,27 @@ The key insight: **Scribe context embedded in the blueprint prevents re-planning
 ## PART 5: IMPLEMENTATION ROADMAP
 
 ### Phase 1: Create New Agents
-- [ ] Create `agents/architect.yaml` (Master Blueprint agent)
-- [ ] Create `agents/caster.yaml` (Lightweight executor)
+- [ ] Create `agents/architect.yaml` (Master Plan agent)
+- [ ] Create `agents/builder.yaml` (Lightweight executor)
 
 ### Phase 2: Implement Validation Hooks
 - [ ] Create `scripts/hooks/validate-step.sh`
-- [ ] Create `scripts/hooks/validate-blueprint.sh`
-- [ ] Create `scripts/hooks/validate-cast.sh`
+- [ ] Create `scripts/hooks/validate-plan.sh`
+- [ ] Create `scripts/hooks/validate-task.sh`
 - [ ] Update `hooks/hooks.json` with new hook configuration
 
 ### Phase 3: Update Schemas
-- [ ] Create `schemas/execution-ready-blueprint.schema.json`
-- [ ] Update `schemas/cast-state.schema.json` for streamlined format
+- [ ] Create `schemas/execution-ready-plan.schema.json`
+- [ ] Update `schemas/task-state.schema.json` for streamlined format
 
 ### Phase 4: Deprecate Old Agents
-- [ ] Mark `smith.yaml` as deprecated (replaced by architect)
-- [ ] Mark `forgemaster.yaml` as deprecated (replaced by caster)
-- [ ] Mark `temperer.yaml` as deprecated (replaced by hooks)
+- [ ] Mark `planner.yaml` as deprecated (replaced by architect)
+- [ ] Mark `builder.yaml` as deprecated (replaced by builder)
+- [ ] Mark `verifier.yaml` as deprecated (replaced by hooks)
 
 ### Phase 5: Update Commands
-- [ ] Update `/cast` command to use new pipeline
-- [ ] Add `/blueprint` command for architect-only runs
+- [ ] Update `/task` command to use new pipeline
+- [ ] Add `/plan` command for architect-only runs
 - [ ] Add `/validate` command for manual quality gate
 
 ---
@@ -811,11 +811,11 @@ The key insight: **Scribe context embedded in the blueprint prevents re-planning
 
 | Aspect | Before (3-Phase) | After (2-Phase + Hooks) |
 |--------|------------------|-------------------------|
-| Planning | Smith + Forgemaster replan | Architect only |
-| Context Loading | 3x per cast | 1x (embedded) |
+| Planning | Planner + Builder replan | Architect only |
+| Context Loading | 3x per task | 1x (embedded) |
 | Replanning | 5 manual strategies | Automatic retry behavior |
-| Validation | Temperer agent | Real-time hooks |
-| State Files | 5-6 files | 2 files (blueprint + state) |
+| Validation | Verifier agent | Real-time hooks |
+| State Files | 5-6 files | 2 files (plan + state) |
 | Failure Recovery | Manual replan decision | Embedded retry rules |
 | Quality Gate | Separate phase | Stop hook |
 

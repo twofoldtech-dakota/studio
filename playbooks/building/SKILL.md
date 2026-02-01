@@ -1,16 +1,16 @@
 ---
-name: forging
+name: building
 description: Plan-and-Execute methodology for adaptive execution with replanning
 triggers:
   - "execute"
-  - "forge"
+  - "build"
   - "implement"
   - "build"
   - "plan-and-execute"
   - "replan"
 ---
 
-# Forging Skill: Plan-and-Execute Methodology
+# Building Skill: Plan-and-Execute Methodology
 
 This skill teaches the **Plan-and-Execute** methodology for executing plans while adapting to reality. It draws from research including "ReAct: Synergizing Reasoning and Acting in Language Models" (Yao et al., 2022) and LangGraph execution patterns.
 
@@ -35,7 +35,7 @@ Every step follows this pattern:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                 THE FORGING LOOP                        │
+│                 THE BUILDING LOOP                        │
 │                                                         │
 │    ┌─────────┐                                          │
 │    │ EXECUTE │  Perform the action                      │
@@ -66,7 +66,7 @@ Every step follows this pattern:
 
 ### Execution Principles
 
-1. **Do exactly what the step says** - The blueprint was designed carefully
+1. **Do exactly what the step says** - The plan was designed carefully
 2. **Use the right tools** - Match tool to task
 3. **Capture everything** - Outputs, artifacts, side effects
 4. **Stay focused** - One step at a time
@@ -150,7 +150,7 @@ Assess if modifications needed.
 **Expected Failure**
 ```
 Action failed in anticipated way.
-Failure mode was documented in blueprint.
+Failure mode was documented in plan.
 Recovery plan exists.
 Execute recovery.
 ```
@@ -335,10 +335,10 @@ replan:
 Maintain state throughout execution:
 
 ```yaml
-forge_state:
-  blueprint_id: "bp_xxx"
-  cast_id: "cast_xxx"
-  status: "forging"
+build_state:
+  plan_id: "bp_xxx"
+  task_id: "task_xxx"
+  status: "building"
 
   current_step: "step_3"
 
@@ -386,7 +386,7 @@ Verifying checkpoint conditions:
 Checkpoint PASSED
 
 Saving state...
-State saved to: studio/casts/[id]/checkpoint_[name].json
+State saved to: studio/tasks/[id]/checkpoint_[name].json
 ```
 
 ### Checkpoint State
@@ -420,7 +420,7 @@ Next step: step_4
 Options:
 1. Retry step 4 with different approach
 2. Replan steps 4-6
-3. Abort cast
+3. Abort task
 ```
 
 ## Error Handling
@@ -521,9 +521,9 @@ Keep the user informed throughout:
 
 ## Best Practices
 
-### 1. Trust the Blueprint, But Verify
+### 1. Trust the Plan, But Verify
 
-The blueprint was carefully designed, but reality may differ:
+The plan was carefully designed, but reality may differ:
 - Execute as planned
 - Verify results
 - Adapt if needed
@@ -558,4 +558,4 @@ The user should never wonder what's happening:
 
 ---
 
-*"The forge reveals what the blueprint cannot predict. Adapt, but never lose sight of the goal." - Forging Principle*
+*"The build reveals what the plan cannot predict. Adapt, but never lose sight of the goal." - Building Principle*

@@ -3,18 +3,18 @@
 # STUDIO PostToolUse Step Validator
 # ================================
 #
-# Runs validation_commands from the current blueprint step after Write/Edit.
+# Runs validation_commands from the current plan step after Write/Edit.
 # Implements automatic reflexion - if validation fails, provides fix hints.
 #
 # Exit codes:
-#   0 - Allow (validation passed or no active cast)
+#   0 - Allow (validation passed or no active task)
 #   2 - Block (validation failed, triggers retry behavior)
 #
 
 set -euo pipefail
 
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-CASTS_DIR="${STUDIO_DIR}/casts"
+TASKS_DIR="${STUDIO_DIR}/tasks"
 
 # Read hook input from stdin
 INPUT=$(cat)
@@ -24,21 +24,21 @@ TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 TOOL_RESPONSE=$(echo "$INPUT" | jq -r '.tool_response // empty')
 
-# Find active cast
-find_active_cast() {
-    if [[ ! -d "$CASTS_DIR" ]]; then
+# Find active task
+find_active_task() {
+    if [[ ! -d "$TASKS_DIR" ]]; then
         return 1
     fi
 
-    local cast_dir
-    for cast_dir in "$CASTS_DIR"/cast_*/; do
-        if [[ -d "$cast_dir" ]]; then
-            local state_file="${cast_dir}state.json"
+    local task_dir
+    for task_dir in "$TASKS_DIR"/task_*/; do
+        if [[ -d "$task_dir" ]]; then
+            local state_file="${task_dir}state.json"
             if [[ -f "$state_file" ]]; then
                 local status
                 status=$(jq -r '.status // empty' "$state_file" 2>/dev/null)
-                if [[ "$status" == "CASTING" || "$status" == "in_progress" || "$status" == "FORGING" ]]; then
-                    echo "${cast_dir%/}"
+                if [[ "$status" == "BUILDING" || "$status" == "in_progress" || "$status" == "BUILDING" ]]; then
+                    echo "${task_dir%/}"
                     return 0
                 fi
             fi
@@ -49,18 +49,18 @@ find_active_cast() {
 }
 
 main() {
-    # Find active cast
-    local cast_dir
-    if ! cast_dir=$(find_active_cast); then
-        # No active cast, allow
+    # Find active task
+    local task_dir
+    if ! task_dir=$(find_active_task); then
+        # No active task, allow
         exit 0
     fi
 
-    local blueprint_file="${cast_dir}/blueprint.json"
-    local state_file="${cast_dir}/state.json"
+    local plan_file="${task_dir}/plan.json"
+    local state_file="${task_dir}/state.json"
 
-    # If no blueprint, allow
-    if [[ ! -f "$blueprint_file" ]]; then
+    # If no plan, allow
+    if [[ ! -f "$plan_file" ]]; then
         exit 0
     fi
 
@@ -75,7 +75,7 @@ main() {
 
     # Get validation commands for current step
     local validations
-    validations=$(jq -c ".steps[] | select(.id == \"$current_step\") | .success_criteria[]?" "$blueprint_file" 2>/dev/null)
+    validations=$(jq -c ".steps[] | select(.id == \"$current_step\") | .success_criteria[]?" "$plan_file" 2>/dev/null)
 
     if [[ -z "$validations" ]]; then
         # No validations defined, allow
@@ -127,9 +127,9 @@ main() {
         local escalation
         local current_attempts
 
-        max_attempts=$(jq -r ".steps[] | select(.id == \"$current_step\") | .retry_behavior.max_attempts // 3" "$blueprint_file" 2>/dev/null)
-        fix_hints=$(jq -r ".steps[] | select(.id == \"$current_step\") | .retry_behavior.fix_hints | join(\"; \") // \"Check the error and try again\"" "$blueprint_file" 2>/dev/null)
-        escalation=$(jq -r ".steps[] | select(.id == \"$current_step\") | .retry_behavior.escalation // \"halt_with_context\"" "$blueprint_file" 2>/dev/null)
+        max_attempts=$(jq -r ".steps[] | select(.id == \"$current_step\") | .retry_behavior.max_attempts // 3" "$plan_file" 2>/dev/null)
+        fix_hints=$(jq -r ".steps[] | select(.id == \"$current_step\") | .retry_behavior.fix_hints | join(\"; \") // \"Check the error and try again\"" "$plan_file" 2>/dev/null)
+        escalation=$(jq -r ".steps[] | select(.id == \"$current_step\") | .retry_behavior.escalation // \"halt_with_context\"" "$plan_file" 2>/dev/null)
 
         # Get current attempts from state (default 1)
         current_attempts=$(jq -r ".steps.\"$current_step\".attempts // 1" "$state_file" 2>/dev/null)
@@ -168,10 +168,10 @@ EOF
                 cat << EOF
 {
   "decision": "block",
-  "reason": "Step validation failed after $max_attempts attempts. Cast halted.",
+  "reason": "Step validation failed after $max_attempts attempts. Task halted.",
   "hookSpecificOutput": {
     "hookEventName": "PostToolUse",
-    "additionalContext": "CAST HALTED\\n\\nStep: $current_step\\nCriterion: $failed_criterion\\nExpected: $failed_expected\\nActual: $failed_actual\\nAttempts: $max_attempts/$max_attempts (exhausted)\\nFix hints tried: $fix_hints\\n\\nManual intervention required. Review the failure and either fix the issue manually or modify the blueprint."
+    "additionalContext": "TASK HALTED\\n\\nStep: $current_step\\nCriterion: $failed_criterion\\nExpected: $failed_expected\\nActual: $failed_actual\\nAttempts: $max_attempts/$max_attempts (exhausted)\\nFix hints tried: $fix_hints\\n\\nManual intervention required. Review the failure and either fix the issue manually or modify the plan."
   }
 }
 EOF

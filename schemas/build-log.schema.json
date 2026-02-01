@@ -1,35 +1,35 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://studio.plugin/schemas/forge-log.schema.json",
-  "title": "STUDIO Forge Log",
-  "description": "Complete forge log structure containing all execution records",
+  "$id": "https://studio.plugin/schemas/build-log.schema.json",
+  "title": "STUDIO Build Log",
+  "description": "Complete build log structure containing all execution records",
   "type": "object",
-  "required": ["blueprint_id", "cast_id", "started_at", "status", "records"],
+  "required": ["plan_id", "task_id", "started_at", "status", "records"],
   "properties": {
-    "blueprint_id": {
+    "plan_id": {
       "type": "string",
       "pattern": "^bp_[0-9]{8}_[0-9]{6}_[a-f0-9]{4}$",
-      "description": "Reference to the blueprint being executed"
+      "description": "Reference to the plan being executed"
     },
-    "cast_id": {
+    "task_id": {
       "type": "string",
-      "pattern": "^cast_[0-9]{8}_[0-9]{6}$",
-      "description": "Reference to the parent cast"
+      "pattern": "^task_[0-9]{8}_[0-9]{6}$",
+      "description": "Reference to the parent task"
     },
     "started_at": {
       "type": "string",
       "format": "date-time",
-      "description": "ISO 8601 timestamp when forging started"
+      "description": "ISO 8601 timestamp when building started"
     },
     "completed_at": {
       "type": ["string", "null"],
       "format": "date-time",
-      "description": "ISO 8601 timestamp when forging completed"
+      "description": "ISO 8601 timestamp when building completed"
     },
     "status": {
       "type": "string",
       "enum": ["in_progress", "complete", "failed", "aborted"],
-      "description": "Overall forging status"
+      "description": "Overall building status"
     },
     "summary": {
       "type": "object",
@@ -162,7 +162,7 @@
       "properties": {
         "all_outputs_produced": { "type": "boolean" },
         "all_criteria_met": { "type": "boolean" },
-        "ready_for_tempering": { "type": "boolean" },
+        "ready_for_verifying": { "type": "boolean" },
         "notes": {
           "type": "array",
           "items": { "type": "string" }

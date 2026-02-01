@@ -2,14 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://studio.plugin/schemas/verdict.schema.json",
   "title": "STUDIO Verdict",
-  "description": "Verdict decision structure for temper verification",
+  "description": "Verdict decision structure for verify verification",
   "type": "object",
   "required": ["verdict", "confidence", "rationale"],
   "properties": {
     "verdict": {
       "type": "string",
-      "enum": ["STRONG", "SOUND", "BRITTLE", "CRACKED"],
-      "description": "The temper verdict determining cast completion status"
+      "enum": ["STRONG", "SOUND", "UNSTABLE", "FAILED"],
+      "description": "The verify verdict determining task completion status"
     },
     "confidence": {
       "type": "integer",
@@ -63,7 +63,7 @@
           "description": "Minor issues noted but not blocking"
         }
       },
-      "description": "Categorized issues found during tempering"
+      "description": "Categorized issues found during verifying"
     },
     "required_actions": {
       "type": "array",
@@ -79,7 +79,7 @@
           "related_step_id": { "type": "string" }
         }
       },
-      "description": "Actions required before cast can complete (for BRITTLE/CRACKED)"
+      "description": "Actions required before task can complete (for UNSTABLE/FAILED)"
     }
   }
 }

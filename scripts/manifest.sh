@@ -8,8 +8,8 @@
 # Usage:
 #   manifest.sh init <task_id> <goal>     Create new manifest
 #   manifest.sh status [task_id]          Show current status
-#   manifest.sh board [cast_id]           Show task board
-#   manifest.sh timeline [cast_id]        Show event timeline
+#   manifest.sh board [task_id]           Show task board
+#   manifest.sh timeline [task_id]        Show event timeline
 #   manifest.sh req add <desc> [priority] Add requirement
 #   manifest.sh req list                  List requirements
 #   manifest.sh task start <task_id>      Start a task
@@ -223,8 +223,8 @@ cmd_status() {
     case "$verdict" in
         STRONG) verdict_color="$GREEN" ;;
         SOUND) verdict_color="$GREEN" ;;
-        BRITTLE) verdict_color="$YELLOW" ;;
-        CRACKED) verdict_color="$RED" ;;
+        UNSTABLE) verdict_color="$YELLOW" ;;
+        FAILED) verdict_color="$RED" ;;
     esac
 
     echo -e "${BOLD}║${NC}  Quality:  ${verdict_color}${verdict}${NC}  (${GREEN}✓${checks_passed}${NC} / ${RED}✗${checks_failed}${NC})"

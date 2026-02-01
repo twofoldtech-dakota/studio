@@ -2,19 +2,19 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://studio.plugin/schemas/execution-record.schema.json",
   "title": "STUDIO Execution Record",
-  "description": "Individual step execution record for the forge log",
+  "description": "Individual step execution record for the build log",
   "type": "object",
-  "required": ["step_id", "blueprint_step_ref", "status", "started_at", "action_taken"],
+  "required": ["step_id", "plan_step_ref", "status", "started_at", "action_taken"],
   "properties": {
     "step_id": {
       "type": "string",
       "pattern": "^step_[0-9]+[a-z]?$",
-      "description": "The step identifier from the blueprint"
+      "description": "The step identifier from the plan"
     },
-    "blueprint_step_ref": {
+    "plan_step_ref": {
       "type": "string",
       "pattern": "^bp_[0-9]{8}_[0-9]{6}_[a-f0-9]{4}#step_[0-9]+[a-z]?$",
-      "description": "Full reference to blueprint step (format: blueprint_id#step_id)"
+      "description": "Full reference to plan step (format: plan_id#step_id)"
     },
     "step_name": {
       "type": "string",

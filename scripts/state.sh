@@ -3,28 +3,28 @@
 # STUDIO State Management Utilities
 # ================================
 #
-# This script provides helper functions for managing STUDIO cast state.
+# This script provides helper functions for managing STUDIO task state.
 # It can be sourced by other scripts or used directly via subcommands.
 #
 # Usage:
-#   ./state.sh init <cast_id> <goal>      Initialize a new cast
-#   ./state.sh get <cast_id> [field]      Get cast state or specific field
-#   ./state.sh set <cast_id> <field> <v>  Set a field in cast state
-#   ./state.sh phase <cast_id> <phase>    Update cast phase
-#   ./state.sh step <cast_id> <step_id>   Mark step as current
-#   ./state.sh complete <cast_id> <step>  Mark step as complete
-#   ./state.sh checkpoint <cast_id> <n>   Save checkpoint
-#   ./state.sh list                       List all casts
-#   ./state.sh clean [days]               Clean old casts (default: 7 days)
+#   ./state.sh init <task_id> <goal>      Initialize a new task
+#   ./state.sh get <task_id> [field]      Get task state or specific field
+#   ./state.sh set <task_id> <field> <v>  Set a field in task state
+#   ./state.sh phase <task_id> <phase>    Update task phase
+#   ./state.sh step <task_id> <step_id>   Mark step as current
+#   ./state.sh complete <task_id> <step>  Mark step as complete
+#   ./state.sh checkpoint <task_id> <n>   Save checkpoint
+#   ./state.sh list                       List all tasks
+#   ./state.sh clean [days]               Clean old tasks (default: 7 days)
 #
-# State is stored in studio/casts/<cast_id>/
+# State is stored in studio/tasks/<task_id>/
 #
 
 set -euo pipefail
 
 # Configuration
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-CASTS_DIR="${STUDIO_DIR}/casts"
+TASKS_DIR="${STUDIO_DIR}/tasks"
 
 # Colors for output (if terminal supports them)
 if [[ -t 1 ]]; then
@@ -58,17 +58,17 @@ log_error() {
     echo -e "${RED}[STUDIO]${NC} $*" >&2
 }
 
-# Generate a cast ID
-generate_cast_id() {
+# Generate a task ID
+generate_task_id() {
     local timestamp
     timestamp=$(date +%Y%m%d_%H%M%S)
-    echo "cast_${timestamp}"
+    echo "task_${timestamp}"
 }
 
 # Ensure the STUDIO directory structure exists
 ensure_studio_dir() {
     mkdir -p "${STUDIO_DIR}"
-    mkdir -p "${CASTS_DIR}"
+    mkdir -p "${TASKS_DIR}"
 
     # Create config if it doesn't exist
     if [[ ! -f "${STUDIO_DIR}/config.json" ]]; then
@@ -76,7 +76,7 @@ ensure_studio_dir() {
 {
   "version": "1.0.0",
   "checkpoint_enabled": true,
-  "tempering_required": true,
+  "verifying_required": true,
   "max_replan_attempts": 3,
   "verbose_output": false
 }
@@ -84,35 +84,35 @@ EOF
     fi
 }
 
-# Initialize a new cast
+# Initialize a new task
 cmd_init() {
-    local cast_id="${1:-$(generate_cast_id)}"
+    local task_id="${1:-$(generate_task_id)}"
     local goal="${2:-}"
 
     if [[ -z "$goal" ]]; then
-        log_error "Goal is required: ./state.sh init <cast_id> <goal>"
+        log_error "Goal is required: ./state.sh init <task_id> <goal>"
         exit 1
     fi
 
     ensure_studio_dir
 
-    local cast_dir="${CASTS_DIR}/${cast_id}"
+    local task_dir="${TASKS_DIR}/${task_id}"
 
-    if [[ -d "$cast_dir" ]]; then
-        log_error "Cast ${cast_id} already exists"
+    if [[ -d "$task_dir" ]]; then
+        log_error "Task ${task_id} already exists"
         exit 1
     fi
 
-    mkdir -p "${cast_dir}"
-    mkdir -p "${cast_dir}/temper_reports"
+    mkdir -p "${task_dir}"
+    mkdir -p "${task_dir}/verify_reports"
 
     # Create initial state
     local now
     now=$(date -Iseconds)
 
-    cat > "${cast_dir}/state.json" << EOF
+    cat > "${task_dir}/state.json" << EOF
 {
-  "id": "${cast_id}",
+  "id": "${task_id}",
   "goal": "${goal}",
   "status": "initializing",
   "phase": 0,
@@ -124,33 +124,33 @@ cmd_init() {
   "failed_steps": [],
   "skipped_steps": [],
   "replan_count": 0,
-  "temper_attempts": 0,
+  "verify_attempts": 0,
   "last_verdict": null,
   "checkpoints": []
 }
 EOF
 
-    # Create empty forge log
-    touch "${cast_dir}/forge_log.jsonl"
+    # Create empty build log
+    touch "${task_dir}/build_log.jsonl"
 
-    log_success "Initialized cast: ${cast_id}"
-    echo "${cast_id}"
+    log_success "Initialized task: ${task_id}"
+    echo "${task_id}"
 }
 
-# Get cast state or a specific field
+# Get task state or a specific field
 cmd_get() {
-    local cast_id="${1:-}"
+    local task_id="${1:-}"
     local field="${2:-}"
 
-    if [[ -z "$cast_id" ]]; then
-        log_error "Cast ID required: ./state.sh get <cast_id> [field]"
+    if [[ -z "$task_id" ]]; then
+        log_error "Task ID required: ./state.sh get <task_id> [field]"
         exit 1
     fi
 
-    local state_file="${CASTS_DIR}/${cast_id}/state.json"
+    local state_file="${TASKS_DIR}/${task_id}/state.json"
 
     if [[ ! -f "$state_file" ]]; then
-        log_error "Cast ${cast_id} not found"
+        log_error "Task ${task_id} not found"
         exit 1
     fi
 
@@ -166,21 +166,21 @@ cmd_get() {
     fi
 }
 
-# Set a field in cast state
+# Set a field in task state
 cmd_set() {
-    local cast_id="${1:-}"
+    local task_id="${1:-}"
     local field="${2:-}"
     local value="${3:-}"
 
-    if [[ -z "$cast_id" || -z "$field" ]]; then
-        log_error "Usage: ./state.sh set <cast_id> <field> <value>"
+    if [[ -z "$task_id" || -z "$field" ]]; then
+        log_error "Usage: ./state.sh set <task_id> <field> <value>"
         exit 1
     fi
 
-    local state_file="${CASTS_DIR}/${cast_id}/state.json"
+    local state_file="${TASKS_DIR}/${task_id}/state.json"
 
     if [[ ! -f "$state_file" ]]; then
-        log_error "Cast ${cast_id} not found"
+        log_error "Task ${task_id} not found"
         exit 1
     fi
 
@@ -206,16 +206,16 @@ cmd_set() {
         sed -i "s/\"updated_at\": *\"[^\"]*\"/\"updated_at\": \"${now}\"/" "$state_file"
     fi
 
-    log_success "Set ${field}=${value} for cast ${cast_id}"
+    log_success "Set ${field}=${value} for task ${task_id}"
 }
 
-# Update cast phase
+# Update task phase
 cmd_phase() {
-    local cast_id="${1:-}"
+    local task_id="${1:-}"
     local phase="${2:-}"
 
-    if [[ -z "$cast_id" || -z "$phase" ]]; then
-        log_error "Usage: ./state.sh phase <cast_id> <phase>"
+    if [[ -z "$task_id" || -z "$phase" ]]; then
+        log_error "Usage: ./state.sh phase <task_id> <phase>"
         exit 1
     fi
 
@@ -223,17 +223,17 @@ cmd_phase() {
     local status
 
     case "$phase" in
-        blueprinting|1)
+        planing|1)
             phase_num=1
-            status="blueprinting"
+            status="planing"
             ;;
-        forging|2)
+        building|2)
             phase_num=2
-            status="forging"
+            status="building"
             ;;
-        tempering|3)
+        verifying|3)
             phase_num=3
-            status="tempering"
+            status="verifying"
             ;;
         complete|4)
             phase_num=4
@@ -241,45 +241,45 @@ cmd_phase() {
             ;;
         *)
             log_error "Unknown phase: ${phase}"
-            log_error "Valid phases: blueprinting, forging, tempering, complete (or 1-4)"
+            log_error "Valid phases: planing, building, verifying, complete (or 1-4)"
             exit 1
             ;;
     esac
 
-    cmd_set "$cast_id" "phase" "$phase_num"
-    cmd_set "$cast_id" "status" "$status"
+    cmd_set "$task_id" "phase" "$phase_num"
+    cmd_set "$task_id" "status" "$status"
 
-    log_success "Cast ${cast_id} moved to phase: ${status}"
+    log_success "Task ${task_id} moved to phase: ${status}"
 }
 
 # Set current step
 cmd_step() {
-    local cast_id="${1:-}"
+    local task_id="${1:-}"
     local step_id="${2:-}"
 
-    if [[ -z "$cast_id" || -z "$step_id" ]]; then
-        log_error "Usage: ./state.sh step <cast_id> <step_id>"
+    if [[ -z "$task_id" || -z "$step_id" ]]; then
+        log_error "Usage: ./state.sh step <task_id> <step_id>"
         exit 1
     fi
 
-    cmd_set "$cast_id" "current_step" "$step_id"
-    log_success "Cast ${cast_id} current step: ${step_id}"
+    cmd_set "$task_id" "current_step" "$step_id"
+    log_success "Task ${task_id} current step: ${step_id}"
 }
 
 # Mark step as complete
 cmd_complete() {
-    local cast_id="${1:-}"
+    local task_id="${1:-}"
     local step_id="${2:-}"
 
-    if [[ -z "$cast_id" || -z "$step_id" ]]; then
-        log_error "Usage: ./state.sh complete <cast_id> <step_id>"
+    if [[ -z "$task_id" || -z "$step_id" ]]; then
+        log_error "Usage: ./state.sh complete <task_id> <step_id>"
         exit 1
     fi
 
-    local state_file="${CASTS_DIR}/${cast_id}/state.json"
+    local state_file="${TASKS_DIR}/${task_id}/state.json"
 
     if [[ ! -f "$state_file" ]]; then
-        log_error "Cast ${cast_id} not found"
+        log_error "Task ${task_id} not found"
         exit 1
     fi
 
@@ -296,31 +296,31 @@ cmd_complete() {
         exit 1
     fi
 
-    log_success "Cast ${cast_id} completed step: ${step_id}"
+    log_success "Task ${task_id} completed step: ${step_id}"
 }
 
 # Save checkpoint
 cmd_checkpoint() {
-    local cast_id="${1:-}"
+    local task_id="${1:-}"
     local checkpoint_name="${2:-}"
 
-    if [[ -z "$cast_id" || -z "$checkpoint_name" ]]; then
-        log_error "Usage: ./state.sh checkpoint <cast_id> <checkpoint_name>"
+    if [[ -z "$task_id" || -z "$checkpoint_name" ]]; then
+        log_error "Usage: ./state.sh checkpoint <task_id> <checkpoint_name>"
         exit 1
     fi
 
-    local cast_dir="${CASTS_DIR}/${cast_id}"
-    local state_file="${cast_dir}/state.json"
+    local task_dir="${TASKS_DIR}/${task_id}"
+    local state_file="${task_dir}/state.json"
 
     if [[ ! -f "$state_file" ]]; then
-        log_error "Cast ${cast_id} not found"
+        log_error "Task ${task_id} not found"
         exit 1
     fi
 
     # Create checkpoint file
     local now
     now=$(date -Iseconds)
-    local checkpoint_file="${cast_dir}/checkpoint_${checkpoint_name}.json"
+    local checkpoint_file="${task_dir}/checkpoint_${checkpoint_name}.json"
 
     cp "$state_file" "$checkpoint_file"
 
@@ -331,28 +331,28 @@ cmd_checkpoint() {
         mv "$tmp_file" "$state_file"
     fi
 
-    log_success "Checkpoint '${checkpoint_name}' saved for cast ${cast_id}"
+    log_success "Checkpoint '${checkpoint_name}' saved for task ${task_id}"
 }
 
-# List all casts
+# List all tasks
 cmd_list() {
     ensure_studio_dir
 
-    echo "STUDIO CASTS"
+    echo "STUDIO TASKS"
     echo "───────────"
     echo ""
 
-    if [[ ! -d "$CASTS_DIR" ]] || [[ -z "$(ls -A "$CASTS_DIR" 2>/dev/null)" ]]; then
-        echo "No casts found."
+    if [[ ! -d "$TASKS_DIR" ]] || [[ -z "$(ls -A "$TASKS_DIR" 2>/dev/null)" ]]; then
+        echo "No tasks found."
         return 0
     fi
 
     printf "%-25s | %-12s | %-30s | %-10s\n" "ID" "Status" "Goal" "Steps"
     echo "─────────────────────────────────────────────────────────────────────────────────"
 
-    for cast_dir in "${CASTS_DIR}"/*/; do
-        if [[ -d "$cast_dir" ]]; then
-            local state_file="${cast_dir}state.json"
+    for task_dir in "${TASKS_DIR}"/*/; do
+        if [[ -d "$task_dir" ]]; then
+            local state_file="${task_dir}state.json"
             if [[ -f "$state_file" ]]; then
                 if command -v jq &> /dev/null; then
                     local id status goal completed
@@ -363,7 +363,7 @@ cmd_list() {
                     printf "%-25s | %-12s | %-30s | %s\n" "$id" "$status" "$goal" "$completed"
                 else
                     local id
-                    id=$(basename "$cast_dir")
+                    id=$(basename "$task_dir")
                     printf "%-25s | %-12s | %-30s | %-10s\n" "$id" "?" "?" "?"
                 fi
             fi
@@ -371,19 +371,19 @@ cmd_list() {
     done
 }
 
-# Clean old casts
+# Clean old tasks
 cmd_clean() {
     local days="${1:-7}"
 
-    log_info "Cleaning casts older than ${days} days..."
+    log_info "Cleaning tasks older than ${days} days..."
 
     local count=0
 
-    for cast_dir in "${CASTS_DIR}"/*/; do
-        if [[ -d "$cast_dir" ]]; then
-            local state_file="${cast_dir}state.json"
+    for task_dir in "${TASKS_DIR}"/*/; do
+        if [[ -d "$task_dir" ]]; then
+            local state_file="${task_dir}state.json"
             if [[ -f "$state_file" ]]; then
-                # Check if cast is old and complete
+                # Check if task is old and complete
                 local mtime
                 mtime=$(stat -c %Y "$state_file" 2>/dev/null || stat -f %m "$state_file" 2>/dev/null)
                 local now
@@ -399,8 +399,8 @@ cmd_clean() {
                     fi
 
                     if [[ "$status" == "complete" ]] || [[ "$status" == "aborted" ]]; then
-                        log_info "Removing old cast: $(basename "$cast_dir")"
-                        rm -rf "$cast_dir"
+                        log_info "Removing old task: $(basename "$task_dir")"
+                        rm -rf "$task_dir"
                         ((count++))
                     fi
                 fi
@@ -408,28 +408,28 @@ cmd_clean() {
         fi
     done
 
-    log_success "Cleaned ${count} old casts"
+    log_success "Cleaned ${count} old tasks"
 }
 
-# Log a forge entry
-cmd_log_forge() {
-    local cast_id="${1:-}"
+# Log a build entry
+cmd_log_build() {
+    local task_id="${1:-}"
     local entry="${2:-}"
 
-    if [[ -z "$cast_id" || -z "$entry" ]]; then
-        log_error "Usage: ./state.sh log_forge <cast_id> <json_entry>"
+    if [[ -z "$task_id" || -z "$entry" ]]; then
+        log_error "Usage: ./state.sh log_build <task_id> <json_entry>"
         exit 1
     fi
 
-    local log_file="${CASTS_DIR}/${cast_id}/forge_log.jsonl"
+    local log_file="${TASKS_DIR}/${task_id}/build_log.jsonl"
 
     if [[ ! -f "$log_file" ]]; then
-        log_error "Cast ${cast_id} not found"
+        log_error "Task ${task_id} not found"
         exit 1
     fi
 
     echo "$entry" >> "$log_file"
-    log_success "Logged forge entry for cast ${cast_id}"
+    log_success "Logged build entry for task ${task_id}"
 }
 
 # Show help
@@ -441,27 +441,27 @@ STUDIO State Management Utilities
 Usage: ./state.sh <command> [arguments]
 
 Commands:
-  init <cast_id> <goal>       Initialize a new cast
-  get <cast_id> [field]       Get cast state or specific field
-  set <cast_id> <field> <v>   Set a field in cast state
-  phase <cast_id> <phase>     Update cast phase (blueprinting|forging|tempering|complete)
-  step <cast_id> <step_id>    Mark step as current
-  complete <cast_id> <step>   Mark step as complete
-  checkpoint <cast_id> <name> Save checkpoint
-  log_forge <cast_id> <json>  Log a forge entry
-  list                        List all casts
-  clean [days]                Clean old casts (default: 7 days)
+  init <task_id> <goal>       Initialize a new task
+  get <task_id> [field]       Get task state or specific field
+  set <task_id> <field> <v>   Set a field in task state
+  phase <task_id> <phase>     Update task phase (planing|building|verifying|complete)
+  step <task_id> <step_id>    Mark step as current
+  complete <task_id> <step>   Mark step as complete
+  checkpoint <task_id> <name> Save checkpoint
+  log_build <task_id> <json>  Log a build entry
+  list                        List all tasks
+  clean [days]                Clean old tasks (default: 7 days)
   help                        Show this help message
 
 Environment Variables:
   STUDIO_DIR                   Base directory for STUDIO state (default: studio)
 
 Examples:
-  ./state.sh init cast_001 "Build user authentication"
-  ./state.sh phase cast_001 forging
-  ./state.sh step cast_001 step_3
-  ./state.sh complete cast_001 step_3
-  ./state.sh checkpoint cast_001 "core_complete"
+  ./state.sh init task_001 "Build user authentication"
+  ./state.sh phase task_001 building
+  ./state.sh step task_001 step_3
+  ./state.sh complete task_001 step_3
+  ./state.sh checkpoint task_001 "core_complete"
   ./state.sh list
 
 EOF
@@ -494,8 +494,8 @@ main() {
         checkpoint)
             cmd_checkpoint "$@"
             ;;
-        log_forge|log)
-            cmd_log_forge "$@"
+        log_build|log)
+            cmd_log_build "$@"
             ;;
         list|ls)
             cmd_list "$@"

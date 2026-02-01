@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://studio.plugin/schemas/scribe-meta.schema.json",
-  "title": "STUDIO Scribe Metadata",
-  "description": "Metadata tracking for The Scribe's self-learning rule system",
+  "$id": "https://studio.plugin/schemas/memory-meta.schema.json",
+  "title": "STUDIO Memory Metadata",
+  "description": "Metadata tracking for The Memory's self-learning rule system",
   "type": "object",
   "required": ["version", "created_at", "last_modified"],
   "properties": {
@@ -88,10 +88,10 @@
             "type": "string",
             "description": "Category header under which the rule was placed"
           },
-          "cast_id": {
+          "task_id": {
             "type": "string",
-            "pattern": "^cast_[0-9]{8}_[0-9]{6}$",
-            "description": "Cast ID if the rule was learned during a cast"
+            "pattern": "^task_[0-9]{8}_[0-9]{6}$",
+            "description": "Task ID if the rule was learned during a task"
           },
           "trigger": {
             "type": "string",

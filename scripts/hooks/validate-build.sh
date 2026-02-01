@@ -1,36 +1,36 @@
 #!/usr/bin/env bash
 #
-# STUDIO Cast Validator
+# STUDIO Task Validator
 # ====================
 #
-# Validates that the Caster agent has properly executed all steps
+# Validates that the Builder agent has properly executed all steps
 # before allowing it to stop.
 #
 # Exit codes:
-#   0 - Approved (cast complete or awaiting quality gate)
+#   0 - Approved (task complete or awaiting quality gate)
 #   Returns JSON with decision:block if incomplete
 #
 
 set -euo pipefail
 
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-CASTS_DIR="${STUDIO_DIR}/casts"
+TASKS_DIR="${STUDIO_DIR}/tasks"
 
-# Find active cast
-find_active_cast() {
-    if [[ ! -d "$CASTS_DIR" ]]; then
+# Find active task
+find_active_task() {
+    if [[ ! -d "$TASKS_DIR" ]]; then
         return 1
     fi
 
-    local cast_dir
-    for cast_dir in "$CASTS_DIR"/cast_*/; do
-        if [[ -d "$cast_dir" ]]; then
-            local state_file="${cast_dir}state.json"
+    local task_dir
+    for task_dir in "$TASKS_DIR"/task_*/; do
+        if [[ -d "$task_dir" ]]; then
+            local state_file="${task_dir}state.json"
             if [[ -f "$state_file" ]]; then
                 local status
                 status=$(jq -r '.status // empty' "$state_file" 2>/dev/null)
-                if [[ "$status" == "CASTING" || "$status" == "FORGING" || "$status" == "in_progress" ]]; then
-                    echo "${cast_dir%/}"
+                if [[ "$status" == "BUILDING" || "$status" == "BUILDING" || "$status" == "in_progress" ]]; then
+                    echo "${task_dir%/}"
                     return 0
                 fi
             fi
@@ -41,28 +41,28 @@ find_active_cast() {
 }
 
 main() {
-    # Find active cast
-    local cast_dir
-    if ! cast_dir=$(find_active_cast); then
-        # No active cast, allow
+    # Find active task
+    local task_dir
+    if ! task_dir=$(find_active_task); then
+        # No active task, allow
         exit 0
     fi
 
-    local state_file="${cast_dir}/state.json"
-    local blueprint_file="${cast_dir}/blueprint.json"
+    local state_file="${task_dir}/state.json"
+    local plan_file="${task_dir}/plan.json"
 
     # Check state exists
     if [[ ! -f "$state_file" ]]; then
         cat << EOF
 {
   "decision": "block",
-  "reason": "Cast state not found. The Caster must maintain state.json."
+  "reason": "Task state not found. The Builder must maintain state.json."
 }
 EOF
         exit 0
     fi
 
-    # Get cast status
+    # Get task status
     local status
     status=$(jq -r '.status // empty' "$state_file" 2>/dev/null)
 
@@ -76,20 +76,20 @@ EOF
         exit 0
     fi
 
-    # Check if blueprint exists
-    if [[ ! -f "$blueprint_file" ]]; then
+    # Check if plan exists
+    if [[ ! -f "$plan_file" ]]; then
         cat << EOF
 {
   "decision": "block",
-  "reason": "Blueprint not found. Cannot validate cast completion."
+  "reason": "Plan not found. Cannot validate task completion."
 }
 EOF
         exit 0
     fi
 
-    # Get total steps from blueprint
+    # Get total steps from plan
     local total_steps
-    total_steps=$(jq -r '.steps | length' "$blueprint_file" 2>/dev/null)
+    total_steps=$(jq -r '.steps | length' "$plan_file" 2>/dev/null)
 
     # Count completed steps from state
     local completed_steps=0
@@ -131,10 +131,10 @@ EOF
     cat << EOF
 {
   "decision": "block",
-  "reason": "Cast incomplete. $processed_steps/$total_steps steps processed.",
+  "reason": "Task incomplete. $processed_steps/$total_steps steps processed.",
   "hookSpecificOutput": {
     "hookEventName": "SubagentStop",
-    "additionalContext": "CAST INCOMPLETE\\n\\nTotal steps: $total_steps\\nCompleted: $completed_steps\\nSkipped: $skipped_steps\\nFailed: $failed_steps\\nCurrent step: $current_step\\n\\nContinue executing steps until all are processed."
+    "additionalContext": "TASK INCOMPLETE\\n\\nTotal steps: $total_steps\\nCompleted: $completed_steps\\nSkipped: $skipped_steps\\nFailed: $failed_steps\\nCurrent step: $current_step\\n\\nContinue executing steps until all are processed."
   }
 }
 EOF

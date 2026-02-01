@@ -5,8 +5,8 @@
 #
 # Initializes STUDIO session by:
 # - Creating necessary directories on-demand
-# - Checking for resumable casts
-# - Loading Scribe rule counts
+# - Checking for resumable tasks
+# - Loading Memory rule counts
 #
 # Exit codes:
 #   0 - Always approve (this is informational)
@@ -15,7 +15,7 @@
 set -euo pipefail
 
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-CASTS_DIR="${STUDIO_DIR}/casts"
+TASKS_DIR="${STUDIO_DIR}/tasks"
 RULES_DIR="${STUDIO_DIR}/rules"
 
 # Create directories on-demand if they don't exist
@@ -23,19 +23,19 @@ ensure_directories() {
     # Only create if parent studio/ exists or if we're running from plugin
     if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
         # We're running as a plugin - create directories on-demand
-        mkdir -p "$CASTS_DIR" 2>/dev/null || true
+        mkdir -p "$TASKS_DIR" 2>/dev/null || true
         mkdir -p "$RULES_DIR" 2>/dev/null || true
     fi
 }
 
-# Check for resumable casts
-find_resumable_casts() {
+# Check for resumable tasks
+find_resumable_tasks() {
     local resumable=()
 
-    if [[ -d "$CASTS_DIR" ]]; then
-        for cast_dir in "$CASTS_DIR"/cast_*/; do
-            if [[ -d "$cast_dir" ]]; then
-                local state_file="${cast_dir}state.json"
+    if [[ -d "$TASKS_DIR" ]]; then
+        for task_dir in "$TASKS_DIR"/task_*/; do
+            if [[ -d "$task_dir" ]]; then
+                local state_file="${task_dir}state.json"
                 if [[ -f "$state_file" ]]; then
                     local status
                     status=$(grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' "$state_file" 2>/dev/null | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
@@ -44,9 +44,9 @@ find_resumable_casts() {
                     case "$status" in
                         COMPLETE|FAILED|ABORTED) ;;
                         *)
-                            local cast_id
-                            cast_id=$(basename "$cast_dir")
-                            resumable+=("$cast_id")
+                            local task_id
+                            task_id=$(basename "$task_dir")
+                            resumable+=("$task_id")
                             ;;
                     esac
                 fi
@@ -58,13 +58,13 @@ find_resumable_casts() {
     if [[ ${#resumable[@]} -gt 0 ]]; then
         printf '['
         local first=true
-        for cast in "${resumable[@]}"; do
+        for task in "${resumable[@]}"; do
             if [[ "$first" == "true" ]]; then
                 first=false
             else
                 printf ','
             fi
-            printf '"%s"' "$cast"
+            printf '"%s"' "$task"
         done
         printf ']'
     else
@@ -72,7 +72,7 @@ find_resumable_casts() {
     fi
 }
 
-# Count Scribe rules
+# Count Memory rules
 count_rules() {
     local count=0
 
@@ -95,7 +95,7 @@ main() {
     ensure_directories
 
     local resumable
-    resumable=$(find_resumable_casts)
+    resumable=$(find_resumable_tasks)
 
     local rule_count
     rule_count=$(count_rules)
@@ -108,7 +108,7 @@ main() {
     # Output JSON response with additionalContext for Claude
     # Note: For SessionStart hooks, stdout becomes context for Claude
     cat <<EOF
-{"additionalContext": "STUDIO session initialized. Available: ${studio_available}. Resumable casts: ${resumable}. Scribe rules loaded: ${rule_count}."}
+{"additionalContext": "STUDIO session initialized. Available: ${studio_available}. Resumable tasks: ${resumable}. Memory rules loaded: ${rule_count}."}
 EOF
 
     exit 0

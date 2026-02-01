@@ -1,18 +1,18 @@
 ---
-name: blueprinting
-description: Plan-and-Solve methodology for goal decomposition and blueprint creation
+name: planing
+description: Plan-and-Solve methodology for goal decomposition and plan creation
 triggers:
   - "plan"
-  - "blueprint"
+  - "plan"
   - "decompose"
   - "analyze goal"
   - "break down"
   - "plan-and-solve"
 ---
 
-# Blueprinting Skill: Plan-and-Solve Methodology
+# Planing Skill: Plan-and-Solve Methodology
 
-This skill teaches the **Plan-and-Solve** methodology for decomposing goals into executable blueprints. It is based on research from "Plan-and-Solve Prompting: Improving Zero-Shot Chain-of-Thought Reasoning by Large Language Models" (Wang et al., 2023).
+This skill teaches the **Plan-and-Solve** methodology for decomposing goals into executable plans. It is based on research from "Plan-and-Solve Prompting: Improving Zero-Shot Chain-of-Thought Reasoning by Large Language Models" (Wang et al., 2023).
 
 ## The Core Insight
 
@@ -120,12 +120,12 @@ If no alternative: Roll back to checkpoint
 If critical: Escalate for replanning
 ```
 
-## The Blueprint Structure
+## The Plan Structure
 
-A complete blueprint follows this structure:
+A complete plan follows this structure:
 
 ```yaml
-blueprint:
+plan:
   # HEADER - Identifies and summarizes
   id: "unique identifier"
   goal: "exact goal statement"
@@ -161,8 +161,8 @@ blueprint:
       verification: [what to check]
       rollback_to: "step_id if failure"
 
-  # TEMPERING CRITERIA - What must be verified
-  tempering_criteria:
+  # VERIFYING CRITERIA - What must be verified
+  verification_criteria:
     must_verify: [critical requirements]
     quality_checks: [quality requirements]
 ```
@@ -377,7 +377,7 @@ Good: Minimum steps needed, no unnecessary granularity
 
 ## The Planning Mindset
 
-When blueprinting, adopt this mindset:
+When planing, adopt this mindset:
 
 1. **Be thorough, not paranoid** - Cover important cases, not every edge case
 2. **Be specific, not verbose** - Precise language, minimum words
@@ -387,7 +387,7 @@ When blueprinting, adopt this mindset:
 
 ## Verification Questions
 
-Before finalizing a blueprint, ask:
+Before finalizing a plan, ask:
 
 - [ ] Could someone else execute this plan without asking questions?
 - [ ] Is every step verifiable with clear criteria?
@@ -395,10 +395,10 @@ Before finalizing a blueprint, ask:
 - [ ] Are risks identified with mitigations?
 - [ ] Are checkpoints at logical recovery points?
 - [ ] Does the plan match the original goal exactly?
-- [ ] Is the tempering criteria complete and specific?
+- [ ] Is the verifying criteria complete and specific?
 
-If any answer is "no," refine the blueprint.
+If any answer is "no," refine the plan.
 
 ---
 
-*"A plan that cannot be verified is not a plan—it's a hope." - Blueprinting Principle*
+*"A plan that cannot be verified is not a plan—it's a hope." - Planing Principle*

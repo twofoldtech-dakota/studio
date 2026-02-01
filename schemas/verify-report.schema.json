@@ -1,32 +1,32 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://studio.plugin/schemas/temper-report.schema.json",
-  "title": "STUDIO Temper Report",
-  "description": "Complete temper verification report with cross-references",
+  "$id": "https://studio.plugin/schemas/verify-report.schema.json",
+  "title": "STUDIO Verify Report",
+  "description": "Complete verify verification report with cross-references",
   "type": "object",
-  "required": ["id", "cast_id", "blueprint_id", "tempered_at", "goal_verification", "step_verifications", "verdict"],
+  "required": ["id", "task_id", "plan_id", "verified_at", "goal_verification", "step_verifications", "verdict"],
   "properties": {
     "id": {
       "type": "string",
       "pattern": "^tr_[0-9]{8}_[0-9]{6}$",
-      "description": "Unique temper report identifier (format: tr_YYYYMMDD_HHMMSS)"
+      "description": "Unique verify report identifier (format: tr_YYYYMMDD_HHMMSS)"
     },
-    "cast_id": {
+    "task_id": {
       "type": "string",
-      "pattern": "^cast_[0-9]{8}_[0-9]{6}$",
-      "description": "Reference to the parent cast"
+      "pattern": "^task_[0-9]{8}_[0-9]{6}$",
+      "description": "Reference to the parent task"
     },
-    "blueprint_id": {
+    "plan_id": {
       "type": "string",
       "pattern": "^bp_[0-9]{8}_[0-9]{6}_[a-f0-9]{4}$",
-      "description": "Reference to the blueprint being verified"
+      "description": "Reference to the plan being verified"
     },
-    "forge_log_hash": {
+    "build_log_hash": {
       "type": "string",
       "pattern": "^sha256:[a-f0-9]{64}$",
-      "description": "SHA256 hash of the forge log for integrity verification"
+      "description": "SHA256 hash of the build log for integrity verification"
     },
-    "tempered_at": {
+    "verified_at": {
       "type": "string",
       "format": "date-time",
       "description": "ISO 8601 timestamp of verification"
@@ -34,7 +34,7 @@
     "attempt_number": {
       "type": "integer",
       "minimum": 1,
-      "description": "Which tempering attempt this is"
+      "description": "Which verifying attempt this is"
     },
     "goal_verification": {
       "type": "object",
@@ -42,7 +42,7 @@
       "properties": {
         "original_goal": {
           "type": "string",
-          "description": "The original goal from the blueprint"
+          "description": "The original goal from the plan"
         },
         "achieved": {
           "type": "string",
@@ -69,21 +69,21 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["step_id", "blueprint_ref", "forge_ref", "status"],
+        "required": ["step_id", "plan_ref", "build_ref", "status"],
         "properties": {
           "step_id": {
             "type": "string",
             "description": "The step identifier"
           },
-          "blueprint_ref": {
+          "plan_ref": {
             "type": "string",
             "pattern": "^bp_[0-9]{8}_[0-9]{6}_[a-f0-9]{4}#step_[0-9]+[a-z]?$",
-            "description": "Reference to the blueprint step"
+            "description": "Reference to the plan step"
           },
-          "forge_ref": {
+          "build_ref": {
             "type": "string",
-            "pattern": "^cast_[0-9]{8}_[0-9]{6}#exec_[0-9]+$",
-            "description": "Reference to the forge execution record"
+            "pattern": "^task_[0-9]{8}_[0-9]{6}#exec_[0-9]+$",
+            "description": "Reference to the build execution record"
           },
           "step_name": { "type": "string" },
           "status": {

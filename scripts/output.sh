@@ -7,7 +7,7 @@
 # Use this script instead of embedding ANSI codes in markdown instructions.
 #
 # Usage:
-#   ./output.sh header <type>              Display phase/cast headers
+#   ./output.sh header <type>              Display phase/task headers
 #   ./output.sh phase <phase>              Display phase transition banner
 #   ./output.sh agent <agent> <message>    Display agent-prefixed message
 #   ./output.sh status <type> <message>    Display status message (success/error/warning/info)
@@ -17,7 +17,7 @@
 #
 # Environment:
 #   NO_COLOR=1    Disable colors
-#   STUDIO_PHASE   Current phase (blueprinting/forging/tempering)
+#   STUDIO_PHASE   Current phase (planing/building/verifying)
 #
 
 set -euo pipefail
@@ -62,37 +62,37 @@ LINE="────────────────────────�
 
 # Header command - display major section headers
 cmd_header() {
-    local type="${1:-cast}"
+    local type="${1:-task}"
     local color title
 
     case "$type" in
-        cast)
+        task)
             color="$BRIGHT_WHITE"
-            title="STUDIO CAST"
+            title="STUDIO TASK"
             ;;
         init)
             color="$BRIGHT_WHITE"
             title="STUDIO INIT"
             ;;
-        smith|blueprinting)
+        planner|planing)
             color="$BRIGHT_BLUE"
-            title="THE SMITH"
+            title="THE PLANNER"
             ;;
-        forgemaster|forging)
+        builder|building)
             color="$BRIGHT_YELLOW"
-            title="THE FORGEMASTER"
+            title="THE BUILDER"
             ;;
-        temperer|tempering)
+        verifier|verifying)
             color="$BRIGHT_CYAN"
-            title="THE TEMPERER"
+            title="THE VERIFIER"
             ;;
         complete)
             color="$BRIGHT_GREEN"
-            title="CAST COMPLETE"
+            title="TASK COMPLETE"
             ;;
         failed)
             color="$BRIGHT_RED"
-            title="CAST FAILED"
+            title="TASK FAILED"
             ;;
         *)
             color="$BRIGHT_WHITE"
@@ -111,23 +111,23 @@ cmd_phase() {
     local color icon num
 
     case "$phase" in
-        blueprinting|1)
+        planing|1)
             color="$BRIGHT_BLUE"
             icon="🔷"
             num="1"
-            phase="BLUEPRINTING"
+            phase="PLANNING"
             ;;
-        forging|2)
+        building|2)
             color="$BRIGHT_YELLOW"
             icon="🔶"
             num="2"
-            phase="FORGING"
+            phase="BUILDING"
             ;;
-        tempering|3)
+        verifying|3)
             color="$BRIGHT_CYAN"
             icon="🔷"
             num="3"
-            phase="TEMPERING"
+            phase="VERIFYING"
             ;;
         requirements|0)
             color="$BRIGHT_BLUE"
@@ -154,21 +154,21 @@ cmd_agent() {
     local color
 
     case "$agent" in
-        smith|Smith)
+        planner|Planner)
             color="$BRIGHT_BLUE"
-            agent="Smith"
+            agent="Planner"
             ;;
-        forgemaster|Forgemaster)
+        builder|Builder)
             color="$BRIGHT_YELLOW"
-            agent="Forgemaster"
+            agent="Builder"
             ;;
-        temperer|Temperer)
+        verifier|Verifier)
             color="$BRIGHT_CYAN"
-            agent="Temperer"
+            agent="Verifier"
             ;;
-        scribe|Scribe)
+        memory|Memory)
             color="$BRIGHT_MAGENTA"
-            agent="Scribe"
+            agent="Memory"
             ;;
         init|Init)
             color="$BRIGHT_MAGENTA"
@@ -236,13 +236,13 @@ cmd_verdict() {
             color="$BRIGHT_GREEN"
             verdict="SOUND"
             ;;
-        BRITTLE|brittle)
+        UNSTABLE|unstable)
             color="$BRIGHT_YELLOW"
-            verdict="BRITTLE"
+            verdict="UNSTABLE"
             ;;
-        CRACKED|cracked)
+        FAILED|failed)
             color="$BRIGHT_RED"
-            verdict="CRACKED"
+            verdict="FAILED"
             ;;
         *)
             color="$BRIGHT_WHITE"
@@ -308,11 +308,11 @@ main() {
             echo "Usage: output.sh <command> [args...]"
             echo ""
             echo "Commands:"
-            echo "  header <type>              Display header (cast/init/smith/forgemaster/temperer/complete/failed)"
-            echo "  phase <phase>              Display phase banner (requirements/blueprinting/forging/tempering)"
-            echo "  agent <agent> <message>    Display agent message (smith/forgemaster/temperer/scribe)"
+            echo "  header <type>              Display header (task/init/planner/builder/verifier/complete/failed)"
+            echo "  phase <phase>              Display phase banner (requirements/planing/building/verifying)"
+            echo "  agent <agent> <message>    Display agent message (planner/builder/verifier/memory)"
             echo "  status <type> <message>    Display status (success/error/warning/info/pending/checkpoint)"
-            echo "  verdict <verdict>          Display verdict (STRONG/SOUND/BRITTLE/CRACKED)"
+            echo "  verdict <verdict>          Display verdict (STRONG/SOUND/UNSTABLE/FAILED)"
             echo "  banner <type> [message]    Display completion banner"
             echo "  separator [color]          Display separator line"
             ;;
