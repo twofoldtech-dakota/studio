@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/blog-post.schema.json",
+  "title": "STUDIO Blog Post Schema",
+  "description": "Validation schema for blog post frontmatter and structure",
+  "type": "object",
+  "required": ["title", "excerpt", "date", "tags"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 100,
+      "description": "Post title - should be keyword-rich and benefit-focused"
+    },
+    "excerpt": {
+      "type": "string",
+      "minLength": 50,
+      "maxLength": 200,
+      "description": "Short summary for previews and meta description"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Publication date in YYYY-MM-DD format"
+    },
+    "updated": {
+      "type": "string",
+      "format": "date",
+      "description": "Last updated date if revised"
+    },
+    "author": {
+      "type": "string",
+      "description": "Author name"
+    },
+    "author_title": {
+      "type": "string",
+      "description": "Author's title or role"
+    },
+    "tags": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "type": "string"
+      },
+      "description": "Content tags for categorization"
+    },
+    "audience": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Target audience ID from brand/audiences/"
+    },
+    "stage": {
+      "type": "string",
+      "enum": ["awareness", "consideration", "decision"],
+      "description": "Buyer journey stage this content targets"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": ["thought_leadership", "how_to", "case_study", "news", "comparison", "guide"],
+      "description": "Type of content"
+    },
+    "seo": {
+      "type": "object",
+      "properties": {
+        "primary_keyword": {
+          "type": "string",
+          "description": "Main keyword to rank for"
+        },
+        "secondary_keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Supporting keywords"
+        },
+        "meta_description": {
+          "type": "string",
+          "minLength": 120,
+          "maxLength": 160,
+          "description": "Meta description for search results"
+        },
+        "canonical_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Canonical URL if content exists elsewhere"
+        }
+      }
+    },
+    "social": {
+      "type": "object",
+      "properties": {
+        "og_title": {
+          "type": "string",
+          "description": "Open Graph title for social sharing"
+        },
+        "og_description": {
+          "type": "string",
+          "description": "Open Graph description"
+        },
+        "og_image": {
+          "type": "string",
+          "description": "Path to social sharing image"
+        },
+        "twitter_card": {
+          "type": "string",
+          "enum": ["summary", "summary_large_image"],
+          "description": "Twitter card type"
+        }
+      }
+    },
+    "cta": {
+      "type": "object",
+      "properties": {
+        "primary": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "CTA button/link text"
+            },
+            "url": {
+              "type": "string",
+              "description": "CTA destination URL"
+            },
+            "type": {
+              "type": "string",
+              "enum": ["contact", "demo", "resource", "newsletter", "consultation"],
+              "description": "Type of conversion action"
+            }
+          }
+        },
+        "secondary": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "related_posts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Slugs of related blog posts for internal linking"
+    },
+    "series": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of content series"
+        },
+        "part": {
+          "type": "integer",
+          "description": "Part number in series"
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total parts in series"
+        }
+      }
+    },
+    "draft": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is a draft (not published)"
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to feature this post prominently"
+    }
+  },
+  "additionalProperties": true
+}

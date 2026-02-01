@@ -1,0 +1,538 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/brand.schema.json",
+  "title": "STUDIO Brand Schema",
+  "description": "Validation schema for brand source of truth files",
+  "type": "object",
+  "definitions": {
+    "identity": {
+      "type": "object",
+      "description": "Brand identity configuration",
+      "required": ["company", "mission", "vision", "values", "positioning"],
+      "properties": {
+        "company": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Company name"
+            },
+            "legal_name": {
+              "type": "string",
+              "description": "Legal entity name"
+            },
+            "founded": {
+              "type": "integer",
+              "description": "Year founded"
+            },
+            "headquarters": {
+              "type": "string",
+              "description": "Location or remote status"
+            }
+          }
+        },
+        "mission": {
+          "type": "string",
+          "minLength": 20,
+          "description": "Mission statement - what you do daily"
+        },
+        "vision": {
+          "type": "string",
+          "minLength": 20,
+          "description": "Vision statement - where you're heading"
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "description"],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "behaviors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Concrete behaviors that demonstrate this value"
+              }
+            }
+          }
+        },
+        "origin_story": {
+          "type": "string",
+          "description": "Why the company was founded"
+        },
+        "positioning": {
+          "type": "object",
+          "required": ["category", "one_liner"],
+          "properties": {
+            "category": {
+              "type": "string",
+              "description": "Market category you compete in"
+            },
+            "tagline": {
+              "type": "string",
+              "description": "Short memorable phrase"
+            },
+            "one_liner": {
+              "type": "string",
+              "description": "One sentence description"
+            },
+            "elevator_pitch": {
+              "type": "string",
+              "description": "30-second pitch"
+            }
+          }
+        }
+      }
+    },
+    "voice": {
+      "type": "object",
+      "description": "Brand voice configuration",
+      "required": ["personality", "tone_spectrum", "writing_principles", "vocabulary"],
+      "properties": {
+        "personality": {
+          "type": "object",
+          "properties": {
+            "primary_traits": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["trait", "not"],
+                "properties": {
+                  "trait": {
+                    "type": "string",
+                    "description": "Desired trait"
+                  },
+                  "not": {
+                    "type": "string",
+                    "description": "What it's not"
+                  },
+                  "example": {
+                    "type": "string",
+                    "description": "Example showing the distinction"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tone_spectrum": {
+          "type": "object",
+          "description": "1-5 scales for tone dimensions",
+          "properties": {
+            "formal_casual": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            },
+            "serious_playful": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            },
+            "technical_accessible": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            },
+            "reserved_bold": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            },
+            "traditional_innovative": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            }
+          }
+        },
+        "writing_principles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["principle", "description"],
+            "properties": {
+              "principle": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "example": {
+                "type": "string"
+              },
+              "terms": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "vocabulary": {
+          "type": "object",
+          "properties": {
+            "always_use": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["word"],
+                "properties": {
+                  "word": {
+                    "type": "string"
+                  },
+                  "context": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "never_use": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["word", "reason"],
+                "properties": {
+                  "word": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "industry_terms": {
+              "type": "object",
+              "properties": {
+                "embrace": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "use_carefully": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "term": {
+                        "type": "string"
+                      },
+                      "guidance": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "avoid": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "term": {
+                        "type": "string"
+                      },
+                      "reason": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "audience": {
+      "type": "object",
+      "description": "Audience profile configuration",
+      "required": ["audience", "demographics", "psychographics", "messaging"],
+      "properties": {
+        "audience": {
+          "type": "object",
+          "required": ["id", "name", "priority"],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z0-9-]+$"
+            },
+            "name": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string",
+              "enum": ["primary", "secondary", "tertiary"]
+            }
+          }
+        },
+        "demographics": {
+          "type": "object",
+          "properties": {
+            "titles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "company_size": {
+              "type": "string"
+            },
+            "industries": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "geography": {
+              "type": "string"
+            }
+          }
+        },
+        "psychographics": {
+          "type": "object",
+          "properties": {
+            "goals": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "pain_points": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "fears": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "aspirations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "behavior": {
+          "type": "object",
+          "properties": {
+            "information_sources": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "buying_triggers": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "decision_process": {
+              "type": "object",
+              "properties": {
+                "timeline": {
+                  "type": "string"
+                },
+                "stakeholders": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "evaluation_criteria": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "messaging": {
+          "type": "object",
+          "required": ["key_message"],
+          "properties": {
+            "key_message": {
+              "type": "string"
+            },
+            "proof_points": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "objections": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "response": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "cta": {
+          "type": "object",
+          "properties": {
+            "primary": {
+              "type": "string"
+            },
+            "secondary": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "value_propositions": {
+      "type": "object",
+      "description": "Value propositions configuration",
+      "required": ["primary_value_prop", "value_pillars"],
+      "properties": {
+        "primary_value_prop": {
+          "type": "object",
+          "required": ["headline", "body"],
+          "properties": {
+            "headline": {
+              "type": "string"
+            },
+            "subhead": {
+              "type": "string"
+            },
+            "body": {
+              "type": "string"
+            },
+            "proof": {
+              "type": "string"
+            }
+          }
+        },
+        "value_pillars": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "headline", "description"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "headline": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "proof_points": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "icon": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "differentiators": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "them": {
+                "type": "string"
+              },
+              "us": {
+                "type": "string"
+              },
+              "proof": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "transformation_statement": {
+          "type": "string"
+        }
+      }
+    },
+    "objections": {
+      "type": "object",
+      "description": "Objection handling configuration",
+      "required": ["objections"],
+      "properties": {
+        "objections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "trigger_phrases", "reframe", "response"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "trigger_phrases": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "reframe": {
+                "type": "string"
+              },
+              "response": {
+                "type": "string"
+              },
+              "proof_points": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "follow_up": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "brand_version": {
+      "type": "string",
+      "description": "Version of the brand files",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of last brand review"
+    },
+    "next_review": {
+      "type": "string",
+      "format": "date",
+      "description": "Scheduled next review date"
+    }
+  }
+}

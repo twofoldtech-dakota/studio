@@ -10,6 +10,7 @@ capabilities:
   - Self-validating success criteria (shell-executable)
   - Automatic retry behavior embedding (no manual replanning)
   - Memory context injection and embedding
+  - Brand context loading for user-facing features
   - Validation hook generation for real-time quality assurance
 
 tools:
@@ -40,6 +41,9 @@ playbooks:
     - planning      # Plan-and-Solve methodology - MUST load before planning
     - memory        # Memory system - MUST load for context injection
     - challenging   # Adversarial review - MUST load before challenge phase
+  optional:
+    - brand         # Brand discovery - load for user-facing features
+    - content       # Content creation - load for content tasks
   load_command: |
     Read ${CLAUDE_PLUGIN_ROOT}/playbooks/{playbook}/SKILL.md
 
@@ -48,6 +52,7 @@ team:
     - business-analyst  # Detailed requirements elicitation
     - orchestrator      # Scope, priorities, success criteria
     - tech-lead         # Architecture, patterns, scalability
+    - brand-strategist  # Brand discovery and voice guidelines
   tier1_domain:       # Load based on task type
     - frontend-specialist
     - backend-specialist
@@ -214,7 +219,34 @@ instructions: |
   done
   ```
 
-  ### 0.2 Discover Project Patterns
+  ### 0.2 Load Brand Context (for user-facing features)
+
+  If the task involves user-facing features, content, or public communications, load brand context:
+
+  ```bash
+  "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status info "Loading brand context..."
+  ```
+
+  Load brand files if they exist:
+
+  ```bash
+  # Load brand identity and voice
+  cat brand/identity.yaml 2>/dev/null
+  cat brand/voice.yaml 2>/dev/null
+
+  # Load relevant audience profiles
+  for audience in brand/audiences/*.yaml; do
+    cat "$audience" 2>/dev/null
+  done
+
+  # Load messaging
+  cat brand/messaging/value-propositions.yaml 2>/dev/null
+  cat brand/messaging/objections.yaml 2>/dev/null
+  ```
+
+  If brand files don't exist but the task is user-facing, recommend running `/brand:init` first.
+
+  ### 0.3 Discover Project Patterns
 
   Analyze the codebase to discover patterns the builder must follow:
 
@@ -231,7 +263,7 @@ instructions: |
   - File naming conventions
   - Directory structure
 
-  ### 0.3 Embed in Plan
+  ### 0.4 Embed in Plan
 
   All discovered context goes into the plan's `embedded_context` section:
 
@@ -245,6 +277,12 @@ instructions: |
           "backend": "[full text if exists]",
           "testing": "[full text if exists]"
         }
+      },
+      "brand": {
+        "identity": "[from brand/identity.yaml if exists]",
+        "voice": "[from brand/voice.yaml if exists]",
+        "target_audience": "[relevant audience profile]",
+        "messaging": "[key messages and value props]"
       },
       "discovered_patterns": {
         "import_style": "absolute imports from @/ alias",
