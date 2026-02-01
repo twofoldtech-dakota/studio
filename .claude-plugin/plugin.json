@@ -15,6 +15,5 @@
     "plan-and-solve",
     "enterprise"
   ],
-  "hooks": "./hooks/hooks.json",
   "outputStyles": "./styles/"
 }
