@@ -1,6 +1,6 @@
 {
   "description": "STUDIO Orchestration Hook System - Wires orchestration to commands and agents",
-  "version": "4.0.0",
+  "version": "5.0.0",
 
   "hooks": {
     "PreToolUse": [
@@ -22,6 +22,10 @@
           {
             "type": "prompt",
             "prompt": "ORCHESTRATION TRIGGER: A /build command was invoked.\n\n1. INITIALIZE orchestration session:\n   - Run: scripts/orchestrator.sh init \"$ARGUMENTS\" implicit\n   - This creates .studio/orchestration/<session_id>/state.json\n\n2. ROUTE the goal:\n   - Run: scripts/orchestrator.sh route\n   - Check routing.selected_workflow in the output\n\n3. IF workflow is 'plan_then_build':\n   - First invoke the Planner agent with the goal\n   - After Planner completes, record handoff: scripts/orchestrator.sh handoff planner builder '{\"task_id\": \"<task_id>\", \"plan_path\": \"<plan_path>\"}'\n   - Then proceed with Builder\n\n4. IF workflow is 'build_only':\n   - Proceed directly to Builder execution\n\n5. Before starting each agent:\n   - Run: scripts/orchestrator.sh agent-start <agent_name>\n\n6. After each agent completes:\n   - Run: scripts/orchestrator.sh agent-complete <agent_name>\n   - Run: scripts/orchestrator.sh checkpoint '<agent_name>_complete'\n\nThe orchestration state is persisted in .studio/orchestration/ for recovery."
+          },
+          {
+            "type": "prompt",
+            "prompt": "KNOWLEDGE BASE INJECTION:\n\nBefore starting the build, inject Strict Constraints as a \"NEVER VIOLATE\" list:\n\n1. READ STUDIO_KNOWLEDGE_BASE.md\n2. EXTRACT the Strict Constraints section\n3. IF there are entries:\n   - Present them as: \"STRICT CONSTRAINTS (NEVER VIOLATE):\"\n   - List each SC-XXX entry with its \"What\" and \"Instead\" fields\n4. EXTRACT relevant Slop Ledger entries based on detected domains:\n   - Run: scripts/learnings.sh detect \"$GOAL\"\n   - For each detected domain, include matching slop entries\n5. Present slop entries as: \"AVOID THESE MISTAKES:\"\n   - List each SL-XXX entry with its \"Pattern\" and \"Fix\" fields\n\nThis ensures the build agent is aware of known constraints before writing code."
           }
         ]
       }
@@ -38,6 +42,10 @@
           {
             "type": "prompt",
             "prompt": "ORCHESTRATION RESUME CHECK:\n\n1. Check if .studio/orchestration/.current exists\n2. If it does, read the session ID and load .studio/orchestration/<session_id>/state.json\n3. Check the 'status' field:\n   - If 'paused': Notify user 'Paused orchestration found: [session_id]. Goal: [goal]. Resume with /orchestrate resume or start fresh?'\n   - If 'recovering': Notify user 'Orchestration in recovery: [session_id]. Last failure: [error]. Resume recovery or abort?'\n   - If 'executing': Notify user 'Interrupted orchestration detected: [session_id]. Would you like to resume from the last checkpoint?'\n4. If user wants to resume, run: scripts/orchestrator.sh resume"
+          },
+          {
+            "type": "prompt",
+            "prompt": "KNOWLEDGE BASE LOADING:\n\n1. READ STUDIO_KNOWLEDGE_BASE.md if it exists\n2. COUNT entries in each section:\n   - Strict Constraints: [N]\n   - Slop Ledger: [N]\n   - Performance Delta: [N]\n   - Pending Queue: [N]\n3. REPORT: 'Knowledge base loaded: [total] entries ([constraints] constraints, [slop] slop, [perf] performance deltas)'\n4. IF Strict Constraints exist, summarize the top 3 most important rules\n5. CHECK sprint counter status:\n   - Read .studio/sprint-counter.json\n   - Report: 'Sprint [N]: [tasks]/5 tasks until evolution'\n   - If evolution is due (5+ tasks), notify: 'Sprint evolution due - consider running scripts/sprint-evolution.sh propose'"
           }
         ]
       }
@@ -58,8 +66,8 @@
         "hooks": [
           {
             "type": "agent",
-            "prompt": "LEARN PHASE: Capture learnings from this build cycle.\n\n1. DETECT domain automatically:\n   - Run: git diff --name-only HEAD~1 (or check changed files in this session)\n   - Map file patterns to domains:\n     - **/components/**, *.tsx, *.css → frontend\n     - **/api/**, **/services/** → backend\n     - **/*test*, **/__tests__/** → testing\n     - **/auth/**, **/security/** → security\n     - Otherwise → global\n\n2. SUMMARIZE what worked well during this build:\n   - Patterns that were effective\n   - Approaches that succeeded on first try\n   - Code that was clean and maintainable\n\n3. LIST any problems encountered and their solutions:\n   - Errors that required fixes\n   - Unexpected issues and how they were resolved\n   - Retry attempts and what finally worked\n\n4. NOTE any new patterns discovered:\n   - Novel approaches used\n   - Reusable code structures\n   - Integration techniques\n\n5. CONFIRM with user:\n   Detected domain: [detected_domain]\n   Save learning here? Or choose:\n   - global (project-wide)\n   - frontend (UI/components)\n   - backend (API/services)\n   - testing (test strategies)\n   - security (security patterns)\n   - performance (optimizations)\n   - integration:<name> (library-specific)\n\n6. WRITE the learning to studio/learnings/{domain}.md using this format:\n   ## YYYY-MM-DD: Brief Title\n   \n   **Context:** Task description\n   \n   **What Worked:**\n   - Item 1\n   - Item 2\n   \n   **Problems Solved:**\n   - Problem: Description\n     Solution: How it was fixed\n   \n   **Pattern:**\n   ```\n   code example if applicable\n   ```\n\nReturn {\"ok\": true, \"learnings_saved_to\": \"domain.md\"} when complete.",
-            "timeout": 120
+            "prompt": "SELF-LEARNING PROTOCOL: Capture learnings from this build cycle.\n\nREAD studio/prompts/self-learning.md for the full protocol.\nREAD STUDIO_KNOWLEDGE_BASE.md for existing patterns to avoid duplicates.\n\n1. GENERATE task_id: task_YYYYMMDD_brief_description (e.g., task_20240215_auth_fix)\n\n2. DETECT domain automatically:\n   - Run: git diff --name-only HEAD~1 (or check changed files in this session)\n   - Map file patterns to domains:\n     - **/components/**, *.tsx, *.css → frontend\n     - **/api/**, **/services/** → backend\n     - **/*test*, **/__tests__/** → testing\n     - **/auth/**, **/security/** → security\n     - Performance improvements with metrics → performance\n     - Otherwise → global\n\n3. CLASSIFY the learning using scripts/signal-audit.sh:\n   - Run: scripts/signal-audit.sh classify \"<summary of what happened>\"\n   - Check output for: signal_type, destination, suggested_severity\n\n4. CHECK for duplicates:\n   - Run: scripts/learnings.sh check-duplicate \"<learning title>\" (if command exists)\n   - Or manually scan STUDIO_KNOWLEDGE_BASE.md for similar entries\n\n5. EXTRACT mandatory fields:\n   - task_id: [generated above]\n   - domain: [detected domain]\n   - impact_type: constraint | slop | performance | pattern\n   - severity: HIGH | MEDIUM | LOW\n   - measurable_outcome: [before/after metrics if applicable]\n\n6. SAVE to appropriate destination based on signal_type:\n   - performance → Add to Performance Delta section in STUDIO_KNOWLEDGE_BASE.md (MUST have numbers)\n   - error (1st occurrence) → Add to Pending Queue in STUDIO_KNOWLEDGE_BASE.md\n   - error (2+ occurrences) → Promote to Strict Constraints\n   - convention → Add to Slop Ledger in STUDIO_KNOWLEDGE_BASE.md\n   - pattern → Save to studio/learnings/{domain}.md\n\n7. INCREMENT sprint counter:\n   - Run: scripts/sprint-evolution.sh increment <task_id>\n   - If output is 'EVOLUTION_DUE', notify user to run evolution proposals\n\n8. CONFIRM with user:\n   - Show: task_id, domain, impact_type, severity, destination\n   - Ask for approval before saving\n\n9. UPDATE Definition of Done checklist:\n   - [ ] Learning extracted and classified\n   - [ ] Knowledge base checked for duplicates\n   - [ ] Sprint counter incremented\n\nReturn {\"ok\": true, \"task_id\": \"...\", \"learnings_saved_to\": \"...\", \"sprint_status\": \"...\"} when complete.",
+            "timeout": 180
           }
         ]
       }
@@ -88,6 +96,10 @@
           {
             "type": "prompt",
             "prompt": "AGENT STARTUP PROTOCOL:\n\n1. CHECK if orchestration is active (.studio/orchestration/.current exists)\n\n2. IF orchestration active:\n   a) Run: scripts/orchestrator.sh agent-start [agent_name]\n   b) Check for incoming handoff: scripts/orchestrator.sh get-handoff [agent_name]\n      - If handoff exists, include the context_passed data in agent context\n      - This contains task_id, plan_path, learnings, and other workflow context\n\n3. DETECT relevant skills for this agent's work:\n   a) Get the current goal from orchestration state or user input\n   b) Run: scripts/skills.sh detect \"$GOAL\"\n   c) For each detected skill (sorted by score):\n      - Run: scripts/skills.sh inject <skill_name>\n      - Include the injection content (questions, guidelines, checklist) in agent context\n\n4. SKILL INJECTION FORMAT:\n   If skills detected, prepend to agent context:\n   ---\n   ## Active Skills: [skill1, skill2]\n   \n   [Injection content from each skill]\n   ---\n\nThis ensures agents receive domain-specific guidance before execution."
+          },
+          {
+            "type": "prompt",
+            "prompt": "KNOWLEDGE BASE INJECTION FOR AGENTS:\n\n1. READ STUDIO_KNOWLEDGE_BASE.md\n\n2. EXTRACT and inject Strict Constraints:\n   - Format as: \"## STRICT CONSTRAINTS (NEVER VIOLATE)\"\n   - List each constraint with its \"What\" and \"Instead\" fields\n   - These are BLOCKING rules - agent must not proceed if it would violate\n\n3. DETECT domains relevant to the agent's goal:\n   - Run: scripts/learnings.sh detect \"$GOAL\"\n\n4. EXTRACT relevant Slop Ledger entries for detected domains:\n   - Format as: \"## AVOID THESE MISTAKES\"\n   - List each slop entry with its \"Pattern\" and \"Fix\" fields\n\n5. INJECT into agent context BEFORE the main task prompt:\n   ---\n   ## STRICT CONSTRAINTS (NEVER VIOLATE)\n   [constraints]\n   \n   ## AVOID THESE MISTAKES\n   [relevant slop entries]\n   ---\n\nThis ensures agents are aware of known pitfalls before execution."
           }
         ]
       }

@@ -1,0 +1,137 @@
+{
+  "description": "Tracked frameworks and custom signals for knowledge base classification",
+  "version": "1.0.0",
+
+  "frameworks": [
+    {
+      "name": "next.js",
+      "keywords": ["next", "nextjs", "app router", "pages router", "server component", "client component", "use server", "use client", "middleware", "getServerSideProps", "getStaticProps"],
+      "severity": "MEDIUM",
+      "destination": "frontend"
+    },
+    {
+      "name": "react",
+      "keywords": ["react", "jsx", "tsx", "useState", "useEffect", "useContext", "useReducer", "useMemo", "useCallback", "useRef", "custom hook", "component"],
+      "severity": "MEDIUM",
+      "destination": "frontend"
+    },
+    {
+      "name": "sitecore",
+      "keywords": ["sitecore", "jss", "xm cloud", "layout service", "placeholder", "rendering", "content resolver", "graphql", "headless"],
+      "severity": "HIGH",
+      "destination": "backend"
+    },
+    {
+      "name": "prisma",
+      "keywords": ["prisma", "orm", "migration", "schema", "model", "relation", "findMany", "findUnique", "create", "update", "delete", "include", "select"],
+      "severity": "MEDIUM",
+      "destination": "backend"
+    },
+    {
+      "name": "tailwind",
+      "keywords": ["tailwind", "tailwindcss", "utility class", "responsive", "dark mode", "cn(", "clsx", "cva"],
+      "severity": "LOW",
+      "destination": "frontend"
+    },
+    {
+      "name": "typescript",
+      "keywords": ["typescript", "type", "interface", "generic", "infer", "satisfies", "as const", "discriminated union", "type guard"],
+      "severity": "MEDIUM",
+      "destination": "global"
+    },
+    {
+      "name": "testing",
+      "keywords": ["jest", "vitest", "cypress", "playwright", "test", "describe", "it(", "expect", "mock", "spy", "fixture", "beforeEach", "afterEach"],
+      "severity": "MEDIUM",
+      "destination": "testing"
+    },
+    {
+      "name": "auth",
+      "keywords": ["auth", "authentication", "authorization", "jwt", "token", "session", "oauth", "saml", "clerk", "nextauth", "auth0"],
+      "severity": "HIGH",
+      "destination": "security"
+    }
+  ],
+
+  "custom_signals": [
+    {
+      "pattern": "hydration",
+      "destination": "frontend",
+      "severity": "HIGH",
+      "description": "React hydration mismatches are critical bugs"
+    },
+    {
+      "pattern": "race condition",
+      "destination": "backend",
+      "severity": "HIGH",
+      "description": "Concurrency bugs are hard to reproduce and fix"
+    },
+    {
+      "pattern": "memory leak",
+      "destination": "performance",
+      "severity": "HIGH",
+      "description": "Memory leaks cause progressive degradation"
+    },
+    {
+      "pattern": "n+1",
+      "destination": "backend",
+      "severity": "HIGH",
+      "description": "N+1 query problems cause severe performance issues"
+    },
+    {
+      "pattern": "cors",
+      "destination": "security",
+      "severity": "MEDIUM",
+      "description": "CORS configuration issues"
+    },
+    {
+      "pattern": "xss",
+      "destination": "security",
+      "severity": "HIGH",
+      "description": "Cross-site scripting vulnerabilities"
+    },
+    {
+      "pattern": "sql injection",
+      "destination": "security",
+      "severity": "HIGH",
+      "description": "SQL injection vulnerabilities"
+    },
+    {
+      "pattern": "bundle size",
+      "destination": "performance",
+      "severity": "MEDIUM",
+      "description": "JavaScript bundle size impacts load time"
+    },
+    {
+      "pattern": "tree shaking",
+      "destination": "performance",
+      "severity": "LOW",
+      "description": "Tree shaking optimization patterns"
+    },
+    {
+      "pattern": "dead code",
+      "destination": "global",
+      "severity": "LOW",
+      "description": "Unused code that should be removed"
+    }
+  ],
+
+  "noise_patterns": [
+    "how to",
+    "basic",
+    "simple",
+    "standard",
+    "obvious",
+    "easy",
+    "straightforward",
+    "common",
+    "typical",
+    "normal",
+    "usual",
+    "just do",
+    "simply",
+    "tutorial",
+    "getting started",
+    "introduction"
+  ]
+}

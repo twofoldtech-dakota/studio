@@ -534,6 +534,214 @@ cmd_search() {
     echo ""
 }
 
+# Classify a learning entry using signal-audit
+cmd_classify() {
+    local text="${1:-}"
+
+    if [[ -z "$text" ]]; then
+        log_error "Usage: ./learnings.sh classify <text>"
+        log_error "Classifies a learning entry and returns destination"
+        exit 1
+    fi
+
+    # Use signal-audit.sh if available
+    local script_dir
+    script_dir=$(dirname "${BASH_SOURCE[0]}")
+    local signal_audit="${script_dir}/signal-audit.sh"
+
+    if [[ -x "$signal_audit" ]]; then
+        "$signal_audit" classify "$text"
+    else
+        # Fallback classification
+        local text_lower
+        text_lower=$(echo "$text" | tr '[:upper:]' '[:lower:]')
+
+        local signal_type="pattern"
+        local destination="domain_learnings"
+        local severity="LOW"
+
+        # Performance detection
+        if echo "$text_lower" | grep -qE "(latency|lcp|memory|slow|timeout|ms|seconds|kb|mb)"; then
+            if echo "$text" | grep -qE "[0-9]+(\.[0-9]+)?\s*(ms|s|kb|mb|%)"; then
+                signal_type="performance"
+                destination="performance_delta"
+                severity="MEDIUM"
+            fi
+        fi
+
+        # Error detection
+        if echo "$text_lower" | grep -qE "(error|failed|crash|bug|fix|broke)"; then
+            signal_type="error"
+            destination="pending_queue"
+            severity="HIGH"
+        fi
+
+        # Convention detection
+        if echo "$text_lower" | grep -qE "(naming|convention|structure|import|style)"; then
+            signal_type="convention"
+            destination="slop_ledger"
+            severity="MEDIUM"
+        fi
+
+        cat << EOF
+{
+  "is_signal": true,
+  "signal_type": "$signal_type",
+  "destination": "$destination",
+  "suggested_severity": "$severity"
+}
+EOF
+    fi
+}
+
+# Check for duplicate entries in knowledge base
+cmd_check_duplicate() {
+    local title="${1:-}"
+
+    if [[ -z "$title" ]]; then
+        log_error "Usage: ./learnings.sh check-duplicate <title>"
+        exit 1
+    fi
+
+    local knowledge_base="STUDIO_KNOWLEDGE_BASE.md"
+    local found_duplicates=0
+
+    echo ""
+    echo -e "${MAGENTA}Checking for duplicates: ${CYAN}${title}${NC}"
+    echo "─────────────────────────────────────────"
+
+    # Normalize title for comparison
+    local title_lower
+    title_lower=$(echo "$title" | tr '[:upper:]' '[:lower:]')
+
+    # Extract key words (3+ chars, remove common words)
+    local keywords
+    keywords=$(echo "$title_lower" | tr -cs '[:alnum:]' '\n' | awk 'length >= 3' | grep -vE "^(the|and|for|with|from|that|this|have|been|were|are|was|has)$" | sort -u)
+
+    # Search in knowledge base
+    if [[ -f "$knowledge_base" ]]; then
+        while IFS= read -r keyword; do
+            if [[ -n "$keyword" ]]; then
+                local matches
+                matches=$(grep -i "$keyword" "$knowledge_base" 2>/dev/null | grep -E "^###" || true)
+                if [[ -n "$matches" ]]; then
+                    if [[ $found_duplicates -eq 0 ]]; then
+                        echo -e "${YELLOW}Potential duplicates in STUDIO_KNOWLEDGE_BASE.md:${NC}"
+                    fi
+                    echo "$matches" | sed 's/^/  /' | head -5
+                    found_duplicates=1
+                fi
+            fi
+        done <<< "$keywords"
+    fi
+
+    # Search in domain learnings
+    for domain in "${VALID_DOMAINS[@]}"; do
+        local file="${LEARNINGS_DIR}/${domain}.md"
+        if [[ -f "$file" ]]; then
+            while IFS= read -r keyword; do
+                if [[ -n "$keyword" ]]; then
+                    local matches
+                    matches=$(grep -i "$keyword" "$file" 2>/dev/null | grep -E "^##" || true)
+                    if [[ -n "$matches" ]]; then
+                        if [[ $found_duplicates -eq 0 ]]; then
+                            echo -e "${YELLOW}Potential duplicates found:${NC}"
+                        fi
+                        echo -e "  ${CYAN}${domain}.md:${NC}"
+                        echo "$matches" | sed 's/^/    /' | head -3
+                        found_duplicates=1
+                    fi
+                fi
+            done <<< "$keywords"
+        fi
+    done
+
+    if [[ $found_duplicates -eq 0 ]]; then
+        echo -e "${GREEN}No duplicates found. Safe to add.${NC}"
+        echo '{"has_duplicate": false}'
+    else
+        echo ""
+        echo '{"has_duplicate": true, "action": "review_above"}'
+    fi
+    echo ""
+}
+
+# Extract metrics from text (before/after values)
+cmd_extract_metrics() {
+    local text="${1:-}"
+
+    if [[ -z "$text" ]]; then
+        log_error "Usage: ./learnings.sh extract-metrics <text>"
+        log_error "Extracts before/after metrics from text"
+        exit 1
+    fi
+
+    echo ""
+    echo -e "${MAGENTA}Extracting metrics from text...${NC}"
+    echo "─────────────────────────────────────────"
+
+    local found_metrics=0
+
+    # Pattern: "from X to Y" or "X -> Y" or "X → Y"
+    local from_to_pattern
+    from_to_pattern=$(echo "$text" | grep -oE "from\s+[0-9]+(\.[0-9]+)?\s*(ms|s|kb|mb|gb|%|x)?\s+(to|->|→)\s+[0-9]+(\.[0-9]+)?\s*(ms|s|kb|mb|gb|%|x)?" || true)
+
+    if [[ -n "$from_to_pattern" ]]; then
+        echo -e "${CYAN}Found from/to pattern:${NC}"
+        echo "  $from_to_pattern"
+        found_metrics=1
+    fi
+
+    # Pattern: "reduced/increased by X%"
+    local delta_pattern
+    delta_pattern=$(echo "$text" | grep -oE "(reduced|increased|improved|decreased|cut|dropped)\s+(by\s+)?[0-9]+(\.[0-9]+)?\s*%" || true)
+
+    if [[ -n "$delta_pattern" ]]; then
+        echo -e "${CYAN}Found delta pattern:${NC}"
+        echo "  $delta_pattern"
+        found_metrics=1
+    fi
+
+    # Pattern: specific metrics (LCP, FCP, TTFB, etc.)
+    local web_vitals
+    web_vitals=$(echo "$text" | grep -oiE "(lcp|fcp|cls|inp|ttfb|tti)\s*[:\s]+[0-9]+(\.[0-9]+)?\s*(ms|s)?" || true)
+
+    if [[ -n "$web_vitals" ]]; then
+        echo -e "${CYAN}Found web vitals:${NC}"
+        echo "  $web_vitals"
+        found_metrics=1
+    fi
+
+    # Pattern: memory/size metrics
+    local size_metrics
+    size_metrics=$(echo "$text" | grep -oiE "[0-9]+(\.[0-9]+)?\s*(kb|mb|gb|bytes)" || true)
+
+    if [[ -n "$size_metrics" ]]; then
+        echo -e "${CYAN}Found size metrics:${NC}"
+        echo "  $size_metrics"
+        found_metrics=1
+    fi
+
+    # Pattern: time metrics
+    local time_metrics
+    time_metrics=$(echo "$text" | grep -oiE "[0-9]+(\.[0-9]+)?\s*(ms|milliseconds|seconds|s|minutes|min)" || true)
+
+    if [[ -n "$time_metrics" ]]; then
+        echo -e "${CYAN}Found time metrics:${NC}"
+        echo "  $time_metrics"
+        found_metrics=1
+    fi
+
+    if [[ $found_metrics -eq 0 ]]; then
+        echo -e "${YELLOW}No metrics found in text.${NC}"
+        echo '{"has_metrics": false}'
+    else
+        echo ""
+        echo '{"has_metrics": true}'
+    fi
+    echo ""
+}
+
 # Show help
 cmd_help() {
     cat << 'EOF'
@@ -553,6 +761,9 @@ Commands:
   inject [domains...]               Generate injection block for agent prompts
   detect <goal>                     Detect relevant domains from goal text
   search <query>                    Search learnings by keyword
+  classify <text>                   Classify learning and determine destination
+  check-duplicate <title>           Check for duplicate entries in knowledge base
+  extract-metrics <text>            Extract before/after metrics from text
   help                              Show this help message
 
 Domains:
@@ -567,6 +778,12 @@ Integrations:
   Use "integration:<name>" for library-specific learnings
   Example: ./learnings.sh add integration:nextjs "Server Actions" "..."
 
+Classification Destinations:
+  performance_delta   Metrics with before/after values → STUDIO_KNOWLEDGE_BASE.md
+  pending_queue       Errors/constraints (1st occurrence) → STUDIO_KNOWLEDGE_BASE.md
+  slop_ledger         Naming/structural issues → STUDIO_KNOWLEDGE_BASE.md
+  domain_learnings    Reusable patterns → studio/learnings/{domain}.md
+
 Examples:
   ./learnings.sh init
   ./learnings.sh add frontend "Form Validation Pattern" "**Context:** Building user registration..."
@@ -575,6 +792,9 @@ Examples:
   ./learnings.sh inject frontend backend
   ./learnings.sh detect "Create a React component for user profile"
   ./learnings.sh search "validation"
+  ./learnings.sh classify "Fixed memory leak - heap reduced from 512MB to 128MB"
+  ./learnings.sh check-duplicate "Memory Optimization Pattern"
+  ./learnings.sh extract-metrics "LCP improved from 2.4s to 1.1s after lazy loading"
 
 Environment Variables:
   STUDIO_DIR    Base directory for STUDIO state (default: studio)
@@ -611,6 +831,15 @@ main() {
             ;;
         search)
             cmd_search "$@"
+            ;;
+        classify)
+            cmd_classify "$@"
+            ;;
+        check-duplicate|checkdup|dup)
+            cmd_check_duplicate "$@"
+            ;;
+        extract-metrics|metrics)
+            cmd_extract_metrics "$@"
             ;;
         help|--help|-h)
             cmd_help

@@ -1,0 +1,10 @@
+{
+  "current_sprint": 1,
+  "tasks_in_sprint": 1,
+  "last_evolution": null,
+  "task_ids": [
+    "task_test_001"
+  ],
+  "total_tasks": 1,
+  "violations": {}
+}
