@@ -332,14 +332,28 @@ A complete visual overview of how STUDIO coordinates AI agents to build software
 │  │  ✓ Security:  npm audit                                   │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │                                                                 │
-│  LEARNING CAPTURE                                               │
-│  ────────────────                                               │
+│  LEARNING CAPTURE (Self-Learning Protocol)                      │
+│  ───────────────────────────────────────                        │
 │                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │  New learning detected:                                   │  │
-│  │  "OAuth providers need env var validation at startup"     │  │
+│  │  1. CLASSIFY learning:                                    │  │
+│  │     ./scripts/signal-audit.sh classify "<summary>"        │  │
+│  │     Output: {signal_type, destination, severity}          │  │
 │  │                                                           │  │
-│  │  Saved to: studio/learnings/security.md                   │  │
+│  │  2. CHECK for duplicates:                                 │  │
+│  │     ./scripts/learnings.sh check-duplicate "title"        │  │
+│  │                                                           │  │
+│  │  3. SAVE to destination:                                  │  │
+│  │     • Performance → STUDIO_KNOWLEDGE_BASE.md#perf_delta   │  │
+│  │     • Error (1st) → STUDIO_KNOWLEDGE_BASE.md#pending      │  │
+│  │     • Convention → STUDIO_KNOWLEDGE_BASE.md#slop          │  │
+│  │     • Pattern → studio/learnings/{domain}.md              │  │
+│  │                                                           │  │
+│  │  4. INCREMENT sprint counter:                             │  │
+│  │     ./scripts/sprint-evolution.sh increment <task_id>     │  │
+│  │                                                           │  │
+│  │  5. CHECK if evolution due (every 5 tasks):               │  │
+│  │     If "EVOLUTION_DUE" → run 'propose' and notify user    │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -638,6 +652,91 @@ A complete visual overview of how STUDIO coordinates AI agents to build software
 │  plan_then_build   Feature → Planner → Builder                  │
 │  multi_task        Backlog → Builder (loop)                     │
 │  decompose         Epic → Architect → Planner                   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Knowledge Evolution Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│  KNOWLEDGE EVOLUTION SYSTEM                                     │
+│  ──────────────────────────                                     │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  SIGNAL CLASSIFICATION                                   │    │
+│  │                                                         │    │
+│  │  Learning Input                                         │    │
+│  │        │                                                │    │
+│  │        ▼                                                │    │
+│  │  ┌───────────────┐                                      │    │
+│  │  │ Is it noise?  │───YES───▶ DISCARD                    │    │
+│  │  └───────┬───────┘                                      │    │
+│  │          │ NO                                           │    │
+│  │          ▼                                              │    │
+│  │  ┌───────────────┐                                      │    │
+│  │  │ Detect Type   │                                      │    │
+│  │  └───────┬───────┘                                      │    │
+│  │          │                                              │    │
+│  │    ┌─────┴─────┬─────────┬─────────┬─────────┐         │    │
+│  │    ▼           ▼         ▼         ▼         ▼         │    │
+│  │ PERF       ERROR     FRAMEWORK  CONVENT   PATTERN      │    │
+│  │    │           │         │         │         │         │    │
+│  │    ▼           ▼         ▼         ▼         ▼         │    │
+│  │ Perf       Pending    Pending    Slop     Domain       │    │
+│  │ Delta      Queue      Queue      Ledger   Learnings    │    │
+│  │                                                         │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  SPRINT EVOLUTION (Every 5 Tasks)                        │    │
+│  │                                                         │    │
+│  │  Task #5 Complete                                       │    │
+│  │        │                                                │    │
+│  │        ▼                                                │    │
+│  │  ┌───────────────────────────────────────────────────┐  │    │
+│  │  │  PROPOSAL GENERATION                              │  │    │
+│  │  │                                                   │  │    │
+│  │  │  1. Scan for DELETABLE rules                      │  │    │
+│  │  │     (No violations in 10+ tasks)                  │  │    │
+│  │  │                                                   │  │    │
+│  │  │  2. Scan for NEW ENFORCEMENT rules                │  │    │
+│  │  │     (Pending Queue items with 2+ occurrences)     │  │    │
+│  │  │     (High-impact patterns from learnings)         │  │    │
+│  │  └───────────────────────────────────────────────────┘  │    │
+│  │        │                                                │    │
+│  │        ▼                                                │    │
+│  │  ┌───────────────────────────────────────────────────┐  │    │
+│  │  │  USER REVIEW                                      │  │    │
+│  │  │                                                   │  │    │
+│  │  │  Proposal 1: Delete SC-003 (stale) ─── [Y/N]     │  │    │
+│  │  │  Proposal 2: Promote auth rule ─────── [Y/N]     │  │    │
+│  │  └───────────────────────────────────────────────────┘  │    │
+│  │        │                                                │    │
+│  │        ▼                                                │    │
+│  │  Apply approved changes to STUDIO_KNOWLEDGE_BASE.md     │    │
+│  │  Reset sprint counter                                   │    │
+│  │                                                         │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  KNOWLEDGE INJECTION                                     │    │
+│  │                                                         │    │
+│  │  On Agent Start:                                        │    │
+│  │  ┌─────────────────────────────────────────────────┐    │    │
+│  │  │ 1. Load STUDIO_KNOWLEDGE_BASE.md                │    │    │
+│  │  │ 2. Extract Strict Constraints                   │    │    │
+│  │  │ 3. Inject as "NEVER VIOLATE" list               │    │    │
+│  │  │ 4. Detect relevant domains                      │    │    │
+│  │  │ 5. Inject matching Slop entries                 │    │    │
+│  │  └─────────────────────────────────────────────────┘    │    │
+│  │                                                         │    │
+│  │  Result: Agent starts with full constraint awareness    │    │
+│  │                                                         │    │
+│  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```

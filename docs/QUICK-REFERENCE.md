@@ -156,10 +156,16 @@
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Memory Files
+## Memory & Knowledge Files
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│   STUDIO_KNOWLEDGE_BASE.md  (Root Level)                                    │
+│   ├── Strict Constraints    Rules that MUST NOT be violated                 │
+│   ├── Slop Ledger           Naming/structural mistakes to avoid             │
+│   ├── Performance Delta     Measured improvements with numbers              │
+│   └── Pending Queue         Signals awaiting promotion                      │
 │                                                                             │
 │   studio/rules/                                                             │
 │   ├── global.md       Project-wide conventions                              │
@@ -168,6 +174,16 @@
 │   ├── testing.md      Testing requirements                                  │
 │   ├── security.md     Security constraints                                  │
 │   └── devops.md       Infrastructure preferences                            │
+│                                                                             │
+│   studio/learnings/                                                         │
+│   ├── global.md       Project-wide patterns                                 │
+│   ├── frontend.md     Frontend patterns                                     │
+│   ├── backend.md      Backend patterns                                      │
+│   ├── testing.md      Testing patterns                                      │
+│   ├── security.md     Security patterns                                     │
+│   └── performance.md  Performance patterns                                  │
+│                                                                             │
+│   .studio/sprint-counter.json    Sprint evolution state                     │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -179,13 +195,59 @@
 │                                                                             │
 │   agents/planner.yaml          Planner configuration                        │
 │   agents/builder.yaml          Builder configuration                        │
-│   hooks/hooks.json             Lifecycle hooks                              │
+│   hooks/hooks.json             Lifecycle hooks (v5.0.0)                     │
 │   playbooks/*/SKILL.md         Methodologies                                │
 │   team/tier*/                  Domain experts                               │
 │   brand/*.yaml                 Brand identity                               │
 │   studio/projects/             Runtime data                                 │
 │                                                                             │
+│   KNOWLEDGE SYSTEM FILES:                                                   │
+│   STUDIO_KNOWLEDGE_BASE.md     Architectural constraints (root)             │
+│   scripts/signal-audit.sh      Signal vs. noise filtering                   │
+│   scripts/sprint-evolution.sh  Sprint evolution protocol                    │
+│   scripts/learnings.sh         Learning capture & classification            │
+│   studio/prompts/self-learning.md  Self-learning protocol                   │
+│   studio/config/tracked-frameworks.json  Framework detection                │
+│   .studio/sprint-counter.json  Sprint tracking state                        │
+│                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Learning Commands
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            LEARNING COMMANDS                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ./scripts/learnings.sh classify <text>      Classify and route learning    │
+│  ./scripts/learnings.sh check-duplicate <t>  Check for existing entries     │
+│  ./scripts/learnings.sh extract-metrics <t>  Extract before/after metrics   │
+│                                                                             │
+│  ./scripts/signal-audit.sh classify <text>   Full classification as JSON    │
+│  ./scripts/signal-audit.sh is-noise <text>   Check if entry is noise        │
+│  ./scripts/signal-audit.sh detect-type <t>   Detect signal type             │
+│                                                                             │
+│  ./scripts/sprint-evolution.sh status        Show sprint progress           │
+│  ./scripts/sprint-evolution.sh increment <id> Track task completion         │
+│  ./scripts/sprint-evolution.sh propose       Generate evolution proposals   │
+│  ./scripts/sprint-evolution.sh reset         Start new sprint               │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Signal Types
+
+```
+┌──────────────┬─────────────────────────────────────────────────────────────┐
+│ Type         │ Destination                                                 │
+├──────────────┼─────────────────────────────────────────────────────────────┤
+│ performance  │ Performance Delta (requires metrics)                        │
+│ error        │ Pending Queue → Strict Constraints (after 2+)               │
+│ convention   │ Slop Ledger                                                 │
+│ framework    │ Pending Queue                                               │
+│ pattern      │ Domain learnings (studio/learnings/{domain}.md)             │
+└──────────────┴─────────────────────────────────────────────────────────────┘
 ```
 
 ## Common Workflows

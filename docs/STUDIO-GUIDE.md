@@ -972,15 +972,20 @@ Track your build metrics:
 |------|---------|
 | `agents/planner.yaml` | Planner agent configuration |
 | `agents/builder.yaml` | Builder agent configuration |
-| `hooks/hooks.json` | Lifecycle hooks (v2.3.0) |
+| `hooks/hooks.json` | Lifecycle hooks (v5.0.0) |
 | `playbooks/*/SKILL.md` | Methodology definitions |
 | `team/tier*/` | Domain expert personas |
 | `schemas/*.json` | Validation schemas |
 | `scripts/output.sh` | Terminal formatting |
 | `scripts/backlog.sh` | Backlog management |
-| `scripts/learnings.sh` | Learning capture |
+| `scripts/learnings.sh` | Learning capture & classification |
+| `scripts/signal-audit.sh` | Signal vs. noise filtering |
+| `scripts/sprint-evolution.sh` | Post-sprint self-correction |
 | `scripts/orchestrator.sh` | Multi-agent orchestration |
 | `scripts/context-manager.sh` | Context optimization |
+| `STUDIO_KNOWLEDGE_BASE.md` | Active architectural constraints |
+| `studio/prompts/self-learning.md` | Self-learning protocol |
+| `studio/config/tracked-frameworks.json` | Framework signal detection |
 
 ### Generated Files
 
@@ -990,8 +995,236 @@ Track your build metrics:
 | `studio/projects/*/tasks/*/plan.json` | Planner | Execution plan |
 | `studio/projects/*/tasks/*/manifest.json` | Builder | Task state |
 | `studio/rules/*.md` | Memory system | Learned rules |
+| `studio/learnings/*.md` | Builder (learn phase) | Domain learnings |
 | `studio/data/analytics.json` | Analytics | Build metrics |
 | `brand/*.yaml` | `/brand` | Brand identity |
+| `.studio/sprint-counter.json` | Sprint evolution | Sprint tracking state |
+
+---
+
+## Knowledge Evolution System
+
+STUDIO actively evolves its architectural understanding through the Dynamic SOP System.
+
+### Knowledge Base Structure
+
+The `STUDIO_KNOWLEDGE_BASE.md` file at the project root contains verified patterns:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       STUDIO KNOWLEDGE BASE                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  STRICT CONSTRAINTS                                              │   │
+│  │  Rules that kill performance, quality, or maintainability        │   │
+│  │                                                                  │   │
+│  │  Promotion: 2+ occurrences across different tasks               │   │
+│  │  Injection: Loaded into agent context as "NEVER VIOLATE" list   │   │
+│  │                                                                  │   │
+│  │  Example:                                                        │   │
+│  │  ### SC-001: Never mutate state directly in React               │   │
+│  │  **What**: Never use array.push() or object mutation in state   │   │
+│  │  **Instead**: Use spread operator or immer                       │   │
+│  │  **Source**: task_20240215_auth, task_20240218_cart             │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  SLOP LEDGER                                                     │   │
+│  │  Naming conventions, structural mistakes that cause rework       │   │
+│  │                                                                  │   │
+│  │  Promotion: 1 occurrence + documented rework impact             │   │
+│  │  Injection: Loaded as "AVOID THESE MISTAKES" per domain         │   │
+│  │                                                                  │   │
+│  │  Example:                                                        │   │
+│  │  ### SL-001: Inconsistent file naming                           │   │
+│  │  **Pattern**: Mixed camelCase and kebab-case in components      │   │
+│  │  **Fix**: Use kebab-case for files, PascalCase for components   │   │
+│  │  **Rework Cost**: 30 minutes renaming and updating imports      │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  PERFORMANCE DELTA                                               │   │
+│  │  Measured before/after improvements with concrete numbers        │   │
+│  │                                                                  │   │
+│  │  Requirement: Must have quantified metrics                       │   │
+│  │                                                                  │   │
+│  │  Example:                                                        │   │
+│  │  ### PD-001: Lazy loading images                                │   │
+│  │  **Metric**: Largest Contentful Paint (LCP)                     │   │
+│  │  **Before**: 2.4s                                               │   │
+│  │  **After**: 1.1s                                                │   │
+│  │  **Delta**: 54% improvement                                     │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  PENDING QUEUE                                                   │   │
+│  │  Signals awaiting promotion when thresholds are met              │   │
+│  │                                                                  │   │
+│  │  Items with 1 occurrence wait here                               │   │
+│  │  On 2nd occurrence → Promote to Strict Constraints              │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Signal vs. Noise Filtering
+
+The `scripts/signal-audit.sh` script automatically classifies learnings:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    SIGNAL CLASSIFICATION FLOW                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  INPUT: "Fixed memory leak - heap reduced from 512MB to 128MB"         │
+│                         │                                               │
+│                         ▼                                               │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  NOISE CHECK                                                     │   │
+│  │  ✗ No task_id? → FILTER OUT                                     │   │
+│  │  ✗ Contains "how to", "basic", "simple"? → FILTER OUT           │   │
+│  │  ✗ No measurable impact? → FILTER OUT                           │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                         │ (passes)                                      │
+│                         ▼                                               │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  SIGNAL TYPE DETECTION                                           │   │
+│  │                                                                  │   │
+│  │  Keywords: "memory", "512MB", "128MB" → PERFORMANCE              │   │
+│  │  Keywords: "error", "crash", "fix" → ERROR                       │   │
+│  │  Keywords: "naming", "structure" → CONVENTION                    │   │
+│  │  Framework match → FRAMEWORK                                     │   │
+│  │  Default → PATTERN                                               │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                         │                                               │
+│                         ▼                                               │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  DESTINATION ROUTING                                             │   │
+│  │                                                                  │   │
+│  │  PERFORMANCE → Performance Delta (must have numbers)             │   │
+│  │  ERROR (1st) → Pending Queue                                     │   │
+│  │  ERROR (2nd) → Strict Constraints                                │   │
+│  │  CONVENTION → Slop Ledger                                        │   │
+│  │  FRAMEWORK → Pending Queue                                       │   │
+│  │  PATTERN → Domain learnings (studio/learnings/{domain}.md)      │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  OUTPUT: {"signal_type": "performance", "destination": "perf_delta"}   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Sprint Evolution Protocol
+
+Every 5 tasks, the `scripts/sprint-evolution.sh` triggers evolution proposals:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     SPRINT EVOLUTION PROTOCOL                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  TRIGGER: Task count reaches 5 (configurable)                           │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  PROPOSAL TYPE 1: DELETABLE RULES                                │   │
+│  │                                                                  │   │
+│  │  Scan Strict Constraints for rules with:                         │   │
+│  │  • No violations in 10+ tasks                                    │   │
+│  │  • May be obsolete or overly specific                           │   │
+│  │                                                                  │   │
+│  │  Proposal: "Consider removing SC-003 - no violations in 15 tasks"│   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  PROPOSAL TYPE 2: NEW ENFORCEMENT RULES                          │   │
+│  │                                                                  │   │
+│  │  Scan recent learnings for:                                      │   │
+│  │  • High-impact patterns (crash, fail, broke)                     │   │
+│  │  • Items in Pending Queue with 2+ occurrences                    │   │
+│  │                                                                  │   │
+│  │  Proposal: "Promote 'Always validate OAuth tokens' to Strict"    │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  USER REVIEW                                                            │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  Accept / Reject each proposal                                   │   │
+│  │  Approved changes applied to STUDIO_KNOWLEDGE_BASE.md            │   │
+│  │  Sprint counter resets for next evolution cycle                  │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Self-Learning Protocol
+
+After every build, the Builder agent captures learnings using `studio/prompts/self-learning.md`:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     DEFINITION OF DONE (Learning)                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  A task is NOT complete until:                                          │
+│                                                                         │
+│  [ ] Learning extracted and classified                                  │
+│      • task_id generated                                                │
+│      • domain detected (frontend/backend/testing/etc.)                  │
+│      • impact_type assigned (constraint/slop/performance/pattern)       │
+│      • severity rated (HIGH/MEDIUM/LOW)                                 │
+│      • measurable_outcome captured (if applicable)                      │
+│                                                                         │
+│  [ ] Knowledge base checked for duplicates                              │
+│      • Run: ./scripts/learnings.sh check-duplicate "title"              │
+│                                                                         │
+│  [ ] Sprint counter incremented                                         │
+│      • Run: ./scripts/sprint-evolution.sh increment <task_id>           │
+│      • If output is "EVOLUTION_DUE", notify user                        │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Learning Commands
+
+```bash
+# Classify a learning entry
+./scripts/learnings.sh classify "Fixed memory leak in task_xxx - reduced heap from 512MB to 128MB"
+# Output: {"signal_type": "performance", "destination": "performance_delta", ...}
+
+# Check for duplicates
+./scripts/learnings.sh check-duplicate "Memory Optimization Pattern"
+
+# Extract metrics from text
+./scripts/learnings.sh extract-metrics "LCP improved from 2.4s to 1.1s"
+
+# Signal audit
+./scripts/signal-audit.sh classify "text"
+./scripts/signal-audit.sh is-noise "text"
+./scripts/signal-audit.sh detect-type "text"
+
+# Sprint evolution
+./scripts/sprint-evolution.sh status      # Show sprint progress
+./scripts/sprint-evolution.sh propose     # Generate evolution proposals
+./scripts/sprint-evolution.sh reset       # Start new sprint after review
+```
+
+### Framework Tracking
+
+The `studio/config/tracked-frameworks.json` file configures signal detection:
+
+```json
+{
+  "frameworks": [
+    {"name": "next.js", "keywords": ["next", "app router", "server component"]},
+    {"name": "react", "keywords": ["useState", "useEffect", "component"]},
+    {"name": "prisma", "keywords": ["prisma", "orm", "migration"]}
+  ],
+  "custom_signals": [
+    {"pattern": "hydration", "destination": "frontend", "severity": "HIGH"},
+    {"pattern": "n+1", "destination": "backend", "severity": "HIGH"}
+  ]
+}
+```
 
 ---
 
@@ -1030,4 +1263,4 @@ STUDIO transforms AI-assisted development through:
 
 *Built with precision. Executed with confidence. Learned continuously.*
 
-**Version:** 2.3.0 | **License:** MIT
+**Version:** 5.0.0 | **License:** MIT

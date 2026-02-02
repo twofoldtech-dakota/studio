@@ -193,9 +193,47 @@ Before any plan executes, it must answer:
 
 ---
 
-## Memory System
+## Knowledge System
 
-STUDIO learns your preferences and remembers them:
+STUDIO actively learns and evolves its architectural understanding:
+
+### Knowledge Base (`STUDIO_KNOWLEDGE_BASE.md`)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                     STUDIO KNOWLEDGE BASE                             │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  STRICT CONSTRAINTS        Rules that kill performance/quality       │
+│  (Never Violate)           Promoted after 2+ occurrences             │
+│                                                                      │
+│  SLOP LEDGER               Naming, structural mistakes               │
+│                            Captured on 1st occurrence + rework       │
+│                                                                      │
+│  PERFORMANCE DELTA         Measured before/after metrics             │
+│                            Must have concrete numbers                │
+│                                                                      │
+│  PENDING QUEUE             Signals awaiting promotion                │
+│                            Moves to sections when thresholds met     │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Sprint Evolution
+
+Every 5 tasks, STUDIO proposes knowledge base evolution:
+- **Deletable Rules**: Constraints with no violations in 10+ tasks
+- **New Enforcement**: Highest-impact recurring patterns
+
+### Signal vs. Noise Filtering
+
+Learnings are automatically classified:
+- **Performance** → Performance Delta (requires metrics)
+- **Errors** → Pending Queue → Strict Constraints (after 2+)
+- **Convention issues** → Slop Ledger
+- **Patterns** → Domain learnings
+
+### Memory Rules
 
 ```
 studio/rules/
@@ -226,11 +264,24 @@ studio/
 ├── 📐 schemas/             # Validation schemas
 ├── 🎨 brand/               # Brand source of truth
 ├── 🔧 scripts/             # Runtime scripts
+│   ├── learnings.sh        # Learning capture & classification
+│   ├── signal-audit.sh     # Signal vs. noise filtering
+│   ├── sprint-evolution.sh # Post-sprint self-correction
+│   └── orchestrator.sh     # Multi-agent orchestration
 ├── 📊 data/                # Error patterns, analytics
 ├── 📝 templates/           # Code templates
-└── 📖 docs/                # Documentation
-    ├── STUDIO-GUIDE.md     # Complete system guide
-    └── QUICK-REFERENCE.md  # Quick lookup card
+├── 📖 docs/                # Documentation
+│   ├── STUDIO-GUIDE.md     # Complete system guide
+│   └── QUICK-REFERENCE.md  # Quick lookup card
+└── 💾 studio/              # Runtime data
+    ├── learnings/          # Domain-specific learnings
+    ├── config/             # Framework tracking, signals
+    └── prompts/            # System prompts (self-learning)
+
+# Root level
+├── STUDIO_KNOWLEDGE_BASE.md  # Active architectural constraints
+└── .studio/                  # Session state
+    └── sprint-counter.json   # Sprint evolution tracking
 ```
 
 ---
@@ -244,15 +295,23 @@ studio/
     │   ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌─────────┐   │
     │   │   USER   │────▶│ PLANNER  │────▶│ BUILDER  │────▶│ VERIFIED│   │
     │   │   GOAL   │     │  AGENT   │     │  AGENT   │     │  OUTPUT │   │
-    │   └──────────┘     └────┬─────┘     └────┬─────┘     └─────────┘   │
-    │                         │                │                         │
-    │                    ┌────┴────────────────┴────┐                    │
-    │                    │                          │                    │
-    │              ┌─────┴─────┐            ┌───────┴───────┐            │
-    │              │  MEMORY   │            │    HOOKS      │            │
-    │              │  SYSTEM   │            │    SYSTEM     │            │
-    │              │ (Learning)│            │ (Validation)  │            │
-    │              └───────────┘            └───────────────┘            │
+    │   └──────────┘     └────┬─────┘     └────┬─────┘     └────┬────┘   │
+    │                         │                │                │        │
+    │                    ┌────┴────────────────┴────┐           │        │
+    │                    │                          │           │        │
+    │              ┌─────┴─────┐            ┌───────┴───────┐   │        │
+    │              │  MEMORY   │            │    HOOKS      │   │        │
+    │              │  SYSTEM   │            │    SYSTEM     │   │        │
+    │              │ (Learning)│            │ (Validation)  │   │        │
+    │              └─────┬─────┘            └───────────────┘   │        │
+    │                    │                                      │        │
+    │              ┌─────┴─────────────────────────────────────┴──┐      │
+    │              │              KNOWLEDGE BASE                   │      │
+    │              │  ┌─────────┐ ┌─────────┐ ┌─────────────────┐ │      │
+    │              │  │Strict   │ │  Slop   │ │  Performance    │ │      │
+    │              │  │Constr.  │ │ Ledger  │ │     Delta       │ │      │
+    │              │  └─────────┘ └─────────┘ └─────────────────┘ │      │
+    │              └──────────────────────────────────────────────┘      │
     │                                                                    │
     └────────────────────────────────────────────────────────────────────┘
 ```

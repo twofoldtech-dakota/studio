@@ -626,4 +626,113 @@ The user should never wonder what's happening:
 
 ---
 
+## Learning Capture Phase
+
+After all steps complete and quality gates pass, the Builder enters the **Learning Capture Phase**.
+
+### Self-Learning Protocol
+
+The self-learning protocol (defined in `studio/prompts/self-learning.md`) ensures learnings are captured:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  LEARNING CAPTURE PROTOCOL                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. GENERATE task_id                                            │
+│     Format: task_YYYYMMDD_brief_description                     │
+│     Example: task_20240215_auth_oauth_fix                       │
+│                                                                 │
+│  2. CLASSIFY the learning                                       │
+│     Run: ./scripts/signal-audit.sh classify "<summary>"         │
+│     Output: {signal_type, destination, suggested_severity}      │
+│                                                                 │
+│  3. CHECK for duplicates                                        │
+│     Run: ./scripts/learnings.sh check-duplicate "<title>"       │
+│     Skip if duplicate found                                     │
+│                                                                 │
+│  4. EXTRACT metrics (if applicable)                             │
+│     Run: ./scripts/learnings.sh extract-metrics "<text>"        │
+│     Required for performance entries                            │
+│                                                                 │
+│  5. SAVE to appropriate destination                             │
+│     • performance → STUDIO_KNOWLEDGE_BASE.md#performance_delta  │
+│     • error (1st) → STUDIO_KNOWLEDGE_BASE.md#pending_queue      │
+│     • error (2+)  → STUDIO_KNOWLEDGE_BASE.md#strict_constraints │
+│     • convention  → STUDIO_KNOWLEDGE_BASE.md#slop_ledger        │
+│     • pattern     → studio/learnings/{domain}.md                │
+│                                                                 │
+│  6. INCREMENT sprint counter                                    │
+│     Run: ./scripts/sprint-evolution.sh increment <task_id>      │
+│     If output is "EVOLUTION_DUE", notify user                   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Definition of Done (Learning)
+
+A task is NOT complete until:
+
+- [ ] **Learning extracted** - At least one learning captured
+- [ ] **Fields complete** - task_id, domain, impact_type, severity
+- [ ] **Classification applied** - Signal type and destination determined
+- [ ] **Duplicate check** - Knowledge base scanned for similar entries
+- [ ] **Sprint counter updated** - `.studio/sprint-counter.json` incremented
+- [ ] **Evolution check** - If 5th task, trigger evolution proposals
+
+### Signal Types
+
+| Signal Type | Destination | Criteria |
+|-------------|-------------|----------|
+| `performance` | Performance Delta | Has before/after metrics |
+| `error` | Pending Queue → Strict Constraints | 1st occurrence → pending; 2+ → strict |
+| `convention` | Slop Ledger | Naming/structural issue + rework cost |
+| `framework` | Pending Queue | Framework-specific pattern |
+| `pattern` | Domain Learnings | Reusable technique |
+
+### Noise Filtering
+
+Do NOT capture learnings that:
+- Have no task_id reference
+- Contain: "how to", "basic", "simple", "standard", "obvious"
+- Have no measurable or observable impact
+- Are generic programming concepts
+
+### Learning Entry Format
+
+```yaml
+# For domain learnings (studio/learnings/{domain}.md)
+## YYYY-MM-DD: Brief Title
+
+**Context:** Task description, what you were trying to do
+**Task ID:** task_xxx
+
+**What Worked:**
+- Item 1
+- Item 2
+
+**Problems Solved:**
+- Problem: Description
+  Solution: How it was fixed
+
+**Pattern:**
+```code
+code example if applicable
+```
+```
+
+### Sprint Evolution Trigger
+
+Every 5 tasks, check for evolution proposals:
+
+```bash
+./scripts/sprint-evolution.sh propose
+```
+
+This generates proposals for:
+1. **Deletable rules** - Constraints with no violations in 10+ tasks
+2. **New enforcement rules** - High-impact patterns ready for promotion
+
+---
+
 *"The build reveals what the plan cannot predict. Adapt, but never lose sight of the goal." - Building Principle*
