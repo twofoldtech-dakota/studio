@@ -2,17 +2,19 @@
 
 > **S**elf-**T**eaching **U**nified **D**evelopment & **I**ntelligent **O**rchestration
 
-**AI builds code. STUDIO makes sure it's correct.**
+**Version 5.0.0** | AI builds code. STUDIO makes sure it's correct — and learns from every build.
 
 ```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                                                                               ║
-║   🎯 GOAL              📋 PLAN                🔨 BUILD            ✅ VERIFIED  ║
-║                                                                               ║
-║   "Add user     ───▶   Atomic steps   ───▶   Execute &    ───▶   Quality      ║
-║    auth"               with validation       validate            gate passed  ║
-║                                                                               ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
+╔═════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                 ║
+║   🎯 GOAL          📋 PLAN           🔨 BUILD          ✅ VERIFIED    📚 LEARN   ║
+║                                                                                 ║
+║   "Add user   ───▶  Atomic steps  ───▶  Execute &  ───▶  Quality   ───▶  Capture ║
+║    auth"            + validation        validate         gates           knowledge║
+║                                                                                 ║
+║                              ◄─────────── FEEDBACK LOOP ───────────────┘        ║
+║                                                                                 ║
+╚═════════════════════════════════════════════════════════════════════════════════╝
 ```
 
 ---
@@ -21,13 +23,13 @@
 
 | AI Problem | STUDIO Solution |
 |------------|-----------------|
-| 🤔 Assumes requirements | Mandatory questioning with domain experts |
-| 🏃 Declares success early | Quality gates block incomplete work |
-| 🌊 Drifts from intent | Plan anchors every execution step |
-| 🧠 Forgets your preferences | Memory system persists rules across sessions |
-| 🎭 Inconsistent voice | Brand context embedded in every plan |
-| ❌ Silent failures | Classified errors with fix suggestions |
-| 😰 No recovery option | Git-based rollback to any task |
+| 🤔 **Assumes requirements** | Mandatory questioning with domain experts |
+| 🏃 **Declares success early** | Quality gates block incomplete work |
+| 🌊 **Drifts from intent** | Plan anchors every execution step |
+| 🧠 **Forgets your preferences** | Knowledge base persists constraints across sessions |
+| 🔄 **Repeats same mistakes** | Sprint evolution promotes patterns to rules |
+| ❌ **Silent failures** | Classified errors with fix suggestions |
+| 😰 **No recovery option** | Git-based rollback to any task |
 
 ---
 
@@ -36,15 +38,11 @@
 ### Installation
 
 ```bash
-# Install Claude Code
-npm install -g @anthropic-ai/claude-code
+# Clone STUDIO into your project
+git clone https://github.com/twofoldtech-dakota/studio.git .studio
 
-# Start Claude Code
-claude
-
-# Add STUDIO plugin
-/plugin marketplace add https://github.com/twofoldtech-dakota/studio.git
-/plugin install studio@studio-marketplace
+# Or as a Claude Code plugin
+claude plugin add studio
 ```
 
 ### Your First Build
@@ -59,19 +57,72 @@ STUDIO will:
 3. **Challenge the plan** for edge cases and risks
 4. **Execute with validation** and automatic retry on failure
 5. **Run quality gates** before marking complete
+6. **Capture learnings** into the knowledge base
 
-### Your First Brand Setup
+---
 
-```bash
-/brand
+## Core Concepts
+
+### The Three Agents
+
+```
+┌───────────────────────┬───────────────────────┬───────────────────────────────┐
+│                       │                       │                               │
+│   🔵 THE PLANNER      │   🟡 THE BUILDER      │   🟣 THE CONTENT WRITER       │
+│                       │                       │                               │
+│   Creates plans       │   Executes plans      │   Creates content             │
+│   Embeds constraints  │   Validates steps     │   Applies brand voice         │
+│   Challenges self     │   Captures learnings  │   Optimizes for SEO           │
+│                       │                       │                               │
+└───────────────────────┴───────────────────────┴───────────────────────────────┘
 ```
 
-Complete a 5-phase guided interview to establish:
-- **Identity** — Mission, vision, values, personality
-- **Audience** — Who you serve, their pain points
-- **Voice** — How you sound, vocabulary, principles
-- **Positioning** — Market category, differentiation
-- **Messaging** — Value propositions, key messages
+### The Knowledge System
+
+STUDIO actively evolves its understanding through the **Dynamic SOP System**:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          STUDIO KNOWLEDGE BASE                                   │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │  STRICT CONSTRAINTS                    (Never Violate)                  │   │
+│  │  Rules that kill performance/quality — promoted after 2+ occurrences    │   │
+│  │  Example: "Never mutate React state directly"                           │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │  SLOP LEDGER                           (Avoid These Mistakes)           │   │
+│  │  Naming, structural mistakes — captured on 1st occurrence + rework cost │   │
+│  │  Example: "Mixed camelCase and kebab-case in component files"           │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │  PERFORMANCE DELTA                     (Measured Improvements)          │   │
+│  │  Before/after metrics — must have concrete numbers                      │   │
+│  │  Example: "LCP: 2.4s → 1.1s (54% improvement) via lazy loading"         │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │  PENDING QUEUE                         (Awaiting Promotion)             │   │
+│  │  Signals with 1 occurrence — moves to Strict Constraints after 2nd      │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Sprint Evolution
+
+Every **5 tasks**, STUDIO proposes knowledge base evolution:
+
+```
+Task 1 → Task 2 → Task 3 → Task 4 → Task 5 → 🔄 EVOLUTION
+                                              │
+                                              ├── Propose deletable rules (stale, no violations)
+                                              ├── Propose new enforcement (recurring patterns)
+                                              └── User approves → Knowledge base updated
+```
 
 ---
 
@@ -92,7 +143,7 @@ Complete a 5-phase guided interview to establish:
 
 | Command | Description |
 |---------|-------------|
-| `/brand` | Start brand discovery |
+| `/brand` | Start brand discovery (5-phase interview) |
 | `/brand:update [area]` | Update identity, voice, audience, or messaging |
 | `/brand:audit` | Check brand consistency |
 | `/blog "topic"` | Create brand-aligned blog post |
@@ -119,43 +170,6 @@ Complete a 5-phase guided interview to establish:
 
 ---
 
-## The Three Agents
-
-```
-┌─────────────────────┬─────────────────────┬─────────────────────────────┐
-│                     │                     │                             │
-│   🔵 THE PLANNER    │   🟡 THE BUILDER     │   🟣 THE CONTENT WRITER     │
-│                     │                     │                             │
-│   Creates plans     │   Executes plans    │   Creates content           │
-│   Embeds context    │   Validates steps   │   Applies brand voice       │
-│   Challenges self   │   Retries on fail   │   Optimizes for SEO         │
-│                     │                     │                             │
-└─────────────────────┴─────────────────────┴─────────────────────────────┘
-```
-
-### The Planner
-- Loads **playbooks** (methodologies for thinking)
-- Consults **team members** (domain expert personas)
-- Embeds **memory rules** (your preferences)
-- Runs **Five Challenges** (adversarial self-review)
-- Calculates **confidence score** before execution
-
-### The Builder
-- Executes **exactly** what the plan specifies
-- Runs **validation commands** after each step
-- Applies **fix hints** and retries on failure
-- Triggers **quality gate** before completion
-- **Never improvises** — follows the plan
-
-### The Content Writer
-- Loads **brand context** (identity, voice, audiences)
-- Applies **voice rules** consistently
-- Structures with **problem-first framework**
-- Optimizes for **SEO** and conversion
-- Verifies **brand alignment**
-
----
-
 ## Quality Assurance
 
 ### Confidence Scoring
@@ -163,14 +177,14 @@ Complete a 5-phase guided interview to establish:
 Every plan gets scored before execution:
 
 ```
-╔══════════════════════════════════════════════════════════════╗
-║  PLAN CONFIDENCE: 85% (MEDIUM)                               ║
-╠══════════════════════════════════════════════════════════════╣
-║  Requirements:    [████████░░] 80%                           ║
-║  Step Quality:    [██████████] 100%                          ║
-║  Context:         [████████░░] 80%                           ║
-║  Risk:            [████████░░] 80%                           ║
-╚══════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════╗
+║  PLAN CONFIDENCE: 85% (MEDIUM)                                   ║
+╠══════════════════════════════════════════════════════════════════╣
+║  Requirements:    [████████░░] 80%                               ║
+║  Step Quality:    [██████████] 100%                              ║
+║  Context:         [████████░░] 80%                               ║
+║  Risk:            [████████░░] 80%                               ║
+╚══════════════════════════════════════════════════════════════════╝
 ```
 
 ### The Five Challenges
@@ -193,128 +207,85 @@ Before any plan executes, it must answer:
 
 ---
 
-## Knowledge System
-
-STUDIO actively learns and evolves its architectural understanding:
-
-### Knowledge Base (`STUDIO_KNOWLEDGE_BASE.md`)
+## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│                     STUDIO KNOWLEDGE BASE                             │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  STRICT CONSTRAINTS        Rules that kill performance/quality       │
-│  (Never Violate)           Promoted after 2+ occurrences             │
-│                                                                      │
-│  SLOP LEDGER               Naming, structural mistakes               │
-│                            Captured on 1st occurrence + rework       │
-│                                                                      │
-│  PERFORMANCE DELTA         Measured before/after metrics             │
-│                            Must have concrete numbers                │
-│                                                                      │
-│  PENDING QUEUE             Signals awaiting promotion                │
-│                            Moves to sections when thresholds met     │
-│                                                                      │
-└──────────────────────────────────────────────────────────────────────┘
+                                STUDIO SYSTEM v5.0
+    ┌──────────────────────────────────────────────────────────────────────────┐
+    │                                                                          │
+    │   ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────────┐   │
+    │   │   USER   │────▶│ PLANNER  │────▶│ BUILDER  │────▶│   VERIFIED   │   │
+    │   │   GOAL   │     │  AGENT   │     │  AGENT   │     │    OUTPUT    │   │
+    │   └──────────┘     └────┬─────┘     └────┬─────┘     └──────┬───────┘   │
+    │                         │                │                   │           │
+    │                    ┌────┴────────────────┴───────────────────┘           │
+    │                    │                                                     │
+    │              ┌─────┴─────┐            ┌───────────────┐                  │
+    │              │  MEMORY   │            │    HOOKS      │                  │
+    │              │  SYSTEM   │            │    SYSTEM     │                  │
+    │              │ (Learning)│            │ (Validation)  │                  │
+    │              └─────┬─────┘            └───────────────┘                  │
+    │                    │                                                     │
+    │   ┌────────────────┴─────────────────────────────────────────────────┐   │
+    │   │                      KNOWLEDGE BASE                               │   │
+    │   │  ┌──────────────┐  ┌──────────────┐  ┌─────────────────────────┐ │   │
+    │   │  │   Strict     │  │    Slop      │  │     Performance         │ │   │
+    │   │  │ Constraints  │  │   Ledger     │  │        Delta            │ │   │
+    │   │  └──────────────┘  └──────────────┘  └─────────────────────────┘ │   │
+    │   │                                                                   │   │
+    │   │  ┌──────────────────────────────────────────────────────────────┐│   │
+    │   │  │  Sprint Evolution: Every 5 tasks → Propose → Approve → Update││   │
+    │   │  └──────────────────────────────────────────────────────────────┘│   │
+    │   └───────────────────────────────────────────────────────────────────┘   │
+    │                                                                          │
+    └──────────────────────────────────────────────────────────────────────────┘
 ```
-
-### Sprint Evolution
-
-Every 5 tasks, STUDIO proposes knowledge base evolution:
-- **Deletable Rules**: Constraints with no violations in 10+ tasks
-- **New Enforcement**: Highest-impact recurring patterns
-
-### Signal vs. Noise Filtering
-
-Learnings are automatically classified:
-- **Performance** → Performance Delta (requires metrics)
-- **Errors** → Pending Queue → Strict Constraints (after 2+)
-- **Convention issues** → Slop Ledger
-- **Patterns** → Domain learnings
-
-### Memory Rules
-
-```
-studio/rules/
-├── global.md       # Project-wide conventions
-├── frontend.md     # UI/UX preferences
-├── backend.md      # API/architecture patterns
-├── testing.md      # Testing requirements
-├── security.md     # Security constraints
-└── devops.md       # Infrastructure preferences
-```
-
-When you correct something, STUDIO asks:
-> "Should I remember this preference?"
-
-If yes, it writes the rule and applies it to all future builds.
 
 ---
 
 ## Project Structure
 
 ```
-studio/
-├── 🤖 agents/              # Agent definitions (Planner, Builder, Content Writer)
-├── 📋 commands/            # Available commands (/build, /brand, /blog, etc.)
-├── 📚 playbooks/           # Methodologies (how agents think)
-├── 👥 team/                # Domain expert personas (13 specialists)
-├── 🔗 hooks/               # Lifecycle hooks (progress, errors, validation)
-├── 📐 schemas/             # Validation schemas
-├── 🎨 brand/               # Brand source of truth
-├── 🔧 scripts/             # Runtime scripts
-│   ├── learnings.sh        # Learning capture & classification
-│   ├── signal-audit.sh     # Signal vs. noise filtering
-│   ├── sprint-evolution.sh # Post-sprint self-correction
-│   └── orchestrator.sh     # Multi-agent orchestration
-├── 📊 data/                # Error patterns, analytics
-├── 📝 templates/           # Code templates
-├── 📖 docs/                # Documentation
-│   ├── STUDIO-GUIDE.md     # Complete system guide
-│   └── QUICK-REFERENCE.md  # Quick lookup card
-└── 💾 studio/              # Runtime data
-    ├── learnings/          # Domain-specific learnings
-    ├── config/             # Framework tracking, signals
-    └── prompts/            # System prompts (self-learning)
-
-# Root level
-├── STUDIO_KNOWLEDGE_BASE.md  # Active architectural constraints
-└── .studio/                  # Session state
-    └── sprint-counter.json   # Sprint evolution tracking
+.
+├── STUDIO_KNOWLEDGE_BASE.md      # 📚 Active architectural constraints
+├── .studio/                      # Session state
+│   └── sprint-counter.json       # Sprint evolution tracking
+│
+└── studio/
+    ├── 🤖 agents/                # Agent definitions
+    ├── 📋 commands/              # Available commands
+    ├── 📚 playbooks/             # Methodologies (how agents think)
+    ├── 👥 team/                  # Domain expert personas (13 specialists)
+    ├── 🔗 hooks/                 # Lifecycle hooks (v5.0.0)
+    ├── 📐 schemas/               # Validation schemas
+    ├── 🎨 brand/                 # Brand source of truth
+    ├── 🔧 scripts/
+    │   ├── learnings.sh          # Learning capture & classification
+    │   ├── signal-audit.sh       # Signal vs. noise filtering
+    │   ├── sprint-evolution.sh   # Post-sprint self-correction
+    │   └── orchestrator.sh       # Multi-agent orchestration
+    ├── 📊 data/                  # Error patterns, analytics
+    ├── 📝 templates/             # Code templates
+    ├── 📖 docs/                  # Documentation
+    ├── 💾 learnings/             # Domain-specific learnings
+    ├── ⚙️ config/                # Framework tracking, signals
+    └── 📄 prompts/               # System prompts
 ```
 
 ---
 
-## Architecture
+## Learning System Scripts
 
-```
-                              STUDIO SYSTEM
-    ┌────────────────────────────────────────────────────────────────────┐
-    │                                                                    │
-    │   ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌─────────┐   │
-    │   │   USER   │────▶│ PLANNER  │────▶│ BUILDER  │────▶│ VERIFIED│   │
-    │   │   GOAL   │     │  AGENT   │     │  AGENT   │     │  OUTPUT │   │
-    │   └──────────┘     └────┬─────┘     └────┬─────┘     └────┬────┘   │
-    │                         │                │                │        │
-    │                    ┌────┴────────────────┴────┐           │        │
-    │                    │                          │           │        │
-    │              ┌─────┴─────┐            ┌───────┴───────┐   │        │
-    │              │  MEMORY   │            │    HOOKS      │   │        │
-    │              │  SYSTEM   │            │    SYSTEM     │   │        │
-    │              │ (Learning)│            │ (Validation)  │   │        │
-    │              └─────┬─────┘            └───────────────┘   │        │
-    │                    │                                      │        │
-    │              ┌─────┴─────────────────────────────────────┴──┐      │
-    │              │              KNOWLEDGE BASE                   │      │
-    │              │  ┌─────────┐ ┌─────────┐ ┌─────────────────┐ │      │
-    │              │  │Strict   │ │  Slop   │ │  Performance    │ │      │
-    │              │  │Constr.  │ │ Ledger  │ │     Delta       │ │      │
-    │              │  └─────────┘ └─────────┘ └─────────────────┘ │      │
-    │              └──────────────────────────────────────────────┘      │
-    │                                                                    │
-    └────────────────────────────────────────────────────────────────────┘
-```
+| Script | Purpose |
+|--------|---------|
+| `./scripts/learnings.sh classify <text>` | Classify learning and determine destination |
+| `./scripts/learnings.sh check-duplicate <title>` | Check for existing similar entries |
+| `./scripts/learnings.sh extract-metrics <text>` | Extract before/after metrics |
+| `./scripts/signal-audit.sh classify <text>` | Full signal classification as JSON |
+| `./scripts/signal-audit.sh is-noise <text>` | Check if entry should be filtered |
+| `./scripts/sprint-evolution.sh status` | Show sprint progress |
+| `./scripts/sprint-evolution.sh propose` | Generate evolution proposals |
+| `./scripts/sprint-evolution.sh reset` | Start new sprint after review |
 
 ---
 
@@ -338,38 +309,22 @@ Git-based snapshots let you recover to any pre-task state:
 /rollback:to <task> --force # Restore pre-task state
 ```
 
-### Analytics Dashboard
-Track build success rates, durations, and quality metrics:
-```bash
-/analytics                  # View dashboard
-```
-
 ### Error Classification
 20+ error patterns with contextual fix suggestions and auto-fix options.
-
-### Interactive Mode
-Step-by-step execution with confirmation at each change:
-```bash
-/build:interactive "goal"
-```
 
 ### Optional MCP Integrations
 
 Enhance STUDIO with additional AI capabilities:
 
-**Context7** — Up-to-date documentation for any library:
 ```bash
-claude mcp add --transport http context7 https://mcp.context7.com/mcp
-```
+# Up-to-date documentation for any library
+claude mcp add context7 --transport http https://mcp.context7.com/mcp
 
-**Vercel MCP** — Manage Vercel projects and deployments:
-```bash
-claude mcp add --transport http vercel https://mcp.vercel.com
-```
+# Manage Vercel projects and deployments
+claude mcp add vercel --transport http https://mcp.vercel.com
 
-**Gemini Design MCP** — AI-powered design assistance:
-```bash
-claude mcp add gemini-design-mcp --env API_KEY=<your-api-key> -- npx -y gemini-design-mcp@latest
+# AI-powered design assistance
+claude mcp add gemini-design-mcp --env API_KEY=<key> -- npx -y gemini-design-mcp@latest
 ```
 
 ---
@@ -380,7 +335,7 @@ claude mcp add gemini-design-mcp --env API_KEY=<your-api-key> -- npx -y gemini-d
 |----------|-------------|
 | [STUDIO-GUIDE.md](docs/STUDIO-GUIDE.md) | Complete system documentation with visuals |
 | [QUICK-REFERENCE.md](docs/QUICK-REFERENCE.md) | Quick lookup card for commands |
-| [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) | Feature implementation details |
+| [WORKFLOW-VISUAL.md](docs/WORKFLOW-VISUAL.md) | Visual workflow diagrams |
 
 ---
 
@@ -388,27 +343,29 @@ claude mcp add gemini-design-mcp --env API_KEY=<your-api-key> -- npx -y gemini-d
 
 | Component | Technology |
 |-----------|------------|
-| Runtime | Claude Code Plugin |
+| Runtime | Claude Code |
 | Agents | YAML definitions |
 | Validation | JSON Schema |
-| Hooks | Shell + LLM prompts |
+| Hooks | Shell + LLM prompts (v5.0.0) |
 | Storage | File-based (JSON, YAML, Markdown) |
+| Learning | Signal classification + Sprint evolution |
 
 ---
 
 ## Philosophy
 
 ```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                                                                               ║
-║   "Plan thoroughly, execute precisely, learn continuously"                    ║
-║                                                                               ║
-║   • Every plan is CHALLENGED before execution                                 ║
-║   • Every step has EXECUTABLE validation                                      ║
-║   • Every preference is REMEMBERED for future use                             ║
-║   • Every requirement is TRACEABLE to implementation                          ║
-║                                                                               ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
+╔═════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                 ║
+║   "Plan thoroughly, execute precisely, learn continuously"                      ║
+║                                                                                 ║
+║   • Every plan is CHALLENGED before execution                                   ║
+║   • Every step has EXECUTABLE validation                                        ║
+║   • Every constraint is INJECTED into agent context                             ║
+║   • Every build CAPTURES learnings for the knowledge base                       ║
+║   • Every sprint EVOLVES the architectural understanding                        ║
+║                                                                                 ║
+╚═════════════════════════════════════════════════════════════════════════════════╝
 ```
 
 ---
@@ -421,4 +378,6 @@ MIT
 
 <p align="center">
   <b>Built with precision. Executed with confidence. Learned continuously.</b>
+  <br><br>
+  <i>STUDIO v5.0.0</i>
 </p>
