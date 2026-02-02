@@ -1,0 +1,120 @@
+{
+  "$schema": "../../../schemas/dod.schema.json",
+  "version": "1.0.0",
+  "template_id": "universal",
+  "name": "Universal Definition of Done",
+  "description": "Base DoD criteria applied to ALL tasks regardless of type. Frontend, backend, and API templates extend this.",
+  "criteria": [
+    {
+      "id": "DoD-U-1",
+      "criterion": "All 'must' acceptance criteria pass",
+      "category": "validation",
+      "blocking": true,
+      "verification": {
+        "type": "manual",
+        "instructions": "Verify each acceptance criterion marked as 'must' has been satisfied",
+        "checklist": [
+          "Review all AC-* items with priority 'must'",
+          "Execute verification command for each",
+          "Confirm all return success"
+        ]
+      },
+      "fix_hints": [
+        "Review the plan.json acceptance_criteria array",
+        "Run each verification command individually to identify failures",
+        "Address each failing criterion before proceeding"
+      ]
+    },
+    {
+      "id": "DoD-U-2",
+      "criterion": "Lint: zero errors",
+      "category": "lint",
+      "blocking": true,
+      "verification": {
+        "type": "command",
+        "command": "npm run lint",
+        "expected_exit_code": 0,
+        "timeout_ms": 120000
+      },
+      "fix_hints": [
+        "Run 'npm run lint -- --fix' to auto-fix issues",
+        "Check ESLint configuration for project-specific rules",
+        "Address remaining manual fixes"
+      ]
+    },
+    {
+      "id": "DoD-U-3",
+      "criterion": "TypeScript strict: zero errors",
+      "category": "typecheck",
+      "blocking": true,
+      "verification": {
+        "type": "command",
+        "command": "npx tsc --noEmit --strict",
+        "expected_exit_code": 0,
+        "timeout_ms": 180000
+      },
+      "fix_hints": [
+        "Check tsconfig.json for strict mode settings",
+        "Address type errors in order of file dependency",
+        "Consider using type assertions sparingly for known-safe casts"
+      ]
+    },
+    {
+      "id": "DoD-U-4",
+      "criterion": "Tests pass",
+      "category": "test",
+      "blocking": true,
+      "verification": {
+        "type": "command",
+        "command": "npm test",
+        "expected_exit_code": 0,
+        "timeout_ms": 300000
+      },
+      "fix_hints": [
+        "Run tests with --verbose to see failure details",
+        "Check for async/await issues in tests",
+        "Verify test fixtures and mocks are correct"
+      ]
+    },
+    {
+      "id": "DoD-U-5",
+      "criterion": "No high/critical vulnerabilities",
+      "category": "security",
+      "blocking": true,
+      "verification": {
+        "type": "command",
+        "command": "npm audit --audit-level=high",
+        "expected_exit_code": 0,
+        "timeout_ms": 60000
+      },
+      "fix_hints": [
+        "Run 'npm audit fix' to auto-fix where possible",
+        "Check for breaking changes before running 'npm audit fix --force'",
+        "Document any acknowledged vulnerabilities with justification"
+      ],
+      "documentation_url": "https://docs.npmjs.com/cli/v8/commands/npm-audit"
+    },
+    {
+      "id": "DoD-U-6",
+      "criterion": "No secrets in code",
+      "category": "security",
+      "blocking": true,
+      "verification": {
+        "type": "command",
+        "command": "npx secretlint '**/*' --ignore '.git/**' --ignore 'node_modules/**'",
+        "expected_exit_code": 0,
+        "timeout_ms": 120000
+      },
+      "fix_hints": [
+        "Move secrets to environment variables",
+        "Use .env files with .gitignore exclusion",
+        "Consider using a secrets manager for production"
+      ],
+      "documentation_url": "https://github.com/secretlint/secretlint"
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-02-02T00:00:00Z",
+    "applicable_pillars": ["data_schema", "auth", "api", "ui_ux", "integration", "infra_devops"]
+  }
+}

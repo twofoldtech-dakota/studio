@@ -11,6 +11,20 @@ capabilities:
   - Goal-to-hierarchy transformation
   - Gap analysis (incomplete features, missing tests)
   - Business domain identification
+  - SICVF atomic task validation
+  - Pillar-based architectural analysis (6 pillars)
+  - Dependency graph generation with cycle detection
+  - DoD template assignment
+
+# SICVF validation configuration
+sicvf:
+  enabled: true
+  validation_script: scripts/sicvf-validate.sh
+  thresholds:
+    max_hours: 8
+    max_micro_actions: 15
+    max_tokens: 80000
+  on_failure: split_task
 
 tools:
   - Read
@@ -49,21 +63,41 @@ phases:
     number: 1
     mandatory: true
     description: Understand the goal or analyze existing codebase
+  - id: pillar_analysis
+    name: Pillar Analysis
+    number: 2
+    mandatory: true
+    description: Score project across 6 architectural pillars (data, auth, api, ui, integration, infra)
+    outputs:
+      - pillar_analysis.json
   - id: domain_analysis
     name: Domain Analysis
-    number: 2
+    number: 3
     description: Identify business domains and group into epics
   - id: decomposition
     name: Decomposition
-    number: 3
+    number: 4
     description: Break down into features and tasks
+  - id: sicvf_validation
+    name: SICVF Validation
+    number: 5
+    mandatory: true
+    description: Validate all tasks against SICVF criteria, split non-compliant tasks
+    validation_command: "${CLAUDE_PLUGIN_ROOT}/scripts/sicvf-validate.sh --all"
+    on_failure: split_and_revalidate
   - id: dependency_mapping
     name: Dependency Mapping
-    number: 4
-    description: Identify dependencies between items
+    number: 6
+    description: Build DAG, identify critical path and parallel batches, detect cycles
+    outputs:
+      - dependency_graph.json
+  - id: dod_assignment
+    name: DoD Assignment
+    number: 7
+    description: Assign DoD templates (universal, frontend, backend, api-endpoint) to each task
   - id: prioritization
     name: Prioritization
-    number: 5
+    number: 8
     description: Score and prioritize work items
 
 instructions: |
@@ -160,11 +194,31 @@ instructions: |
   3. Each task should be completable in a single plan.json execution
 
   **Task Sizing Guidelines:**
-  - XS: Single file change, < 50 lines
-  - S: 1-2 files, < 100 lines
-  - M: 2-4 files, 100-300 lines
-  - L: 4-8 files, 300-500 lines
-  - XL: 8+ files, 500+ lines (consider splitting)
+  - XS: Single file change, < 50 lines (~1 hour, ~3 micro-actions)
+  - S: 1-2 files, < 100 lines (~2 hours, ~6 micro-actions)
+  - M: 2-4 files, 100-300 lines (~4 hours, ~10 micro-actions)
+  - L: 4-8 files, 300-500 lines (~6 hours, ~12 micro-actions)
+  - XL: 8+ files, 500+ lines - **MUST SPLIT** (exceeds SICVF thresholds)
+
+  ### SICVF Validation
+
+  Every task MUST pass SICVF criteria:
+
+  | Criterion | Threshold | Check |
+  |-----------|-----------|-------|
+  | **S**ingle-pass | < 8h, < 15 actions | effort.estimated_hours, effort.estimated_micro_actions |
+  | **I**ndependent | No concurrent deps | depends_on items all COMPLETE |
+  | **C**lear boundaries | No UNDEFINED | inputs[], outputs[] defined |
+  | **V**erifiable | Executable criteria | acceptance_criteria[].verification |
+  | **F**its context | < 80K tokens | Token estimation |
+
+  Run validation:
+  ```bash
+  "${CLAUDE_PLUGIN_ROOT}/scripts/sicvf-validate.sh" --task-id <task_id>
+  "${CLAUDE_PLUGIN_ROOT}/scripts/sicvf-validate.sh" --all  # Validate all pending
+  ```
+
+  **If a task fails SICVF, split it before proceeding.**
 
   ### Phase 4: Dependency Mapping
 

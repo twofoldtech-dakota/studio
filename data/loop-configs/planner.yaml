@@ -1,0 +1,427 @@
+# Planner Loop Configuration
+# ==========================
+# Question → Respond → Clarify → Ready pattern for iterative requirement gathering
+#
+# This loop is triggered during the requirement gathering phase.
+# Max 5 rounds of questioning before proceeding.
+
+name: planner-questioning
+description: Iterative questioning loop for comprehensive requirement gathering
+
+loop_type: question-respond-clarify
+max_iterations: 5
+trigger: requirement_gathering
+
+phases:
+  - id: prepare_questions
+    name: Prepare Questions
+    state: ATTEMPT
+    description: Analyze context and prepare relevant questions for current round
+    action: |
+      Round 1 (Scope & Success):
+        - What functionality is IN scope?
+        - What is explicitly OUT of scope?
+        - How will you know when this is complete?
+
+      Round 2 (Technical Constraints):
+        - Are there existing patterns to follow?
+        - What dependencies or integrations needed?
+        - Any technical constraints?
+
+      Round 3 (Opposing/Adversarial):
+        - What if user provides invalid input?
+        - What happens if [dependency] unavailable?
+        - Could this conflict with existing feature X?
+        - What's the minimum viable implementation?
+
+      Round 4 (Quality):
+        - What test coverage is needed?
+        - Security considerations?
+        - Performance requirements?
+    success_criteria:
+      - type: condition
+        value: "Questions formulated for current round"
+    transitions:
+      on_success: ask_user
+      on_failure: ask_user  # Proceed even with minimal questions
+    outputs:
+      - questions
+      - round_focus
+
+  - id: ask_user
+    name: Ask User
+    state: ATTEMPT
+    description: Present questions to user and await response
+    action: |
+      1. Display questions in structured format
+      2. Use AskUserQuestion tool if applicable
+      3. Wait for user response
+    success_criteria:
+      - type: user_response
+        value: "User provides response"
+    transitions:
+      on_success: process_response
+      on_timeout: check_readiness
+    timeout_ms: 300000  # 5 minutes
+    outputs:
+      - user_response
+      - response_quality
+
+  - id: process_response
+    name: Process Response
+    state: OBSERVE
+    description: Extract requirements and validate completeness
+    action: |
+      1. Parse user response
+      2. Extract concrete requirements
+      3. Identify ambiguities or gaps
+      4. Update gathered_requirements
+    success_criteria:
+      - type: condition
+        value: "Response processed and requirements extracted"
+    transitions:
+      on_success: check_readiness
+      on_failure: check_readiness
+    outputs:
+      - extracted_requirements
+      - remaining_gaps
+
+  - id: check_readiness
+    name: Check Readiness
+    state: EVALUATE
+    description: Determine if enough information gathered to create plan
+    action: |
+      Evaluate:
+      - Scope clarity (IN/OUT defined?)
+      - Success criteria (measurable?)
+      - Technical constraints (known?)
+      - Edge cases (addressed?)
+      - Quality requirements (specified?)
+
+      Ready if:
+      - All "must have" information gathered
+      - No critical ambiguities remain
+      - User indicates ready to proceed
+    success_criteria:
+      - type: condition
+        value: "readiness_score >= 0.7 OR user_ready == true"
+    transitions:
+      on_success: ready_to_plan
+      on_failure: need_clarification
+    outputs:
+      - readiness_score
+      - missing_items
+      - user_ready
+
+  - id: need_clarification
+    name: Need Clarification
+    state: RETRY
+    description: More questions needed, prepare next round
+    action: |
+      1. Identify specific gaps
+      2. Formulate targeted follow-up questions
+      3. Increment round counter
+    transitions:
+      on_success: prepare_questions
+      on_failure: offer_proceed
+    outputs:
+      - clarification_questions
+
+  - id: offer_proceed
+    name: Offer to Proceed
+    state: CHECKPOINT
+    description: Ask user if ready despite incomplete information
+    action: |
+      Display:
+      "I have gathered the following requirements:
+       [summary]
+
+       I still have questions about:
+       [gaps]
+
+       Would you like me to:
+       1. Continue with more questions
+       2. Create the plan now (noting assumptions)"
+    success_criteria:
+      - type: user_response
+        value: "User selects option"
+    transitions:
+      on_success: handle_user_choice
+      on_timeout: ready_to_plan
+    outputs:
+      - user_choice
+
+  - id: handle_user_choice
+    name: Handle User Choice
+    state: EVALUATE
+    description: Route based on user decision
+    action: |
+      If choice == "more questions": goto prepare_questions
+      If choice == "create plan": goto ready_to_plan
+    transitions:
+      on_success: ready_to_plan
+      on_failure: prepare_questions
+
+  - id: ready_to_plan
+    name: Ready to Create Plan
+    state: NEXT
+    description: All requirements gathered, proceed to plan construction
+    action: |
+      1. Consolidate all gathered requirements
+      2. Document any assumptions made
+      3. Signal ready for Phase 3: Plan Construction
+    transitions:
+      on_success: null  # Exit loop
+
+state_tracking:
+  checkpoint_after:
+    - offer_proceed
+    - ready_to_plan
+  state_file_pattern: ".studio/tasks/{task_id}/questioning_state.json"
+  persist_across_sessions: true
+
+escalation:
+  strategy: escalate_to_user
+  message_template: |
+    After {iteration} rounds of questioning, I still need clarity on:
+    {missing_items}
+
+    Should I:
+    1. Continue gathering requirements
+    2. Proceed with assumptions documented
+    3. Pause and revisit later
+
+retry_config:
+  backoff_type: none
+  backoff_base_ms: 0
+  max_backoff_ms: 0
+
+# Phases that don't need loops
+non_looping_phases:
+  - id: challenge
+    description: "Single pass adversarial review - flags issues but doesn't loop"
+    max_iterations: 1
+
+  - id: confidence
+    description: "Single calculation of plan confidence score"
+    max_iterations: 1
+
+---
+# Decomposition Validation Loop
+# ==============================
+# Validates decomposition map and handles SICVF failures through task splitting
+#
+# This loop is triggered during enterprise decomposition for large projects (10+ tasks)
+
+name: decomposition-validation
+description: Iterative SICVF validation loop with task splitting for non-compliant tasks
+
+loop_type: validate-split-revalidate
+max_iterations: 10
+trigger: enterprise_decomposition
+
+phases:
+  - id: load_decomposition
+    name: Load Decomposition Map
+    state: ATTEMPT
+    description: Load the decomposition map for validation
+    action: |
+      1. Load decomposition-map.json
+      2. Extract all tasks from hierarchy
+      3. Initialize validation state
+    success_criteria:
+      - type: condition
+        value: "decomposition_map loaded and tasks extracted"
+    transitions:
+      on_success: validate_sicvf
+      on_failure: null  # Exit if no map
+    outputs:
+      - decomposition_map
+      - all_tasks
+
+  - id: validate_sicvf
+    name: Validate SICVF Criteria
+    state: ATTEMPT
+    description: Run SICVF validation on all pending tasks
+    action: |
+      Run: "${CLAUDE_PLUGIN_ROOT}/scripts/sicvf-validate.sh" --all
+
+      Check each task for:
+      - Single-pass: < 8 hours, < 15 micro-actions
+      - Independent: No concurrent dependencies
+      - Clear boundaries: Inputs/outputs defined
+      - Verifiable: Executable acceptance criteria
+      - Fits context: < 80K tokens
+    success_criteria:
+      - type: command
+        command: "${CLAUDE_PLUGIN_ROOT}/scripts/sicvf-validate.sh --all"
+        expected_exit_code: 0
+    transitions:
+      on_success: validate_dag
+      on_failure: identify_failures
+    outputs:
+      - validation_results
+      - failing_tasks
+
+  - id: identify_failures
+    name: Identify SICVF Failures
+    state: OBSERVE
+    description: Analyze which tasks failed and why
+    action: |
+      For each failing task:
+      1. Identify which criteria failed
+      2. Determine split strategy:
+         - Too large → Split by component/layer
+         - Unclear → Define explicit inputs/outputs
+         - Not verifiable → Add executable criteria
+         - Too many deps → Reorder or split
+    transitions:
+      on_success: propose_splits
+      on_failure: escalate_to_user
+    outputs:
+      - failure_analysis
+      - split_recommendations
+
+  - id: propose_splits
+    name: Propose Task Splits
+    state: ATTEMPT
+    description: Generate split proposals for failing tasks
+    action: |
+      For each failing task:
+      1. Generate 2-3 subtasks
+      2. Ensure each subtask < 4 hours
+      3. Define clear inputs/outputs for each
+      4. Add executable verification criteria
+    transitions:
+      on_success: apply_splits
+      on_failure: escalate_to_user
+    outputs:
+      - split_proposals
+
+  - id: apply_splits
+    name: Apply Task Splits
+    state: ATTEMPT
+    description: Update decomposition map with split tasks
+    action: |
+      1. Remove original failing task
+      2. Add split subtasks
+      3. Update dependency graph
+      4. Update hierarchy
+      5. Recalculate critical path
+    transitions:
+      on_success: validate_sicvf  # Loop back to revalidate
+      on_failure: escalate_to_user
+    outputs:
+      - updated_decomposition_map
+
+  - id: validate_dag
+    name: Validate Dependency Graph
+    state: EVALUATE
+    description: Check DAG for cycles and calculate metrics
+    action: |
+      1. Detect cycles in dependency graph
+      2. If cycles found, identify and resolve
+      3. Calculate critical path
+      4. Calculate parallelization factor
+    success_criteria:
+      - type: condition
+        value: "dependency_graph.cycle_detection.has_cycles == false"
+    transitions:
+      on_success: validate_quality_gates
+      on_failure: resolve_cycles
+    outputs:
+      - dag_validation
+      - critical_path
+
+  - id: resolve_cycles
+    name: Resolve Dependency Cycles
+    state: RETRY
+    description: Break cycles in dependency graph
+    action: |
+      For each cycle:
+      1. Identify incorrect dependency edge
+      2. Either remove edge or split task
+      3. Revalidate graph
+    transitions:
+      on_success: validate_dag  # Loop back to revalidate
+      on_failure: escalate_to_user
+
+  - id: validate_quality_gates
+    name: Validate Quality Gates
+    state: EVALUATE
+    description: Verify DoD templates assigned and quality thresholds configured
+    action: |
+      Check:
+      1. Every task has dod_template assigned
+      2. Thresholds configured (Lighthouse >= 90, LCP <= 2.5s, CLS <= 0.1)
+      3. Blocking vs non-blocking criteria defined
+    success_criteria:
+      - type: condition
+        value: "all tasks have dod_template AND thresholds configured"
+    transitions:
+      on_success: validation_complete
+      on_failure: assign_missing_dod
+
+  - id: assign_missing_dod
+    name: Assign Missing DoD Templates
+    state: ATTEMPT
+    description: Auto-assign DoD templates based on task type
+    action: |
+      For each task without dod_template:
+      - If touches UI/components → frontend
+      - If touches API/routes → api-endpoint
+      - If touches services/db → backend
+      - Else → universal
+    transitions:
+      on_success: validate_quality_gates
+      on_failure: escalate_to_user
+
+  - id: validation_complete
+    name: Validation Complete
+    state: NEXT
+    description: All validations passed, decomposition map is ready
+    action: |
+      1. Set validation_status.is_valid = true
+      2. Update validated_at timestamp
+      3. Write final decomposition-map.json
+      4. Signal ready for user approval
+    transitions:
+      on_success: null  # Exit loop
+
+  - id: escalate_to_user
+    name: Escalate to User
+    state: CHECKPOINT
+    description: Ask user for help resolving validation issues
+    action: |
+      Display:
+      "Decomposition validation encountered issues:
+       {issues_summary}
+
+       Recommendations:
+       {recommendations}
+
+       Would you like me to:
+       1. Automatically apply recommended fixes
+       2. Show detailed analysis
+       3. Pause and let you fix manually"
+    transitions:
+      on_success: handle_user_choice
+      on_timeout: null  # Exit on timeout
+
+state_tracking:
+  checkpoint_after:
+    - validation_complete
+    - escalate_to_user
+  state_file_pattern: ".studio/decomposition-validation-state.json"
+  persist_across_sessions: true
+
+escalation:
+  strategy: escalate_to_user
+  message_template: |
+    After {iteration} validation rounds, {failing_count} tasks still fail SICVF:
+    {failing_summary}
+
+    Should I:
+    1. Continue splitting tasks
+    2. Proceed with warnings documented
+    3. Pause for manual review

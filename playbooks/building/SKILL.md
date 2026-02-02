@@ -8,11 +8,31 @@ triggers:
   - "build"
   - "plan-and-execute"
   - "replan"
+loop_config: data/loop-configs/builder.yaml
 ---
 
 # Building Skill: Plan-and-Execute Methodology
 
 This skill teaches the **Plan-and-Execute** methodology for executing plans while adapting to reality. It draws from research including "ReAct: Synergizing Reasoning and Acting in Language Models" (Yao et al., 2022) and LangGraph execution patterns.
+
+## Loop Configuration
+
+The builder uses the universal loop system defined in `data/loop-configs/builder.yaml`:
+
+```yaml
+loop_type: execute-validate-fix
+max_iterations: 5
+trigger: each_step
+phases: [execute, validate, analyze, fix, complete, escalate]
+```
+
+**Key Loop Phases:**
+- **ATTEMPT (execute)**: Perform the step action
+- **OBSERVE (validate)**: Run success criteria verification
+- **EVALUATE (analyze)**: Determine cause of failure
+- **RETRY (fix)**: Apply fix and retry
+- **NEXT (complete)**: Proceed to next step
+- **ESCALATE**: Max retries exceeded
 
 ## The Core Insight
 
@@ -366,6 +386,54 @@ build_state:
   replans: []
   retries: {}
   checkpoints_reached: ["after_step_2"]
+```
+
+## Loop State Persistence
+
+The loop state is automatically saved to enable recovery:
+
+```yaml
+# .studio/tasks/{task_id}/loop_state.json
+loop_state:
+  loop_id: "loop_step_3_1706789123"
+  config_name: "builder-execute-validate"
+  current_iteration: 2
+  current_phase: "fix"
+  status: "running"
+  phase_history:
+    - phase_id: "execute"
+      iteration: 1
+      outcome: "success"
+    - phase_id: "validate"
+      iteration: 1
+      outcome: "failure"
+    - phase_id: "analyze"
+      iteration: 1
+      outcome: "success"
+  accumulated_outputs:
+    action_output: "..."
+    validation_results: "..."
+    error_analysis: "..."
+  error_log:
+    - iteration: 1
+      phase_id: "validate"
+      error: "File contains syntax error"
+```
+
+### Loop Checkpointing
+
+Checkpoints are saved after each successful step completion:
+
+```bash
+# Automatic checkpoint after step completes
+"${CLAUDE_PLUGIN_ROOT}/scripts/orchestrator.sh" checkpoint "step_${STEP_NUM}_complete"
+```
+
+To resume from a loop checkpoint:
+```bash
+# Load loop state and continue
+cat ".studio/tasks/${TASK_ID}/loop_state.json"
+# Resume from last successful iteration
 ```
 
 ## Checkpoint Management

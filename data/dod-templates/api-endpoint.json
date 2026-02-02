@@ -1,0 +1,195 @@
+{
+  "$schema": "../../../schemas/dod.schema.json",
+  "version": "1.0.0",
+  "template_id": "api-endpoint",
+  "name": "API Endpoint Definition of Done",
+  "description": "DoD criteria specifically for API endpoint tasks. Extends Backend DoD with OpenAPI documentation, contract testing, and response validation.",
+  "extends": "universal",
+  "criteria": [
+    {
+      "id": "DoD-API-1",
+      "criterion": "OpenAPI/Swagger documentation exists for endpoint",
+      "category": "documentation",
+      "blocking": true,
+      "verification": {
+        "type": "file",
+        "path": "openapi.yaml",
+        "must_exist": true
+      },
+      "fix_hints": [
+        "Add endpoint definition to openapi.yaml",
+        "Include request/response schemas",
+        "Document all possible error responses",
+        "Add example values for parameters"
+      ],
+      "documentation_url": "https://swagger.io/specification/"
+    },
+    {
+      "id": "DoD-API-2",
+      "criterion": "Request body validated against schema",
+      "category": "validation",
+      "blocking": true,
+      "verification": {
+        "type": "pattern",
+        "pattern": "safeParse|validate|schema\\.parse",
+        "must_exist": true,
+        "file_glob": "src/routes/**/*.ts"
+      },
+      "fix_hints": [
+        "Use Zod or similar for request validation",
+        "Return 400 Bad Request for validation failures",
+        "Include field-level error messages"
+      ]
+    },
+    {
+      "id": "DoD-API-3",
+      "criterion": "Response matches documented schema",
+      "category": "validation",
+      "blocking": true,
+      "verification": {
+        "type": "command",
+        "command": "npm run test:contract",
+        "expected_exit_code": 0,
+        "timeout_ms": 120000
+      },
+      "fix_hints": [
+        "Use response serialization to ensure shape",
+        "Add contract tests comparing response to schema",
+        "Consider using tRPC or similar for type-safe APIs"
+      ]
+    },
+    {
+      "id": "DoD-API-4",
+      "criterion": "All HTTP methods have appropriate status codes",
+      "category": "validation",
+      "blocking": true,
+      "verification": {
+        "type": "manual",
+        "instructions": "Verify correct HTTP status codes are returned",
+        "checklist": [
+          "GET returns 200 (OK) or 404 (Not Found)",
+          "POST returns 201 (Created) or 400 (Bad Request)",
+          "PUT/PATCH returns 200 (OK) or 404 (Not Found)",
+          "DELETE returns 204 (No Content) or 404 (Not Found)",
+          "Auth failures return 401 (Unauthorized)",
+          "Permission failures return 403 (Forbidden)"
+        ]
+      },
+      "fix_hints": [
+        "Use HTTP status constants, not magic numbers",
+        "Consider returning 202 Accepted for async operations",
+        "Return 409 Conflict for duplicate creation attempts"
+      ]
+    },
+    {
+      "id": "DoD-API-5",
+      "criterion": "Integration tests cover happy path and error cases",
+      "category": "test",
+      "blocking": true,
+      "verification": {
+        "type": "command",
+        "command": "npm run test:integration -- --grep 'API'",
+        "expected_exit_code": 0,
+        "timeout_ms": 180000
+      },
+      "fix_hints": [
+        "Test successful request/response flow",
+        "Test validation error responses",
+        "Test authentication/authorization failures",
+        "Test edge cases (empty body, missing fields)"
+      ]
+    },
+    {
+      "id": "DoD-API-6",
+      "criterion": "CORS headers configured correctly",
+      "category": "security",
+      "blocking": true,
+      "verification": {
+        "type": "pattern",
+        "pattern": "cors|Access-Control-Allow",
+        "must_exist": true,
+        "file_glob": "src/**/*.ts"
+      },
+      "fix_hints": [
+        "Configure allowed origins explicitly (not *)",
+        "Set appropriate allowed methods",
+        "Configure credentials if needed",
+        "Set Access-Control-Max-Age for preflight caching"
+      ]
+    },
+    {
+      "id": "DoD-API-7",
+      "criterion": "Content-Type validation on request",
+      "category": "security",
+      "blocking": true,
+      "verification": {
+        "type": "pattern",
+        "pattern": "content-type|contentType|express\\.json|bodyParser",
+        "must_exist": true,
+        "file_glob": "src/**/*.ts"
+      },
+      "fix_hints": [
+        "Validate Content-Type header matches expected",
+        "Reject requests with unexpected content types",
+        "Use appropriate body parser middleware"
+      ]
+    },
+    {
+      "id": "DoD-API-8",
+      "criterion": "Pagination implemented for list endpoints",
+      "category": "validation",
+      "blocking": false,
+      "verification": {
+        "type": "pattern",
+        "pattern": "limit|offset|page|cursor|skip|take",
+        "must_exist": true,
+        "file_glob": "src/routes/**/*.ts"
+      },
+      "fix_hints": [
+        "Use cursor-based pagination for large datasets",
+        "Set sensible default and maximum page sizes",
+        "Include total count in response metadata",
+        "Return next/previous links in response"
+      ]
+    },
+    {
+      "id": "DoD-API-9",
+      "criterion": "Idempotency key supported for POST/PUT (when applicable)",
+      "category": "validation",
+      "blocking": false,
+      "verification": {
+        "type": "pattern",
+        "pattern": "idempotency|Idempotency-Key|x-request-id",
+        "must_exist": true,
+        "file_glob": "src/**/*.ts"
+      },
+      "fix_hints": [
+        "Accept Idempotency-Key header for write operations",
+        "Store and check idempotency keys with TTL",
+        "Return cached response for duplicate requests"
+      ]
+    },
+    {
+      "id": "DoD-API-10",
+      "criterion": "Request/response logged (excluding sensitive data)",
+      "category": "validation",
+      "blocking": true,
+      "verification": {
+        "type": "pattern",
+        "pattern": "log.*request|logger.*req|morgan|pino",
+        "must_exist": true,
+        "file_glob": "src/**/*.ts"
+      },
+      "fix_hints": [
+        "Log request method, path, status code, duration",
+        "Exclude request/response bodies from logs",
+        "Include request ID for correlation",
+        "Use appropriate log levels"
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-02-02T00:00:00Z",
+    "applicable_pillars": ["api"]
+  }
+}

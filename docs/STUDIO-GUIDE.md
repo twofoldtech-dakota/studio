@@ -152,23 +152,19 @@ studio/
 │   ├── build.md                 # /build command
 │   ├── brand.md                 # /brand command
 │   ├── blog.md                  # /blog command
-│   ├── analytics.md             # /analytics command
-│   ├── project.md               # /project command
-│   ├── rollback.md              # /rollback command
-│   └── trace.md                 # /trace command
+│   ├── orchestrate.md           # /orchestrate command
+│   └── status.md                # /status command
 │
 ├── 📚 playbooks/                 # Methodologies (How to Think)
 │   ├── planning/                # Plan-and-Solve methodology
 │   ├── building/                # Execution methodology
-│   ├── challenging/             # Adversarial review
+│   ├── validation/              # Adversarial review + confidence scoring
 │   ├── memory/                  # Learning system
 │   ├── brand/                   # Brand discovery
 │   ├── content/                 # Content creation
-│   ├── confidence/              # Quality scoring
-│   ├── reviewing/               # Self-review
-│   ├── incremental/             # Partial updates
-│   ├── preview/                 # Dry-run mode
-│   └── templates/               # Reusable templates
+│   ├── reviewing/               # Self-review (Reflection methodology)
+│   ├── orchestration/           # Multi-agent coordination
+│   └── context-management/      # Context optimization
 │
 ├── 👥 team/                      # Domain Expert Personas
 │   ├── tier1/                   # Core specialists (always loaded)
@@ -184,7 +180,6 @@ studio/
 │   │   ├── security-analyst.md  # Security
 │   │   └── devops-engineer.md   # Operations
 │   └── tier3/                   # Growth specialists
-│       ├── content-strategist.md
 │       ├── legal-compliance.md
 │       └── seo-growth.md
 │
@@ -195,8 +190,9 @@ studio/
 │   ├── execution-ready-plan.schema.json
 │   ├── task-manifest.schema.json
 │   ├── brand.schema.json
+│   ├── backlog.schema.json
 │   ├── confidence.schema.json
-│   └── ...
+│   └── build-output.schema.json
 │
 ├── 🎨 brand/                     # Brand Source of Truth
 │   ├── identity.yaml            # Who you are
@@ -206,11 +202,10 @@ studio/
 │
 ├── 🔧 scripts/                   # Runtime Scripts
 │   ├── output.sh                # Terminal formatting
-│   ├── manifest.sh              # Task management
-│   ├── analytics.sh             # Analytics dashboard
-│   ├── project.sh               # Project orchestration
-│   ├── rollback.sh              # Rollback system
-│   └── hooks/                   # Hook implementations
+│   ├── backlog.sh               # Backlog management
+│   ├── learnings.sh             # Learning capture
+│   ├── orchestrator.sh          # Multi-agent orchestration
+│   └── context-manager.sh       # Context optimization
 │
 ├── 📊 data/                      # Static Data
 │   └── error-patterns.json      # Error classification
@@ -596,15 +591,15 @@ Playbooks teach agents **how to think**. They're loaded before work begins.
     │   ┌─────────────────────────────────────────────────┐   │
     │   │  planning/     How to create execution plans    │   │
     │   │  building/     How to execute plans             │   │
-    │   │  challenging/  How to adversarially review      │   │
+    │   │  validation/   Adversarial review + scoring     │   │
     │   │  reviewing/    How to verify and reflect        │   │
     │   └─────────────────────────────────────────────────┘   │
     │                                                         │
     │   🧠 LEARNING & QUALITY                                 │
     │   ┌─────────────────────────────────────────────────┐   │
     │   │  memory/       How to learn and remember        │   │
-    │   │  confidence/   How to score plan quality        │   │
-    │   │  incremental/  How to update plans partially    │   │
+    │   │  orchestration/ Multi-agent coordination        │   │
+    │   │  context-management/ Context optimization       │   │
     │   └─────────────────────────────────────────────────┘   │
     │                                                         │
     │   🎨 BRAND & CONTENT                                    │
@@ -613,16 +608,10 @@ Playbooks teach agents **how to think**. They're loaded before work begins.
     │   │  content/      How to create aligned content    │   │
     │   └─────────────────────────────────────────────────┘   │
     │                                                         │
-    │   🛠️ UTILITIES                                          │
-    │   ┌─────────────────────────────────────────────────┐   │
-    │   │  preview/      How to show dry-run previews     │   │
-    │   │  templates/    How to use plan templates        │   │
-    │   └─────────────────────────────────────────────────┘   │
-    │                                                         │
     └─────────────────────────────────────────────────────────┘
 ```
 
-### The Five Challenges (from `challenging/SKILL.md`)
+### The Five Challenges (from `validation/SKILL.md`)
 
 Before any plan is executed, it must pass:
 
@@ -988,8 +977,10 @@ Track your build metrics:
 | `team/tier*/` | Domain expert personas |
 | `schemas/*.json` | Validation schemas |
 | `scripts/output.sh` | Terminal formatting |
-| `scripts/manifest.sh` | Task management |
-| `data/error-patterns.json` | Error classification |
+| `scripts/backlog.sh` | Backlog management |
+| `scripts/learnings.sh` | Learning capture |
+| `scripts/orchestrator.sh` | Multi-agent orchestration |
+| `scripts/context-manager.sh` | Context optimization |
 
 ### Generated Files
 

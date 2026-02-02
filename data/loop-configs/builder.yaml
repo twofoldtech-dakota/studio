@@ -1,0 +1,147 @@
+# Builder Loop Configuration
+# ==========================
+# Execute → Validate → Fix → Retry pattern for iterative building
+#
+# This loop is triggered for each step during the build phase.
+# Max 5 retries per step before escalation.
+
+name: builder-execute-validate
+description: Iterative build loop with validation and retry on failure
+
+loop_type: execute-validate-fix
+max_iterations: 5
+trigger: each_step
+
+phases:
+  - id: execute
+    name: Execute Action
+    state: ATTEMPT
+    description: Perform the step's action using appropriate tools
+    action: |
+      1. Read step.action from plan
+      2. Determine required tools (Write, Edit, Bash)
+      3. Execute the action
+      4. Capture outputs and artifacts
+    success_criteria:
+      - type: condition
+        value: "Action completed without error"
+    transitions:
+      on_success: validate
+      on_failure: analyze
+    outputs:
+      - action_output
+      - artifacts_created
+
+  - id: validate
+    name: Validate Success Criteria
+    state: OBSERVE
+    description: Run each success criterion's verification
+    action: |
+      For each criterion in step.success_criteria:
+        - command: Run command, check exit 0
+        - file_exists: Check path exists
+        - file_contains: grep for pattern
+        - test_passes: Run test command
+    success_criteria:
+      - type: condition
+        value: "All criteria pass"
+    transitions:
+      on_success: complete
+      on_failure: analyze
+    outputs:
+      - validation_results
+      - failed_criteria
+
+  - id: analyze
+    name: Analyze Failure
+    state: EVALUATE
+    description: Determine cause and select recovery strategy
+    action: |
+      1. Parse error output
+      2. Check retry_behavior.fix_hints
+      3. Identify root cause
+      4. Select fix strategy
+    transitions:
+      on_success: fix
+      on_failure: escalate
+    outputs:
+      - error_analysis
+      - selected_fix
+
+  - id: fix
+    name: Apply Fix
+    state: RETRY
+    description: Apply the identified fix before retry
+    action: |
+      1. Apply fix hint or generated solution
+      2. Update artifacts if needed
+      3. Prepare for retry
+    transitions:
+      on_success: execute
+      on_failure: escalate
+
+  - id: complete
+    name: Step Complete
+    state: NEXT
+    description: Mark step complete and proceed
+    action: |
+      1. Record execution record
+      2. Update build state
+      3. Signal ready for next step
+    transitions:
+      on_success: null  # Exit loop, proceed to next step
+
+  - id: escalate
+    name: Escalate Failure
+    state: ESCALATE
+    description: Max retries exceeded or unrecoverable error
+    action: |
+      1. Save checkpoint state
+      2. Report failure details
+      3. Request user/orchestrator intervention
+
+state_tracking:
+  checkpoint_after:
+    - complete
+  state_file_pattern: ".studio/tasks/{task_id}/step_{step_id}_state.json"
+  persist_across_sessions: true
+
+escalation:
+  strategy: escalate_to_user
+  message_template: |
+    Step "{step_name}" failed after {iteration} attempts.
+
+    Last error: {error}
+
+    Options:
+    1. Retry with different approach
+    2. Skip this step (if non-critical)
+    3. Abort build and re-plan
+
+retry_config:
+  backoff_type: none
+  backoff_base_ms: 0
+  max_backoff_ms: 0
+
+# Quality Gate Loop (nested)
+quality_gate_loop:
+  name: quality-gate-retry
+  max_iterations: 3
+  trigger: on_failure
+  phases:
+    - id: run_gate
+      name: Run Quality Gate
+      state: ATTEMPT
+      action: Execute gate command (lint, typecheck, test, security)
+    - id: check_result
+      name: Check Result
+      state: OBSERVE
+      action: Parse gate output, identify failures
+    - id: auto_fix
+      name: Auto Fix
+      state: RETRY
+      action: |
+        - Lint: Apply auto-fix if available (npm run lint --fix)
+        - Typecheck: Fix type errors identified
+        - Test: Fix failing assertions
+        - Security: Report but don't auto-fix

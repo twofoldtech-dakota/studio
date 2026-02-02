@@ -294,6 +294,25 @@ Step-by-step execution with confirmation at each change:
 /build:interactive "goal"
 ```
 
+### Optional MCP Integrations
+
+Enhance STUDIO with additional AI capabilities:
+
+**Context7** — Up-to-date documentation for any library:
+```bash
+claude mcp add --transport http context7 https://mcp.context7.com/mcp
+```
+
+**Vercel MCP** — Manage Vercel projects and deployments:
+```bash
+claude mcp add --transport http vercel https://mcp.vercel.com
+```
+
+**Gemini Design MCP** — AI-powered design assistance:
+```bash
+claude mcp add gemini-design-mcp --env API_KEY=<your-api-key> -- npx -y gemini-design-mcp@latest
+```
+
 ---
 
 ## Documentation

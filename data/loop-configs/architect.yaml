@@ -1,0 +1,221 @@
+# Architect Loop Configuration
+# ============================
+# Analyze → Decompose → Validate → Refine pattern for project decomposition
+#
+# This loop is triggered during enterprise-scale project decomposition.
+# Max 3 refinement iterations before proceeding.
+
+name: architect-decomposition
+description: Iterative decomposition loop for breaking down complex projects
+
+loop_type: analyze-decompose-refine
+max_iterations: 3
+trigger: decomposition
+
+phases:
+  - id: analyze
+    name: Analyze Scope
+    state: ATTEMPT
+    description: Analyze the full project scope and identify domains
+    action: |
+      1. Parse the incoming goal/PRD
+      2. Identify bounded contexts / domains
+      3. Map dependencies between domains
+      4. Estimate complexity per domain
+      5. Identify cross-cutting concerns
+
+      Outputs:
+      - domain_map: List of identified domains
+      - dependency_graph: Domain interdependencies
+      - complexity_estimates: Per-domain complexity
+      - cross_cutting: Shared concerns (auth, logging, etc.)
+    success_criteria:
+      - type: condition
+        value: "At least 1 domain identified"
+      - type: condition
+        value: "No circular dependencies"
+    transitions:
+      on_success: decompose
+      on_failure: decompose  # Proceed with best effort
+    outputs:
+      - domain_map
+      - dependency_graph
+      - complexity_estimates
+      - cross_cutting
+
+  - id: decompose
+    name: Decompose into Hierarchy
+    state: ATTEMPT
+    description: Break domains into Epic → Feature → Task hierarchy
+    action: |
+      For each domain:
+        1. Create Epic (large milestone)
+        2. Break into Features (deliverable units)
+        3. Break Features into Tasks (atomic work items)
+
+      Apply sizing rules:
+        - Epic: 2-4 weeks of work
+        - Feature: 2-5 days of work
+        - Task: 2-8 hours of work (max 2 days)
+
+      Each Task must have:
+        - Clear acceptance criteria
+        - Single responsibility
+        - Testable outcome
+        - Dependency list
+    success_criteria:
+      - type: condition
+        value: "All domains have at least 1 epic"
+      - type: condition
+        value: "All epics have at least 1 feature"
+      - type: condition
+        value: "All features have at least 1 task"
+    transitions:
+      on_success: validate
+      on_failure: validate
+    outputs:
+      - epics
+      - features
+      - tasks
+      - hierarchy_map
+
+  - id: validate
+    name: Validate Decomposition
+    state: OBSERVE
+    description: Check decomposition quality and identify issues
+    action: |
+      Validation checks:
+
+      1. Size validation:
+         - No task > 2 days estimated
+         - No feature > 5 days
+         - No epic > 4 weeks
+
+      2. Dependency validation:
+         - No circular dependencies
+         - Critical path identified
+         - No orphan tasks
+
+      3. Coverage validation:
+         - All requirements covered
+         - No duplicate work
+         - Clear ownership boundaries
+
+      4. Quality validation:
+         - All tasks have acceptance criteria
+         - All tasks are testable
+         - Integration points identified
+    success_criteria:
+      - type: condition
+        value: "validation_score >= 0.8"
+    transitions:
+      on_success: finalize
+      on_failure: identify_issues
+    outputs:
+      - validation_results
+      - validation_score
+      - issues_found
+
+  - id: identify_issues
+    name: Identify Issues
+    state: EVALUATE
+    description: Analyze validation failures and plan refinement
+    action: |
+      For each issue:
+        1. Categorize (size/dependency/coverage/quality)
+        2. Identify affected items
+        3. Propose fix strategy
+
+      Common fixes:
+        - Oversized task: Split into smaller tasks
+        - Circular dependency: Introduce abstraction layer
+        - Missing coverage: Add missing tasks
+        - Vague criteria: Add specific acceptance criteria
+    success_criteria:
+      - type: condition
+        value: "Fix strategy identified for all issues"
+    transitions:
+      on_success: refine
+      on_failure: escalate
+    outputs:
+      - issue_analysis
+      - fix_strategies
+
+  - id: refine
+    name: Refine Decomposition
+    state: RETRY
+    description: Apply fixes and re-decompose affected areas
+    action: |
+      1. Apply identified fixes
+      2. Re-decompose affected tasks/features
+      3. Update dependency graph
+      4. Recalculate estimates
+    transitions:
+      on_success: validate
+      on_failure: escalate
+    outputs:
+      - refined_hierarchy
+      - changes_made
+
+  - id: finalize
+    name: Finalize Decomposition
+    state: NEXT
+    description: Decomposition complete, write to backlog
+    action: |
+      1. Generate final backlog.json
+      2. Write epic/feature/task files
+      3. Calculate priority scores
+      4. Identify recommended first task
+    transitions:
+      on_success: null  # Exit loop
+    outputs:
+      - backlog_json
+      - priority_ranking
+      - recommended_start
+
+  - id: escalate
+    name: Escalate to User
+    state: ESCALATE
+    description: Cannot complete decomposition automatically
+    action: |
+      Present:
+      - What was accomplished
+      - What issues remain
+      - Options for user intervention
+
+state_tracking:
+  checkpoint_after:
+    - decompose
+    - finalize
+  state_file_pattern: ".studio/decomposition/{goal_hash}_state.json"
+  persist_across_sessions: true
+
+escalation:
+  strategy: escalate_to_user
+  message_template: |
+    Decomposition refinement limit reached after {iteration} iterations.
+
+    Completed: {completed_count} epics, {feature_count} features, {task_count} tasks
+
+    Remaining issues:
+    {issues}
+
+    Options:
+    1. Accept current decomposition (with noted issues)
+    2. Provide guidance on specific issues
+    3. Simplify scope and re-decompose
+
+retry_config:
+  backoff_type: none
+  backoff_base_ms: 0
+  max_backoff_ms: 0
+
+# Domain analysis doesn't loop - single pass
+non_looping_phases:
+  - id: domain_analysis
+    description: "Single pass domain identification"
+    max_iterations: 1
+
+  - id: prioritization
+    description: "Single calculation of priority scores"
+    max_iterations: 1

@@ -1,0 +1,179 @@
+{
+  "$schema": "../../../schemas/dod.schema.json",
+  "version": "1.0.0",
+  "template_id": "frontend",
+  "name": "Frontend Definition of Done",
+  "description": "DoD criteria for frontend/UI tasks. Extends Universal DoD with accessibility, performance, and Core Web Vitals checks.",
+  "extends": "universal",
+  "criteria": [
+    {
+      "id": "DoD-FE-1",
+      "criterion": "axe-core a11y audit passes",
+      "category": "accessibility",
+      "blocking": true,
+      "verification": {
+        "type": "command",
+        "command": "npx @axe-core/cli --exit http://localhost:3000",
+        "expected_exit_code": 0,
+        "timeout_ms": 120000
+      },
+      "fix_hints": [
+        "Run axe-core in browser DevTools for detailed element highlighting",
+        "Address critical and serious issues first",
+        "Use semantic HTML elements where possible",
+        "Add ARIA labels to interactive elements"
+      ],
+      "documentation_url": "https://www.deque.com/axe/"
+    },
+    {
+      "id": "DoD-FE-2",
+      "criterion": "Lighthouse accessibility >= 90",
+      "category": "accessibility",
+      "blocking": true,
+      "verification": {
+        "type": "threshold",
+        "metric": "lighthouse.accessibility",
+        "operator": ">=",
+        "threshold": 90,
+        "extraction_command": "npx lighthouse http://localhost:3000 --output=json --quiet | jq '.categories.accessibility.score * 100'"
+      },
+      "fix_hints": [
+        "Check color contrast ratios (4.5:1 for normal text, 3:1 for large text)",
+        "Ensure all images have alt text",
+        "Add skip links for keyboard navigation",
+        "Use proper heading hierarchy"
+      ],
+      "documentation_url": "https://web.dev/lighthouse-accessibility/"
+    },
+    {
+      "id": "DoD-FE-3",
+      "criterion": "Lighthouse performance >= 90",
+      "category": "performance",
+      "blocking": true,
+      "verification": {
+        "type": "threshold",
+        "metric": "lighthouse.performance",
+        "operator": ">=",
+        "threshold": 90,
+        "extraction_command": "npx lighthouse http://localhost:3000 --output=json --quiet | jq '.categories.performance.score * 100'"
+      },
+      "fix_hints": [
+        "Optimize images (WebP, lazy loading, srcset)",
+        "Minimize JavaScript bundle size",
+        "Enable code splitting and tree shaking",
+        "Use font-display: swap for web fonts"
+      ],
+      "documentation_url": "https://web.dev/performance/"
+    },
+    {
+      "id": "DoD-FE-4",
+      "criterion": "LCP <= 2.5s (Largest Contentful Paint)",
+      "category": "performance",
+      "blocking": true,
+      "verification": {
+        "type": "threshold",
+        "metric": "lcp_ms",
+        "operator": "<=",
+        "threshold": 2500,
+        "extraction_command": "npx lighthouse http://localhost:3000 --output=json --quiet | jq '.audits[\"largest-contentful-paint\"].numericValue'"
+      },
+      "fix_hints": [
+        "Preload critical assets (fonts, hero images)",
+        "Optimize server response time (TTFB)",
+        "Remove render-blocking resources",
+        "Use CDN for static assets"
+      ],
+      "documentation_url": "https://web.dev/lcp/"
+    },
+    {
+      "id": "DoD-FE-5",
+      "criterion": "CLS <= 0.1 (Cumulative Layout Shift)",
+      "category": "performance",
+      "blocking": true,
+      "verification": {
+        "type": "threshold",
+        "metric": "cls",
+        "operator": "<=",
+        "threshold": 0.1,
+        "extraction_command": "npx lighthouse http://localhost:3000 --output=json --quiet | jq '.audits[\"cumulative-layout-shift\"].numericValue'"
+      },
+      "fix_hints": [
+        "Set explicit width/height on images and videos",
+        "Reserve space for dynamic content (ads, embeds)",
+        "Avoid inserting content above existing content",
+        "Use transform animations instead of layout-triggering properties"
+      ],
+      "documentation_url": "https://web.dev/cls/"
+    },
+    {
+      "id": "DoD-FE-6",
+      "criterion": "No console errors in browser",
+      "category": "validation",
+      "blocking": false,
+      "verification": {
+        "type": "manual",
+        "instructions": "Open browser DevTools console and verify no errors appear during normal usage",
+        "checklist": [
+          "Load the page fresh (hard refresh)",
+          "Navigate through all affected routes",
+          "Interact with new/modified components",
+          "Check for React/Vue/framework-specific warnings"
+        ]
+      },
+      "fix_hints": [
+        "Check for undefined variables or null references",
+        "Verify all required props are passed to components",
+        "Ensure async operations have proper error handling"
+      ]
+    },
+    {
+      "id": "DoD-FE-7",
+      "criterion": "Keyboard navigation works",
+      "category": "accessibility",
+      "blocking": true,
+      "verification": {
+        "type": "manual",
+        "instructions": "Verify all interactive elements are keyboard accessible",
+        "checklist": [
+          "Tab through all interactive elements",
+          "Verify focus indicators are visible",
+          "Test Enter/Space activation on buttons",
+          "Test arrow key navigation in menus/dropdowns",
+          "Verify Escape closes modals/popups"
+        ]
+      },
+      "fix_hints": [
+        "Use native button/link elements where possible",
+        "Add tabindex='0' to custom interactive elements",
+        "Implement proper focus management for modals",
+        "Use focus-visible for focus indicators"
+      ]
+    },
+    {
+      "id": "DoD-FE-8",
+      "criterion": "Responsive design works on mobile viewports",
+      "category": "validation",
+      "blocking": true,
+      "verification": {
+        "type": "manual",
+        "instructions": "Test layout at common mobile breakpoints",
+        "checklist": [
+          "Test at 320px width (small mobile)",
+          "Test at 375px width (iPhone SE)",
+          "Test at 768px width (tablet)",
+          "Verify no horizontal scrolling",
+          "Verify touch targets are >= 44px"
+        ]
+      },
+      "fix_hints": [
+        "Use relative units (rem, em, %) instead of fixed pixels",
+        "Implement mobile-first CSS",
+        "Test with browser DevTools device emulation"
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-02-02T00:00:00Z",
+    "applicable_pillars": ["ui_ux"]
+  }
+}

@@ -1,481 +1,323 @@
 ---
 name: plan
-description: Decompose a goal into Epic > Feature > Task hierarchy or analyze existing codebase
+description: Create execution-ready plans through iterative questioning and context gathering
 arguments:
   - name: goal
-    description: Optional goal to decompose (if omitted, analyzes codebase)
-    required: false
+    description: The goal to plan (required)
+    required: true
 triggers:
   - "/plan"
-  - "/plan:analyze"
 ---
 
 # STUDIO Plan Command
 
-The `/plan` command decomposes goals into a structured hierarchy or analyzes existing codebases to map them to the **Epic > Feature > Task** structure.
-
-## Terminal Output
-
-**IMPORTANT**: Use the output.sh script for all formatted terminal output.
-
-```bash
-# Display headers
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" header architect
-
-# Display phase transitions
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase context-gathering
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase domain-analysis
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase decomposition
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase dependency-mapping
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase prioritization
-
-# Display agent messages
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent architect "Analyzing codebase..."
-
-# Display status messages
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status success "Epic created: E1"
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status info "Scanning directories..."
-```
-
-## Command Variants
-
-### `/plan`
-
-When run without arguments:
-
-1. **If no backlog exists**: Prompt user for what they want to build
-2. **If backlog exists**: Analyze codebase and map to existing hierarchy
-
-```
-/plan
-  │
-  ├── No backlog exists?
-  │   └── "What would you like to build?" (prompt user)
-  │
-  └── Backlog exists?
-      └── Analyze codebase → map existing code to hierarchy
-          └── Show what's built vs what's planned
-```
-
-### `/plan "goal"`
-
-Decompose a specific goal into the hierarchy:
-
-```
-/plan "Add payment processing"
-  │
-  ▼
-┌─────────────────────────────────────────┐
-│  ARCHITECT: Decomposing goal...         │
-│                                         │
-│  Created:                               │
-│  └── Epic: E3 - Payment Processing      │
-│       ├── Feature: F7 - Stripe Setup    │
-│       │   ├── T15 - Add Stripe SDK      │
-│       │   ├── T16 - Create payment API  │
-│       │   └── T17 - Add webhook handler │
-│       └── Feature: F8 - Checkout Flow   │
-│           ├── T18 - Cart total calc     │
-│           └── T19 - Payment form UI     │
-│                                         │
-│  Dependencies linked to existing work   │
-│  Added 5 tasks to backlog               │
-│                                         │
-│  Run /build to start execution          │
-└─────────────────────────────────────────┘
-```
-
-### `/plan:analyze`
-
-Force codebase analysis mode (even with a goal):
-
-```bash
-/plan:analyze
-```
+The `/plan` command creates execution-ready plans through a structured workflow of context gathering, iterative questioning, and plan construction.
 
 ## Workflow Phases
 
-### Phase 1: Context Gathering
+```
+/plan "goal"
+    -> PHASE 1: Context Gathering (learnings, codebase, git, backlog, Context7)
+    -> PHASE 2: Iterative Questioning (clarifying + opposing questions)
+    -> PHASE 3: Plan Construction (acceptance criteria, steps, quality gates)
+    -> Output: .studio/tasks/{id}/plan.json
+```
+
+## Phase 1: Context Gathering
+
+### 1.1 Load Project Learnings
+
+Load learnings from previous build cycles to inform planning:
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase context-gathering
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent planner "Loading project learnings..."
 ```
 
-**For goal decomposition:**
-1. Parse the goal statement
-2. Scan existing codebase for context
-3. Identify integration points
-
-**For codebase analysis:**
-1. Scan directory structure
-2. Detect tech stack and frameworks
-3. Identify existing modules
+Read learnings files:
+- `studio/learnings/global.md` - Always load
+- Detect relevant domains from goal and load those files
+- Check `studio/learnings/integrations/` for library-specific learnings
 
 ```bash
-# Check if backlog exists
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" exists
+# Detect relevant domains
+"${CLAUDE_PLUGIN_ROOT}/scripts/learnings.sh" detect "$GOAL"
 
-# If analyzing codebase, scan structure
-ls -la src/ 2>/dev/null || ls -la app/ 2>/dev/null || ls -la lib/ 2>/dev/null
+# Inject learnings into context
+"${CLAUDE_PLUGIN_ROOT}/scripts/learnings.sh" inject global frontend backend
 ```
 
-### Phase 2: Domain Analysis
+### 1.2 Analyze Codebase
+
+Scan the project structure to understand:
+- Tech stack (package.json, requirements.txt, etc.)
+- Directory structure and naming conventions
+- Existing patterns and component structure
+- Import style (relative vs absolute, aliases)
+
+### 1.3 Check Git Status
+
+Understand current state:
+- Current branch
+- Uncommitted changes
+- Recent commits for context
+
+### 1.4 Load Backlog Context
+
+If `.studio/backlog.json` exists:
+- Load existing epics, features, and tasks
+- Understand what's already planned
+- Find where new work fits
+
+### 1.5 Context7 MCP Integration (if available)
+
+For library-specific planning, use Context7 to fetch relevant documentation:
+
+1. Detect libraries from `package.json` or `requirements.txt`
+2. Call `resolve-library-id` for each relevant library
+3. Call `query-docs` for patterns related to the goal
+4. Embed relevant documentation snippets in plan context
+
+```
+Example: Planning "Add form validation"
+-> Detect: react-hook-form, zod in package.json
+-> Query Context7 for form validation patterns
+-> Embed best practices in plan
+```
+
+## Phase 2: Iterative Questioning
+
+The planner asks questions in rounds until the user indicates readiness. Each round builds understanding.
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase domain-analysis
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent architect "Identifying business domains..."
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase requirements-gathering
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent planner "Before I create a plan, I need to understand your requirements."
 ```
 
-Group functionality into business domains (Epics):
-- User Management (auth, profiles, settings)
-- Content (posts, media, comments)
-- Commerce (products, cart, checkout)
-- Analytics (tracking, reporting)
-- Admin (management, moderation)
+### Round 1: Scope & Success
 
-### Phase 3: Decomposition
+Ask about what's IN and OUT of scope:
+
+- "What functionality is IN scope for this task?"
+- "What is explicitly OUT of scope?"
+- "How will you know when this is complete?"
+
+### Round 2: Technical Constraints
+
+Understand existing patterns and dependencies:
+
+- "Are there existing patterns in the codebase I should follow?"
+- "What dependencies or integrations are needed?"
+- "Are there any technical constraints I should be aware of?"
+
+### Round 3: Opposing Questions (Adversarial)
+
+Challenge assumptions and find edge cases:
+
+- "What if the user provides invalid input?"
+- "What happens if [external dependency] is unavailable?"
+- "Could this conflict with existing feature X?"
+- "Are you sure we need Y, or could we simplify?"
+- "What's the minimum viable implementation?"
+
+### Round 4: Quality
+
+Understand quality expectations:
+
+- "What test coverage is needed?"
+- "Are there security considerations?"
+- "What performance requirements exist?"
+
+### Readiness Check
+
+After each round, check if the user is ready to proceed:
+
+```
+"I have enough information to proceed. Would you like me to:
+1. Continue with more questions
+2. Create the plan now"
+```
+
+## Phase 3: Plan Construction
+
+### 3.1 Create Task Directory
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase decomposition
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent architect "Breaking down into features and tasks..."
+TASK_ID="task_$(date +%Y%m%d_%H%M%S)"
+mkdir -p ".studio/tasks/${TASK_ID}"
 ```
 
-For each Epic:
-1. Identify user-facing features
-2. For each feature, identify buildable tasks
-3. Size each task (XS, S, M, L, XL)
+### 3.2 Build Plan Structure
 
-**Task Sizing Guidelines:**
+Create `plan.json` with acceptance criteria and verification types:
 
-| Size | Scope | Lines | Files |
-|------|-------|-------|-------|
-| XS | Single function | < 50 | 1 |
-| S | Small feature | 50-100 | 1-2 |
-| M | Medium feature | 100-300 | 2-4 |
-| L | Large feature | 300-500 | 4-8 |
-| XL | Complex feature | 500+ | 8+ |
+```json
+{
+  "id": "bp_YYYYMMDD_HHMMSS_XXXX",
+  "task_id": "task_YYYYMMDD_HHMMSS",
+  "goal": "exact goal statement",
+  "created_at": "ISO 8601 timestamp",
 
-### Phase 4: Dependency Mapping
+  "context": {
+    "learnings_loaded": ["global", "frontend"],
+    "patterns_discovered": {...},
+    "dependencies": [...]
+  },
 
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase dependency-mapping
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent architect "Mapping dependencies..."
+  "gathered_requirements": {
+    "scope": {
+      "included": [...],
+      "excluded": [...]
+    },
+    "success_criteria": [...],
+    "user_confirmations": [...]
+  },
+
+  "acceptance_criteria": [
+    {
+      "id": "AC-1",
+      "criterion": "Form validates email format",
+      "verification": {
+        "type": "test_passes",
+        "test_command": "npm test -- --grep 'email validation'"
+      },
+      "priority": "must"
+    },
+    {
+      "id": "AC-2",
+      "criterion": "Error messages display inline",
+      "verification": {
+        "type": "playwright",
+        "url": "http://localhost:3000/register",
+        "actions": [
+          {"action": "fill", "selector": "#email", "value": "invalid"},
+          {"action": "click", "selector": "button[type=submit]"}
+        ],
+        "assertions": [
+          {"type": "visible", "selector": ".error-message"}
+        ]
+      },
+      "priority": "must"
+    }
+  ],
+
+  "steps": [...],
+
+  "quality_gates": {
+    "lint": "npm run lint",
+    "typecheck": "npx tsc --noEmit",
+    "test": "npm test",
+    "security": "npm audit --audit-level=high"
+  }
+}
 ```
 
-Identify:
-- Task → Task dependencies (e.g., "Create API" before "Create UI")
-- Feature → Feature dependencies
-- Cross-epic dependencies
+### 3.3 Acceptance Criteria Verification Types
 
-### Phase 5: Prioritization
+Each acceptance criterion must have a verification method:
 
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase prioritization
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent architect "Calculating priorities..."
-```
+| Type | Usage | Example |
+|------|-------|---------|
+| `command` | Run shell command, check exit code | `{"type": "command", "command": "npm test"}` |
+| `file_exists` | Check file was created | `{"type": "file_exists", "path": "src/components/Form.tsx"}` |
+| `file_contains` | Check file has content | `{"type": "file_contains", "path": "...", "pattern": "export.*Form"}` |
+| `test_passes` | Run specific test | `{"type": "test_passes", "test_command": "npm test -- auth"}` |
+| `playwright` | UI verification | `{"type": "playwright", "url": "...", "actions": [...], "assertions": [...]}` |
 
-Score each task:
+### 3.4 Priority Levels
 
-```
-SCORE = (0.35 × priority) +
-        (0.25 × dependency_unlock) +
-        (0.20 × business_value) +
-        (0.20 × readiness)
-```
+- `must` - Required for completion, blocks quality gate
+- `should` - Important but not blocking
+- `nice-to-have` - Optional enhancement
 
 ## Output Format
 
-### Backlog Creation
-
-Create/update `.studio/backlog.json`:
-
-```bash
-# Initialize if needed
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" init "Project Name"
-
-# Add epic
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" add-epic "User Management" "All user functionality"
-
-# Add feature to epic
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" add-feature E1 "Authentication" "Login and session"
-
-# Add task to feature
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" add-task F1 "Create login API" "POST /api/auth/login"
-```
-
-### Visual Summary
-
-Display decomposition results:
+### Terminal Display
 
 ```
-┌─────────────────────────────────────────┐
-│  DECOMPOSITION COMPLETE                 │
-│                                         │
-│  Created:                               │
-│  └── Epic: E1 - User Management         │
-│       ├── Feature: F1 - Authentication  │
-│       │   └── (existing - COMPLETE)     │
-│       └── Feature: F2 - Password Reset  │
-│           ├── T1 - Reset API endpoint   │
-│           ├── T2 - Email sender         │
-│           └── T3 - Reset UI component   │
-│                                         │
-│  Summary:                               │
-│  ├── 1 Epic                             │
-│  ├── 2 Features                         │
-│  └── 3 Tasks added to backlog           │
-│                                         │
-│  Next: T1 - Reset API endpoint          │
-│  Run /build to start execution          │
-└─────────────────────────────────────────┘
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent planner "Plan created:"
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status success "Task: ${TASK_ID}"
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status success "Steps: [N] execution-ready steps"
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status success "Acceptance Criteria: [N] verifiable criteria"
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status info "Run /build to start execution"
 ```
 
-## ID System
+### File Output
 
-**Full IDs** (stored in JSON):
-- Epic: `EPIC-001`, `EPIC-002`
-- Feature: `FEAT-001`, `FEAT-002`
-- Task: `task_20260201_120000`
+Write to `.studio/tasks/${TASK_ID}/plan.json`
 
-**Short IDs** (for commands):
-- Epic: `E1`, `E2`
-- Feature: `F1`, `F2`
-- Task: `T1`, `T2`
-
-Always display both formats:
-```
-Epic: E1 (EPIC-001) - User Management
-  Feature: F1 (FEAT-001) - Authentication
-    Task: T1 (task_20260201_120000) - Create login API
-```
-
-## Codebase Analysis Mode
-
-When `/plan` runs in an existing project:
-
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent architect "Analyzing existing codebase..."
-```
-
-### 1. Scan Codebase Structure
-
-```bash
-# Detect framework
-test -f package.json && jq '.dependencies' package.json
-test -f requirements.txt && cat requirements.txt
-test -f Cargo.toml && cat Cargo.toml
-
-# Map directories
-find . -type d -name 'src' -o -name 'app' -o -name 'lib' | head -20
-```
-
-### 2. Map to Hierarchy
-
-Group existing code into logical structures:
-
-```json
-{
-  "analysis_type": "existing_codebase",
-  "discovered": {
-    "epics": [
-      {
-        "name": "User Management",
-        "source_paths": ["src/auth/*", "src/users/*"],
-        "status": "IN_PROGRESS",
-        "features": [
-          {
-            "name": "Authentication",
-            "source_paths": ["src/auth/*"],
-            "status": "COMPLETE"
-          }
-        ]
-      }
-    ]
-  },
-  "gaps": [
-    {"type": "missing_tests", "path": "src/services/payment.ts"},
-    {"type": "todo_comment", "path": "src/utils/helpers.ts:42"}
-  ]
-}
-```
-
-### 3. Display Analysis
+## Example Session
 
 ```
-┌─────────────────────────────────────────┐
-│  ANALYZING EXISTING CODEBASE...         │
-│                                         │
-│  Discovered:                            │
-│  ├── Epic: User Management              │
-│  │   ├── Feature: Authentication ✓      │
-│  │   ├── Feature: Registration ✓        │
-│  │   └── Feature: Password Reset (50%)  │
-│  ├── Epic: Product Catalog              │
-│  │   └── Feature: Product List ✓        │
-│  └── Epic: Checkout (not started)       │
-│                                         │
-│  Gaps Found:                            │
-│  ├── 3 TODO comments                    │
-│  ├── 2 files missing tests              │
-│  └── 1 incomplete feature               │
-│                                         │
-│  Backlog: 12 tasks remaining            │
-│  Next: T8 - Add password reset email    │
-└─────────────────────────────────────────┘
+User: /plan "Add user registration with email verification"
+
+Planner: Loading project context...
+         Found 3 learnings in frontend domain
+         Detected: Next.js, Prisma, Zod
+
+         PHASE 2: Requirements Gathering
+
+         Before I create a plan, I need to understand your requirements.
+
+         1. Scope & Success:
+            - What fields should registration capture?
+            - What happens after successful verification?
+
+User: Email, password, name. Redirect to dashboard after verification.
+
+Planner: Got it. A few more questions:
+
+         2. Technical:
+            - Should I follow the existing form patterns in src/components/forms/?
+            - Do you want to use the existing email service or create new?
+
+User: Yes, follow existing patterns. Use existing email service.
+
+Planner: 3. Edge Cases (Adversarial):
+            - What if someone tries to register with an existing email?
+            - What's the verification link expiration?
+            - What happens if verification link is clicked twice?
+
+User: Show error for existing email. 24hr expiration. Second click shows "already verified".
+
+Planner: 4. Quality:
+            - What test coverage? Unit + integration + e2e?
+            - Any rate limiting for security?
+
+User: Unit and integration tests. Yes, rate limit to 5 attempts per IP per hour.
+
+Planner: Creating plan...
+
+         Plan Created:
+         - Task: task_20260202_143052
+         - Steps: 8 execution-ready steps
+         - Acceptance Criteria: 6 verifiable criteria
+           - AC-1: Registration form renders (playwright)
+           - AC-2: Validation errors show inline (playwright)
+           - AC-3: Email sent on submit (test_passes)
+           - AC-4: Verification link works (test_passes)
+           - AC-5: Rate limiting active (test_passes)
+           - AC-6: Duplicate email rejected (test_passes)
+
+         Run /build to start execution
 ```
-
-## File Locations
-
-### Input (reads)
-- `.studio/backlog.json` - Existing backlog (if any)
-- `.studio/project.json` - Project metadata
-- Source directories (`src/`, `app/`, `lib/`)
-
-### Output (writes)
-- `.studio/backlog.json` - Created/updated backlog
-- `.studio/id-map.json` - Short ID to full ID mapping
 
 ## Integration with /build
 
-After `/plan` completes:
+After `/plan` completes, the plan is ready for `/build`:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status info "Run /build to start execution"
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status info "Or /build T1 to build specific task"
+/build              # Executes the most recent plan
+/build task_id      # Executes specific task
 ```
 
-The `/build` command reads from the backlog:
+The builder will:
+1. Load the plan from `.studio/tasks/{id}/plan.json`
+2. Execute steps in the iterative build loop
+3. Verify acceptance criteria
+4. Run quality gates
+5. Capture learnings
 
-```bash
-# Get next task
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" next-task
+## Agent Definition
 
-# Build specific item
-/build T1   # Build task T1
-/build F1   # Build all tasks in feature F1
-/build E1   # Build all tasks in epic E1
-```
-
-## Example Sessions
-
-### New Project
-
-```
-User: /plan "Build a todo app"
-
-Architect: Analyzing goal...
-
-         What features should the todo app have?
-         1. Basic CRUD operations
-         2. Due dates
-         3. Categories/tags
-         4. User accounts
-
-User: Basic CRUD and due dates. No accounts for now.
-
-Architect: Creating decomposition...
-
-         ✓ Context gathered
-         ✓ Domain identified: Task Management
-         ✓ Decomposition complete
-
-         Created:
-         └── Epic: E1 - Task Management
-              ├── Feature: F1 - Task CRUD
-              │   ├── T1 - Create task model
-              │   ├── T2 - Create task API
-              │   └── T3 - Create task UI
-              └── Feature: F2 - Due Dates
-                  ├── T4 - Add due date field
-                  └── T5 - Due date picker UI
-
-         Summary: 1 Epic, 2 Features, 5 Tasks
-
-         Next: T1 - Create task model
-         Run /build to start execution
-```
-
-### Existing Project
-
-```
-User: /plan
-
-Architect: Found existing backlog with 12 items
-           Analyzing codebase for updates...
-
-         Discovered:
-         ├── Epic: E1 - User Management (80%)
-         │   ├── Feature: F1 - Auth ✓
-         │   └── Feature: F2 - Profile (1 task remaining)
-         └── Epic: E2 - Products (40%)
-             └── Feature: F3 - Catalog (3 tasks remaining)
-
-         No new items to add.
-
-         Backlog: 4 tasks remaining
-         Next: T8 - Complete profile update
-
-         Run /build to continue execution
-```
-
-### Adding to Existing Project
-
-```
-User: /plan "Add dark mode"
-
-Architect: Analyzing goal in context of existing project...
-
-         This fits under existing Epic: E1 - User Management
-
-         Created:
-         └── Feature: F5 - UI Settings
-             ├── T15 - Theme context provider
-             ├── T16 - Dark mode CSS variables
-             └── T17 - Theme toggle component
-
-         Dependencies:
-         └── T15 depends on F1 (Auth) - user prefs storage
-
-         Summary: Added 1 Feature, 3 Tasks
-
-         Next: T15 - Theme context provider
-         Run /build to start execution
-```
-
-## Immutability Rules
-
-**CRITICAL**: All operations are append-only.
-
-- Never delete items from backlog
-- Use status transitions (PENDING → COMPLETE)
-- Always add changelog entries
-- Preserve full history for audit
-
-```json
-{
-  "changelog": [
-    {
-      "timestamp": "2026-02-01T12:00:00Z",
-      "action": "CREATED",
-      "actor": "architect",
-      "new_value": {"status": "PENDING"},
-      "reason": "Initial decomposition"
-    }
-  ]
-}
-```
-
-## Agent Invocation
-
-This command invokes the **Architect** agent:
-
-```bash
-# Read the architect agent definition
-cat "${CLAUDE_PLUGIN_ROOT}/agents/architect.yaml"
-```
-
-The Architect:
-- Uses claude-opus-4-5-20250514 model
-- Has purple phase color
-- Consults tech-lead, business-analyst, orchestrator
-- Creates structured decompositions
+This command invokes the **Planner** agent defined in `agents/planner.yaml`.

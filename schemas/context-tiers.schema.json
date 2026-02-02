@@ -1,0 +1,453 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/context-tiers.schema.json",
+  "title": "STUDIO Context Tiers",
+  "description": "4-tier context hierarchy for preserving context across 50+ tasks in enterprise projects",
+  "type": "object",
+  "required": ["version", "project_id", "tiers", "current_state"],
+
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^proj_[a-f0-9]{8}$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tiers": {
+      "type": "object",
+      "required": ["tier_0", "tier_1", "tier_2", "tier_3"],
+      "properties": {
+        "tier_0": {
+          "$ref": "#/$defs/tier_0_invariants"
+        },
+        "tier_1": {
+          "$ref": "#/$defs/tier_1_active"
+        },
+        "tier_2": {
+          "$ref": "#/$defs/tier_2_summarized"
+        },
+        "tier_3": {
+          "$ref": "#/$defs/tier_3_indexed"
+        }
+      }
+    },
+    "current_state": {
+      "$ref": "#/$defs/context_state"
+    },
+    "token_usage": {
+      "$ref": "#/$defs/token_usage"
+    }
+  },
+
+  "$defs": {
+    "tier_0_invariants": {
+      "type": "object",
+      "description": "Tier 0: Invariants - Never aged, never summarized (~5K tokens)",
+      "required": ["token_budget", "content"],
+      "properties": {
+        "token_budget": {
+          "type": "integer",
+          "default": 5000,
+          "description": "Maximum tokens for this tier"
+        },
+        "current_tokens": {
+          "type": "integer",
+          "default": 0
+        },
+        "retention": {
+          "type": "string",
+          "const": "never_aged",
+          "description": "These items are never aged or summarized"
+        },
+        "content": {
+          "type": "object",
+          "properties": {
+            "architectural_decisions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "decision", "rationale"],
+                "properties": {
+                  "id": { "type": "string", "pattern": "^AD-[0-9]{3}$" },
+                  "decision": { "type": "string" },
+                  "rationale": { "type": "string" },
+                  "alternatives_considered": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "decided_at": { "type": "string", "format": "date-time" },
+                  "decided_by": { "type": "string" }
+                }
+              }
+            },
+            "constraints": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "constraint", "source"],
+                "properties": {
+                  "id": { "type": "string", "pattern": "^CON-[0-9]{3}$" },
+                  "constraint": { "type": "string" },
+                  "source": { "type": "string" },
+                  "impact": { "type": "string" }
+                }
+              }
+            },
+            "patterns": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "name", "description"],
+                "properties": {
+                  "id": { "type": "string", "pattern": "^PAT-[0-9]{3}$" },
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "example": { "type": "string" },
+                  "applies_to": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            },
+            "conventions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "convention"],
+                "properties": {
+                  "id": { "type": "string", "pattern": "^CNV-[0-9]{3}$" },
+                  "convention": { "type": "string" },
+                  "example": { "type": "string" }
+                }
+              }
+            },
+            "critical_dependencies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "version", "purpose"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "version": { "type": "string" },
+                  "purpose": { "type": "string" },
+                  "api_patterns": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "invariants_file": {
+          "type": "string",
+          "default": "studio/context/invariants.md",
+          "description": "Path to the invariants markdown file"
+        }
+      }
+    },
+
+    "tier_1_active": {
+      "type": "object",
+      "description": "Tier 1: Active Context - Current task, adjacent tasks, recent learnings (~30K tokens)",
+      "required": ["token_budget", "retention_window"],
+      "properties": {
+        "token_budget": {
+          "type": "integer",
+          "default": 30000
+        },
+        "current_tokens": {
+          "type": "integer",
+          "default": 0
+        },
+        "retention_window": {
+          "type": "integer",
+          "default": 5,
+          "description": "Number of recent tasks to keep in active context"
+        },
+        "content": {
+          "type": "object",
+          "properties": {
+            "current_task": {
+              "type": "object",
+              "properties": {
+                "task_id": { "type": "string" },
+                "plan_id": { "type": "string" },
+                "goal": { "type": "string" },
+                "context_loaded_at": { "type": "string", "format": "date-time" }
+              }
+            },
+            "adjacent_tasks": {
+              "type": "array",
+              "maxItems": 2,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "task_id": { "type": "string" },
+                  "relationship": {
+                    "type": "string",
+                    "enum": ["previous", "next"]
+                  },
+                  "summary": { "type": "string" },
+                  "outputs": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            },
+            "recent_learnings": {
+              "type": "array",
+              "maxItems": 10,
+              "items": {
+                "type": "object",
+                "required": ["learning_id", "domain", "content"],
+                "properties": {
+                  "learning_id": { "type": "string" },
+                  "domain": { "type": "string" },
+                  "content": { "type": "string" },
+                  "from_task": { "type": "string" },
+                  "relevance_score": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              }
+            },
+            "active_files": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "path": { "type": "string" },
+                  "last_modified_by_task": { "type": "string" },
+                  "modification_type": {
+                    "type": "string",
+                    "enum": ["created", "modified", "deleted"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "tier_2_summarized": {
+      "type": "object",
+      "description": "Tier 2: Summarized Context - Task outcomes, pattern registry (~15K tokens)",
+      "required": ["token_budget", "retention_window"],
+      "properties": {
+        "token_budget": {
+          "type": "integer",
+          "default": 15000
+        },
+        "current_tokens": {
+          "type": "integer",
+          "default": 0
+        },
+        "retention_window": {
+          "type": "object",
+          "properties": {
+            "from_task": { "type": "integer", "default": 6 },
+            "to_task": { "type": "integer", "default": 20 }
+          },
+          "description": "Tasks 6-20 (relative to current)"
+        },
+        "content": {
+          "type": "object",
+          "properties": {
+            "task_summaries": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["task_id", "summary", "outcome"],
+                "properties": {
+                  "task_id": { "type": "string" },
+                  "summary": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "Compressed summary of task"
+                  },
+                  "outcome": {
+                    "type": "string",
+                    "enum": ["success", "partial", "failed", "skipped"]
+                  },
+                  "key_decisions": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "files_affected": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "patterns_discovered": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            },
+            "pattern_registry": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["pattern_id", "name"],
+                "properties": {
+                  "pattern_id": { "type": "string" },
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "example_files": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "usage_count": { "type": "integer" },
+                  "last_used_in_task": { "type": "string" }
+                }
+              }
+            },
+            "error_patterns": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "error_type": { "type": "string" },
+                  "occurrence_count": { "type": "integer" },
+                  "resolution": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "tier_3_indexed": {
+      "type": "object",
+      "description": "Tier 3: Indexed References - Task IDs, file paths, references (~5K tokens)",
+      "required": ["token_budget"],
+      "properties": {
+        "token_budget": {
+          "type": "integer",
+          "default": 5000
+        },
+        "current_tokens": {
+          "type": "integer",
+          "default": 0
+        },
+        "retention_window": {
+          "type": "string",
+          "const": "tasks_21_plus",
+          "description": "Tasks 21+ (oldest tasks)"
+        },
+        "content": {
+          "type": "object",
+          "properties": {
+            "task_index": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["task_id", "name"],
+                "properties": {
+                  "task_id": { "type": "string" },
+                  "name": { "type": "string", "maxLength": 100 },
+                  "feature_id": { "type": "string" },
+                  "outcome": {
+                    "type": "string",
+                    "enum": ["success", "partial", "failed", "skipped"]
+                  }
+                }
+              }
+            },
+            "file_history": {
+              "type": "object",
+              "description": "Maps file paths to task IDs that modified them",
+              "additionalProperties": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "dependency_index": {
+              "type": "object",
+              "description": "Maps dependencies to tasks that use them",
+              "additionalProperties": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "context_state": {
+      "type": "object",
+      "description": "Current state of context management",
+      "properties": {
+        "total_tasks_completed": {
+          "type": "integer"
+        },
+        "current_task_number": {
+          "type": "integer"
+        },
+        "last_summarization_at_task": {
+          "type": "integer"
+        },
+        "last_tier_promotion": {
+          "type": "object",
+          "properties": {
+            "tier_1_to_tier_2": { "type": "string", "format": "date-time" },
+            "tier_2_to_tier_3": { "type": "string", "format": "date-time" }
+          }
+        },
+        "domains_loaded": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+
+    "token_usage": {
+      "type": "object",
+      "description": "Token usage tracking across tiers",
+      "properties": {
+        "total_budget": {
+          "type": "integer",
+          "default": 55000,
+          "description": "Total token budget for context (leaves 40K for working space)"
+        },
+        "current_total": {
+          "type": "integer"
+        },
+        "by_tier": {
+          "type": "object",
+          "properties": {
+            "tier_0": { "type": "integer" },
+            "tier_1": { "type": "integer" },
+            "tier_2": { "type": "integer" },
+            "tier_3": { "type": "integer" }
+          }
+        },
+        "budget_utilization": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Percentage of budget used"
+        },
+        "last_compression": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

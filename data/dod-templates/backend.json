@@ -1,0 +1,200 @@
+{
+  "$schema": "../../../schemas/dod.schema.json",
+  "version": "1.0.0",
+  "template_id": "backend",
+  "name": "Backend Definition of Done",
+  "description": "DoD criteria for backend/service tasks. Extends Universal DoD with input validation, auth middleware, and security pattern checks.",
+  "extends": "universal",
+  "criteria": [
+    {
+      "id": "DoD-BE-1",
+      "criterion": "All inputs validated with Zod (or equivalent schema validator)",
+      "category": "validation",
+      "blocking": true,
+      "verification": {
+        "type": "pattern",
+        "pattern": "safeParse|parse\\(|z\\.",
+        "must_exist": true,
+        "file_glob": "src/**/*.ts",
+        "exclude_glob": "src/**/*.test.ts"
+      },
+      "fix_hints": [
+        "Use Zod schemas for all request body validation",
+        "Validate query parameters and URL params",
+        "Return typed errors for validation failures",
+        "Consider using z.infer<> for TypeScript type safety"
+      ],
+      "documentation_url": "https://zod.dev/"
+    },
+    {
+      "id": "DoD-BE-2",
+      "criterion": "Protected routes have auth middleware",
+      "category": "security",
+      "blocking": true,
+      "verification": {
+        "type": "pattern",
+        "pattern": "withAuth|requireAuth|isAuthenticated|authMiddleware",
+        "must_exist": true,
+        "file_glob": "src/routes/**/*.ts"
+      },
+      "fix_hints": [
+        "Apply auth middleware to all routes handling user data",
+        "Use route-level or router-level middleware application",
+        "Document any intentionally public routes"
+      ]
+    },
+    {
+      "id": "DoD-BE-3",
+      "criterion": "No SQL injection patterns (parameterized queries required)",
+      "category": "security",
+      "blocking": true,
+      "verification": {
+        "type": "pattern",
+        "pattern": "\\$\\{.*\\}.*(?:SELECT|INSERT|UPDATE|DELETE|FROM|WHERE)|`.*\\$\\{.*\\}.*(?:SELECT|INSERT|UPDATE|DELETE)",
+        "must_exist": false,
+        "file_glob": "src/**/*.ts",
+        "exclude_glob": "src/**/*.test.ts"
+      },
+      "fix_hints": [
+        "Use parameterized queries with placeholders",
+        "Use an ORM like Prisma or Drizzle",
+        "Never interpolate user input into SQL strings",
+        "Use prepared statements for raw queries"
+      ],
+      "documentation_url": "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+    },
+    {
+      "id": "DoD-BE-4",
+      "criterion": "Error responses don't leak internal details",
+      "category": "security",
+      "blocking": true,
+      "verification": {
+        "type": "pattern",
+        "pattern": "stack|trace|internal|debug.*error",
+        "must_exist": false,
+        "file_glob": "src/**/*error*.ts"
+      },
+      "fix_hints": [
+        "Return generic error messages to clients",
+        "Log detailed errors server-side only",
+        "Use error codes instead of descriptive messages for security errors",
+        "Implement centralized error handling"
+      ]
+    },
+    {
+      "id": "DoD-BE-5",
+      "criterion": "Rate limiting applied to public endpoints",
+      "category": "security",
+      "blocking": false,
+      "verification": {
+        "type": "pattern",
+        "pattern": "rateLimit|rateLimiter|throttle",
+        "must_exist": true,
+        "file_glob": "src/**/*.ts"
+      },
+      "fix_hints": [
+        "Apply rate limiting middleware to authentication endpoints",
+        "Consider different limits for different endpoints",
+        "Implement sliding window or token bucket algorithms",
+        "Return 429 Too Many Requests with Retry-After header"
+      ]
+    },
+    {
+      "id": "DoD-BE-6",
+      "criterion": "Database transactions used for multi-step operations",
+      "category": "validation",
+      "blocking": true,
+      "verification": {
+        "type": "pattern",
+        "pattern": "\\$transaction|transaction\\(|BEGIN|COMMIT|withTransaction",
+        "must_exist": true,
+        "file_glob": "src/**/*.ts"
+      },
+      "fix_hints": [
+        "Wrap related database operations in transactions",
+        "Implement proper rollback on failure",
+        "Consider optimistic locking for concurrent updates"
+      ]
+    },
+    {
+      "id": "DoD-BE-7",
+      "criterion": "Logging includes request context (request ID, user ID)",
+      "category": "validation",
+      "blocking": false,
+      "verification": {
+        "type": "pattern",
+        "pattern": "requestId|correlationId|traceId|userId.*log|log.*userId",
+        "must_exist": true,
+        "file_glob": "src/**/*.ts"
+      },
+      "fix_hints": [
+        "Add request ID middleware to generate unique IDs",
+        "Include context in all log statements",
+        "Use structured logging (JSON format)",
+        "Consider using OpenTelemetry for distributed tracing"
+      ]
+    },
+    {
+      "id": "DoD-BE-8",
+      "criterion": "Sensitive data fields are not logged",
+      "category": "security",
+      "blocking": true,
+      "verification": {
+        "type": "pattern",
+        "pattern": "console\\.log.*password|console\\.log.*token|console\\.log.*secret|log.*password|log.*apiKey",
+        "must_exist": false,
+        "file_glob": "src/**/*.ts"
+      },
+      "fix_hints": [
+        "Use allowlists for loggable fields",
+        "Implement data masking for sensitive fields",
+        "Review log output for PII exposure",
+        "Use structured logging with field filtering"
+      ]
+    },
+    {
+      "id": "DoD-BE-9",
+      "criterion": "Environment variables used for configuration (no hardcoded values)",
+      "category": "security",
+      "blocking": true,
+      "verification": {
+        "type": "pattern",
+        "pattern": "process\\.env\\.|env\\(|getEnv\\(",
+        "must_exist": true,
+        "file_glob": "src/**/*.ts",
+        "exclude_glob": "src/**/*.test.ts"
+      },
+      "fix_hints": [
+        "Move all configuration to environment variables",
+        "Use a config validation library (e.g., envalid, zod)",
+        "Document required environment variables",
+        "Provide sensible defaults where appropriate"
+      ]
+    },
+    {
+      "id": "DoD-BE-10",
+      "criterion": "API endpoints return consistent response format",
+      "category": "validation",
+      "blocking": false,
+      "verification": {
+        "type": "manual",
+        "instructions": "Verify API responses follow the project's standard format",
+        "checklist": [
+          "Success responses include data field",
+          "Error responses include error code and message",
+          "HTTP status codes are appropriate",
+          "Content-Type header is set correctly"
+        ]
+      },
+      "fix_hints": [
+        "Implement response wrapper middleware",
+        "Use consistent error response structure",
+        "Document response format in API specs"
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-02-02T00:00:00Z",
+    "applicable_pillars": ["api", "data_schema", "auth"]
+  }
+}

@@ -1,5 +1,5 @@
 ---
-name: planing
+name: planning
 description: Plan-and-Solve methodology for goal decomposition and plan creation
 triggers:
   - "plan"
@@ -8,11 +8,38 @@ triggers:
   - "analyze goal"
   - "break down"
   - "plan-and-solve"
+loop_config: data/loop-configs/planner.yaml
 ---
 
-# Planing Skill: Plan-and-Solve Methodology
+# Planning Skill: Plan-and-Solve Methodology
 
 This skill teaches the **Plan-and-Solve** methodology for decomposing goals into executable plans. It is based on research from "Plan-and-Solve Prompting: Improving Zero-Shot Chain-of-Thought Reasoning by Large Language Models" (Wang et al., 2023).
+
+## Loop Configuration
+
+The planner uses the universal loop system defined in `data/loop-configs/planner.yaml`:
+
+```yaml
+loop_type: question-respond-clarify
+max_iterations: 5
+trigger: requirement_gathering
+phases: [prepare_questions, ask_user, process_response, check_readiness,
+         need_clarification, offer_proceed, ready_to_plan]
+```
+
+**Key Loop Phases:**
+- **ATTEMPT (prepare_questions)**: Formulate questions for current round
+- **ATTEMPT (ask_user)**: Present questions, await response
+- **OBSERVE (process_response)**: Extract requirements from answers
+- **EVALUATE (check_readiness)**: Determine if enough info gathered
+- **RETRY (need_clarification)**: More questions needed
+- **CHECKPOINT (offer_proceed)**: Ask if ready despite gaps
+- **NEXT (ready_to_plan)**: Exit loop, proceed to construction
+
+**Non-Looping Phases:**
+- Context Gathering: Single pass analysis
+- Challenge Phase: Single adversarial review
+- Confidence Scoring: Single calculation
 
 ## The Core Insight
 
@@ -385,6 +412,52 @@ When planing, adopt this mindset:
 4. **Be adaptive, not rigid** - The plan should guide, not constrain
 5. **Be complete, not exhaustive** - Everything needed, nothing extra
 
+## Questioning Loop State
+
+The questioning loop state is tracked for recovery:
+
+```yaml
+# .studio/tasks/{task_id}/questioning_state.json
+questioning_state:
+  loop_id: "loop_questioning_1706789123"
+  config_name: "planner-questioning"
+  current_iteration: 2
+  current_phase: "check_readiness"
+  status: "running"
+
+  round_history:
+    - round: 1
+      focus: "scope_and_success"
+      questions_asked: 3
+      answers_received: 3
+      requirements_extracted: 5
+    - round: 2
+      focus: "technical_constraints"
+      questions_asked: 3
+      answers_received: 2
+      requirements_extracted: 3
+
+  gathered_requirements:
+    scope_in: ["feature A", "feature B"]
+    scope_out: ["feature X"]
+    success_criteria: ["criterion 1", "criterion 2"]
+    technical_constraints: ["use existing auth"]
+
+  readiness_score: 0.65
+  missing_items: ["edge case handling", "performance requirements"]
+```
+
+### Questioning Checkpoints
+
+Checkpoints are saved after each questioning round:
+
+```bash
+# After each round, check readiness and optionally checkpoint
+if readiness_score >= 0.7; then
+  "${CLAUDE_PLUGIN_ROOT}/scripts/orchestrator.sh" checkpoint "questioning_complete"
+fi
+```
+
 ## Verification Questions
 
 Before finalizing a plan, ask:
@@ -401,4 +474,175 @@ If any answer is "no," refine the plan.
 
 ---
 
-*"A plan that cannot be verified is not a plan—it's a hope." - Planing Principle*
+## Enterprise Decomposition
+
+For large-scale projects (10+ tasks, enterprise migrations, complex multi-pillar work), use the Enterprise Decomposition system. This ensures tasks remain atomic, context is preserved across 50+ tasks, and quality gates are enforced.
+
+### When to Use Enterprise Decomposition
+
+Trigger enterprise decomposition when:
+- Project has more than 10 estimated tasks
+- Project spans multiple architectural pillars
+- Project is a migration (Sitecore, CMS, legacy system)
+- Project requires strict compliance (WCAG, SOC2, HIPAA)
+- Multiple developers will work on the project
+
+### The 6 Architectural Pillars
+
+Every project is analyzed across 6 pillars:
+
+| Pillar | Scope | Examples |
+|--------|-------|----------|
+| **data_schema** | Data models, migrations, relationships | Prisma schemas, DB migrations, entity design |
+| **auth** | Identity, sessions, permissions | OAuth, JWT, RBAC, session management |
+| **api** | Endpoints, middleware, contracts | REST routes, GraphQL resolvers, API versioning |
+| **ui_ux** | Components, layouts, state, a11y | React components, CSS, accessibility |
+| **integration** | External services, CMS, search | Sitecore, Algolia, analytics, payment APIs |
+| **infra_devops** | CI/CD, environments, monitoring | GitHub Actions, Docker, logging, scaling |
+
+Score each pillar 0-100 based on relevance to the project.
+
+### SICVF Atomic Task Criteria
+
+Every task must pass SICVF validation:
+
+```
+SICVF Validation
+================
+
+S - Single-pass
+   ✓ < 8 hours estimated work
+   ✓ < 15 micro-actions (tool calls, edits, commands)
+   ✗ FAIL: Split the task
+
+I - Independent
+   ✓ All depends_on tasks are COMPLETE
+   ✓ No concurrent dependencies
+   ✗ FAIL: Reorder or wait
+
+C - Clear boundaries
+   ✓ Explicit inputs defined
+   ✓ Explicit outputs defined
+   ✓ No "undefined" or "TBD" sources
+   ✗ FAIL: Define boundaries
+
+V - Verifiable
+   ✓ All acceptance criteria have verification commands
+   ✓ Success can be objectively measured
+   ✗ FAIL: Add executable criteria
+
+F - Fits context
+   ✓ Task + context < 80K tokens
+   ✓ Can fit in single Claude session
+   ✗ FAIL: Split or summarize context
+```
+
+Run validation:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/sicvf-validate.sh" --task-id <task_id>
+"${CLAUDE_PLUGIN_ROOT}/scripts/sicvf-validate.sh" --all
+```
+
+### 4-Tier Context Preservation
+
+For long-running projects, context is managed across 4 tiers:
+
+```
+Tier 0: Invariants (5K tokens, NEVER aged)
+├── Architectural decisions (AD-001, AD-002...)
+├── Constraints (CON-001, CON-002...)
+├── Patterns (PAT-001, PAT-002...)
+└── Conventions (CNV-001, CNV-002...)
+
+Tier 1: Active Context (30K tokens, last 5 tasks)
+├── Current task plan
+├── Previous task summary
+├── Next task preview
+└── Recent learnings (domain-relevant)
+
+Tier 2: Summarized (15K tokens, tasks 6-20)
+├── Compressed task summaries
+├── Pattern registry
+└── Error resolution history
+
+Tier 3: Indexed (5K tokens, tasks 21+)
+├── Task ID → name mapping
+├── File → task history
+└── Dependency cross-references
+```
+
+Inject context:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/context-inject.sh" --task-id <task_id> --goal "<goal>"
+```
+
+### Definition of Done Templates
+
+Four DoD templates are available:
+
+| Template | Extends | Key Checks |
+|----------|---------|------------|
+| `universal` | - | lint, typecheck, test, npm audit, secretlint |
+| `frontend` | universal | + axe-core, Lighthouse a11y/perf >= 90, LCP <= 2.5s, CLS <= 0.1 |
+| `backend` | universal | + Zod validation, auth middleware, SQL injection prevention |
+| `api-endpoint` | universal | + OpenAPI docs, contract tests, CORS, pagination |
+
+Assign based on task type:
+- UI/component work → `frontend`
+- API endpoint creation → `api-endpoint`
+- Service/data layer → `backend`
+- Everything else → `universal`
+
+### Decomposition Map Output
+
+Before any code generation, enterprise decomposition outputs:
+
+```json
+{
+  "decomposition_map": {
+    "pillar_analysis": { /* 6 pillars with scores */ },
+    "hierarchy": {
+      "epics": [],
+      "features": [],
+      "tasks": []
+    },
+    "dependency_graph": {
+      "nodes": [],
+      "edges": [],
+      "critical_path": [],
+      "parallel_batches": []
+    },
+    "context_plan": {
+      "invariants": [],
+      "injection_strategy": {}
+    },
+    "quality_config": {
+      "dod_assignments": {},
+      "blocking_thresholds": {}
+    }
+  }
+}
+```
+
+**This map requires user approval before execution begins.**
+
+### Enterprise Decomposition Checklist
+
+Before proceeding to execution:
+
+- [ ] Pillar analysis complete with scores 0-100
+- [ ] All tasks have SICVF validation passing
+- [ ] No task exceeds 8 hours or 15 micro-actions
+- [ ] Dependency graph has no cycles
+- [ ] Critical path identified
+- [ ] Parallel batches defined
+- [ ] Invariants extracted to `studio/context/invariants.md`
+- [ ] DoD templates assigned to all tasks
+- [ ] Quality thresholds configured
+- [ ] User has approved the decomposition map
+
+---
+
+*"A plan that cannot be verified is not a plan—it's a hope." - Planning Principle*
+
+*"Decompose completely, execute atomically, preserve context always." - Enterprise Decomposition Principle*

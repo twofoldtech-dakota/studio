@@ -1,0 +1,664 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/decomposition-map.schema.json",
+  "title": "STUDIO Decomposition Map",
+  "description": "Enterprise project decomposition map output structure for large-scale project analysis",
+  "type": "object",
+  "required": ["version", "created_at", "pillar_analysis", "hierarchy", "dependency_graph", "context_plan", "quality_config"],
+
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Schema version"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this decomposition was created"
+    },
+    "project_goal": {
+      "type": "string",
+      "description": "The original project goal/PRD that was decomposed"
+    },
+    "pillar_analysis": {
+      "$ref": "#/$defs/pillar_analysis"
+    },
+    "hierarchy": {
+      "$ref": "#/$defs/hierarchy"
+    },
+    "dependency_graph": {
+      "$ref": "#/$defs/dependency_graph"
+    },
+    "context_plan": {
+      "$ref": "#/$defs/context_plan"
+    },
+    "quality_config": {
+      "$ref": "#/$defs/quality_config"
+    },
+    "validation_status": {
+      "$ref": "#/$defs/validation_status"
+    }
+  },
+
+  "$defs": {
+    "pillar_analysis": {
+      "type": "object",
+      "description": "First principles decomposition across 6 architectural pillars",
+      "required": ["pillars", "cross_pillar_dependencies"],
+      "properties": {
+        "pillars": {
+          "type": "object",
+          "required": ["data_schema", "auth", "api", "ui_ux", "integration", "infra_devops"],
+          "properties": {
+            "data_schema": {
+              "$ref": "#/$defs/pillar_score",
+              "description": "Data models, migrations, entity relationships"
+            },
+            "auth": {
+              "$ref": "#/$defs/pillar_score",
+              "description": "Identity, sessions, permissions, SSO/OAuth"
+            },
+            "api": {
+              "$ref": "#/$defs/pillar_score",
+              "description": "REST/GraphQL endpoints, middleware, contracts"
+            },
+            "ui_ux": {
+              "$ref": "#/$defs/pillar_score",
+              "description": "Components, layouts, routing, state, a11y"
+            },
+            "integration": {
+              "$ref": "#/$defs/pillar_score",
+              "description": "External services, CMS, search, analytics"
+            },
+            "infra_devops": {
+              "$ref": "#/$defs/pillar_score",
+              "description": "CI/CD, environments, monitoring, scaling"
+            }
+          }
+        },
+        "cross_pillar_dependencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from_pillar", "to_pillar", "dependency_type", "description"],
+            "properties": {
+              "from_pillar": {
+                "type": "string",
+                "enum": ["data_schema", "auth", "api", "ui_ux", "integration", "infra_devops"]
+              },
+              "to_pillar": {
+                "type": "string",
+                "enum": ["data_schema", "auth", "api", "ui_ux", "integration", "infra_devops"]
+              },
+              "dependency_type": {
+                "type": "string",
+                "enum": ["requires", "informs", "extends", "validates"]
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "primary_pillars": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["data_schema", "auth", "api", "ui_ux", "integration", "infra_devops"]
+          },
+          "description": "Pillars with relevance >= 50"
+        }
+      }
+    },
+
+    "pillar_score": {
+      "type": "object",
+      "required": ["relevance"],
+      "properties": {
+        "relevance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "How relevant this pillar is to the project (0-100)"
+        },
+        "requirements": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Specific requirements mapped to this pillar"
+        },
+        "risks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Risks specific to this pillar"
+        },
+        "existing_assets": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Existing code/infrastructure in this pillar"
+        }
+      }
+    },
+
+    "hierarchy": {
+      "type": "object",
+      "description": "Epic > Feature > Task decomposition",
+      "required": ["epics", "features", "tasks"],
+      "properties": {
+        "epics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "pillar_alignment", "feature_ids"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^EPIC-[0-9]{3}$"
+              },
+              "short_id": {
+                "type": "string",
+                "pattern": "^E[0-9]+$"
+              },
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "pillar_alignment": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["data_schema", "auth", "api", "ui_ux", "integration", "infra_devops"]
+                }
+              },
+              "feature_ids": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "business_value": {
+                "type": "string",
+                "enum": ["critical", "high", "medium", "low"]
+              }
+            }
+          }
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "epic_id", "name", "task_ids"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^FEAT-[0-9]{3}$"
+              },
+              "short_id": {
+                "type": "string",
+                "pattern": "^F[0-9]+$"
+              },
+              "epic_id": { "type": "string" },
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "user_story": { "type": "string" },
+              "task_ids": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "acceptance_criteria": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "feature_id", "name", "sicvf_validation"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^task_[0-9]{8}_[0-9]{6}$"
+              },
+              "short_id": {
+                "type": "string",
+                "pattern": "^T[0-9]+$"
+              },
+              "feature_id": { "type": "string" },
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "inputs": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Explicit inputs required"
+              },
+              "outputs": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Explicit outputs produced"
+              },
+              "dod_template": {
+                "type": "string",
+                "enum": ["universal", "frontend", "backend", "api-endpoint"],
+                "description": "Which DoD template applies"
+              },
+              "sicvf_validation": {
+                "$ref": "#/$defs/sicvf_validation"
+              },
+              "effort": {
+                "type": "object",
+                "properties": {
+                  "size": {
+                    "type": "string",
+                    "enum": ["XS", "S", "M", "L", "XL"]
+                  },
+                  "estimated_hours": {
+                    "type": "number",
+                    "maximum": 8
+                  },
+                  "estimated_micro_actions": {
+                    "type": "integer",
+                    "maximum": 15
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "total_epics": { "type": "integer" },
+            "total_features": { "type": "integer" },
+            "total_tasks": { "type": "integer" },
+            "tasks_by_dod_template": {
+              "type": "object",
+              "additionalProperties": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
+
+    "sicvf_validation": {
+      "type": "object",
+      "description": "SICVF atomic task validation criteria",
+      "required": ["single_pass", "independent", "clear_boundaries", "verifiable", "fits_context", "passes"],
+      "properties": {
+        "single_pass": {
+          "type": "object",
+          "required": ["passes"],
+          "properties": {
+            "passes": { "type": "boolean" },
+            "estimated_hours": { "type": "number" },
+            "estimated_micro_actions": { "type": "integer" },
+            "violation_reason": { "type": "string" }
+          },
+          "description": "Completable in one session (< 8 hours, < 15 micro-actions)"
+        },
+        "independent": {
+          "type": "object",
+          "required": ["passes"],
+          "properties": {
+            "passes": { "type": "boolean" },
+            "concurrent_dependencies": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "violation_reason": { "type": "string" }
+          },
+          "description": "No concurrent dependencies (depends_on items all COMPLETE)"
+        },
+        "clear_boundaries": {
+          "type": "object",
+          "required": ["passes"],
+          "properties": {
+            "passes": { "type": "boolean" },
+            "inputs_defined": { "type": "boolean" },
+            "outputs_defined": { "type": "boolean" },
+            "undefined_sources": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "violation_reason": { "type": "string" }
+          },
+          "description": "Explicit inputs/outputs (No UNDEFINED sources)"
+        },
+        "verifiable": {
+          "type": "object",
+          "required": ["passes"],
+          "properties": {
+            "passes": { "type": "boolean" },
+            "criteria_count": { "type": "integer" },
+            "executable_criteria_count": { "type": "integer" },
+            "non_executable_criteria": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "violation_reason": { "type": "string" }
+          },
+          "description": "Executable success criteria (All criteria have commands)"
+        },
+        "fits_context": {
+          "type": "object",
+          "required": ["passes"],
+          "properties": {
+            "passes": { "type": "boolean" },
+            "estimated_tokens": { "type": "integer" },
+            "token_budget": { "type": "integer", "default": 80000 },
+            "violation_reason": { "type": "string" }
+          },
+          "description": "Within token budget (< 80K tokens)"
+        },
+        "passes": {
+          "type": "boolean",
+          "description": "True if all 5 criteria pass"
+        },
+        "validation_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+
+    "dependency_graph": {
+      "type": "object",
+      "description": "DAG of all tasks with critical path and parallelization",
+      "required": ["nodes", "edges"],
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "type"],
+            "properties": {
+              "id": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": ["epic", "feature", "task"]
+              },
+              "name": { "type": "string" },
+              "status": {
+                "type": "string",
+                "enum": ["PENDING", "IN_PROGRESS", "COMPLETE", "BLOCKED"]
+              }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to", "type"],
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": ["depends_on", "blocks", "informs"]
+              }
+            }
+          }
+        },
+        "critical_path": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ordered list of task IDs on the critical path"
+        },
+        "parallel_batches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["batch_number", "task_ids"],
+            "properties": {
+              "batch_number": { "type": "integer" },
+              "task_ids": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "can_parallelize": { "type": "boolean" }
+            }
+          },
+          "description": "Tasks grouped by execution order (batch N can run after batch N-1)"
+        },
+        "cycle_detection": {
+          "type": "object",
+          "properties": {
+            "has_cycles": { "type": "boolean" },
+            "cycles": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "total_nodes": { "type": "integer" },
+            "total_edges": { "type": "integer" },
+            "max_depth": { "type": "integer" },
+            "parallelization_factor": {
+              "type": "number",
+              "description": "Average tasks per batch (higher = more parallelizable)"
+            }
+          }
+        }
+      }
+    },
+
+    "context_plan": {
+      "type": "object",
+      "description": "Context preservation strategy across 50+ tasks",
+      "required": ["invariants", "injection_strategy"],
+      "properties": {
+        "invariants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "type", "content"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^INV-[0-9]{3}$"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["architectural_decision", "constraint", "pattern", "convention", "dependency"]
+              },
+              "content": { "type": "string" },
+              "rationale": { "type": "string" },
+              "affected_pillars": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["data_schema", "auth", "api", "ui_ux", "integration", "infra_devops"]
+                }
+              },
+              "source": {
+                "type": "string",
+                "description": "Where this invariant was defined (PRD, discussion, discovery)"
+              }
+            }
+          },
+          "description": "Project-wide truths that must persist across all tasks"
+        },
+        "injection_strategy": {
+          "type": "object",
+          "required": ["tier_budgets"],
+          "properties": {
+            "tier_budgets": {
+              "type": "object",
+              "required": ["tier_0_invariants", "tier_1_active", "tier_2_summarized", "tier_3_indexed"],
+              "properties": {
+                "tier_0_invariants": {
+                  "type": "integer",
+                  "default": 5000,
+                  "description": "Token budget for invariants (never aged)"
+                },
+                "tier_1_active": {
+                  "type": "integer",
+                  "default": 30000,
+                  "description": "Token budget for active context (last 5 tasks)"
+                },
+                "tier_2_summarized": {
+                  "type": "integer",
+                  "default": 15000,
+                  "description": "Token budget for summarized context (tasks 6-20)"
+                },
+                "tier_3_indexed": {
+                  "type": "integer",
+                  "default": 5000,
+                  "description": "Token budget for indexed references (tasks 21+)"
+                }
+              }
+            },
+            "domain_mapping": {
+              "type": "object",
+              "description": "Maps pillars to learning domains for context injection",
+              "additionalProperties": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "summarization_triggers": {
+              "type": "object",
+              "properties": {
+                "tier_1_to_tier_2_after_tasks": {
+                  "type": "integer",
+                  "default": 5
+                },
+                "tier_2_to_tier_3_after_tasks": {
+                  "type": "integer",
+                  "default": 20
+                }
+              }
+            }
+          }
+        },
+        "pattern_registry": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["pattern_id", "name", "description"],
+            "properties": {
+              "pattern_id": { "type": "string" },
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "pillar": { "type": "string" },
+              "example_files": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "discovered_in_task": { "type": "string" }
+            }
+          },
+          "description": "Patterns discovered during decomposition"
+        }
+      }
+    },
+
+    "quality_config": {
+      "type": "object",
+      "description": "Quality gate configuration for all tasks",
+      "required": ["dod_assignments", "gate_configuration"],
+      "properties": {
+        "dod_assignments": {
+          "type": "object",
+          "description": "Maps task IDs to their DoD templates",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["universal", "frontend", "backend", "api-endpoint"]
+          }
+        },
+        "gate_configuration": {
+          "type": "object",
+          "properties": {
+            "universal": {
+              "$ref": "#/$defs/gate_set"
+            },
+            "accessibility": {
+              "$ref": "#/$defs/gate_set"
+            },
+            "performance": {
+              "$ref": "#/$defs/gate_set"
+            },
+            "security": {
+              "$ref": "#/$defs/gate_set"
+            },
+            "type_safety": {
+              "$ref": "#/$defs/gate_set"
+            }
+          }
+        },
+        "blocking_thresholds": {
+          "type": "object",
+          "properties": {
+            "lighthouse_accessibility": {
+              "type": "integer",
+              "default": 90
+            },
+            "lighthouse_performance": {
+              "type": "integer",
+              "default": 90
+            },
+            "lcp_ms": {
+              "type": "integer",
+              "default": 2500
+            },
+            "cls": {
+              "type": "number",
+              "default": 0.1
+            }
+          }
+        }
+      }
+    },
+
+    "gate_set": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "blocking": { "type": "boolean", "default": true },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "criterion"],
+            "properties": {
+              "id": { "type": "string" },
+              "criterion": { "type": "string" },
+              "command": { "type": "string" },
+              "pattern": { "type": "string" },
+              "blocking": { "type": "boolean", "default": true }
+            }
+          }
+        }
+      }
+    },
+
+    "validation_status": {
+      "type": "object",
+      "description": "Overall validation status of the decomposition map",
+      "properties": {
+        "is_valid": { "type": "boolean" },
+        "all_tasks_pass_sicvf": { "type": "boolean" },
+        "dependency_graph_acyclic": { "type": "boolean" },
+        "quality_gates_configured": { "type": "boolean" },
+        "invariants_defined": { "type": "boolean" },
+        "validation_errors": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "validation_warnings": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "validated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}
