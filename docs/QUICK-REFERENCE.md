@@ -1,8 +1,16 @@
+---
+title: STUDIO Quick Reference
+version: 5.0.0
+type: reference
+audience: [developers, ai-agents]
+last_updated: 2026-02-02
+---
+
 # STUDIO Quick Reference Card
 
 ```
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║                           STUDIO QUICK REFERENCE                              ║
+║                           STUDIO QUICK REFERENCE v5.0                         ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 ```
 
@@ -54,6 +62,35 @@
 │  /trace                     Show requirements traceability                  │
 │  /rollback:list             List rollback points                            │
 │  /rollback:to <task>        Rollback to pre-task state                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Enterprise Scripts
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            ENTERPRISE SCRIPTS                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  SICVF VALIDATION                                                           │
+│  ./scripts/sicvf-validate.sh --task-id <id>   Validate task passes SICVF    │
+│                                                                             │
+│  CONTEXT SYSTEM                                                             │
+│  ./scripts/context-inject.sh --task-id <id>   Inject 4-tier context         │
+│  ./scripts/context-manager.sh status          Show context budget pools     │
+│  ./scripts/context-manager.sh scan            Find optimization targets     │
+│                                                                             │
+│  ORCHESTRATION                                                              │
+│  ./scripts/orchestrator.sh init "goal"        Start orchestration session   │
+│  ./scripts/orchestrator.sh route              Route goal to workflow        │
+│  ./scripts/orchestrator.sh checkpoint <name>  Save recovery checkpoint      │
+│  ./scripts/orchestrator.sh resume             Resume from checkpoint        │
+│                                                                             │
+│  SKILLS                                                                     │
+│  ./scripts/skills.sh detect "goal"            Detect matching skills        │
+│  ./scripts/skills.sh inject <skill>           Get skill injection content   │
+│  ./scripts/skills.sh list                     List available skills         │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -248,6 +285,33 @@
 │ framework    │ Pending Queue                                               │
 │ pattern      │ Domain learnings (studio/learnings/{domain}.md)             │
 └──────────────┴─────────────────────────────────────────────────────────────┘
+```
+
+## SICVF Validation Criteria
+
+```
+┌──────────┬─────────────────────────────────────────────────────────────────┐
+│ Criterion│ Description                                                     │
+├──────────┼─────────────────────────────────────────────────────────────────┤
+│ Single   │ Can complete in one build cycle without external blocks         │
+│ Independ │ No circular dependencies in task graph                          │
+│ Clear    │ Well-defined inputs, outputs, acceptance criteria               │
+│ Verifiable│ Has executable validation commands                             │
+│ Fits     │ Within token budget (~30K active tier)                          │
+└──────────┴─────────────────────────────────────────────────────────────────┘
+```
+
+## 4-Tier Context System
+
+```
+┌──────────┬─────────┬─────────────────────────────────────────────────────────┐
+│ Tier     │ Budget  │ Contents                                                │
+├──────────┼─────────┼─────────────────────────────────────────────────────────┤
+│ Tier 0   │ 5K      │ Invariants - always loaded, never summarized            │
+│ Tier 1   │ 30K     │ Active - current task context, plan, code               │
+│ Tier 2   │ 15K     │ Summarized - recent tasks, compressed                   │
+│ Tier 3   │ 5K      │ Indexed - on-demand reference lookup                    │
+└──────────┴─────────┴─────────────────────────────────────────────────────────┘
 ```
 
 ## Common Workflows

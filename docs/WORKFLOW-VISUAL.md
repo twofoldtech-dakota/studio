@@ -1,3 +1,11 @@
+---
+title: STUDIO Workflow Visual Guide
+version: 5.0.0
+type: visual-guide
+audience: [developers, ai-agents]
+last_updated: 2026-02-02
+---
+
 # STUDIO Workflow Visual Guide
 
 A complete visual overview of how STUDIO coordinates AI agents to build software.

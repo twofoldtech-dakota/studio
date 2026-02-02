@@ -1,3 +1,11 @@
+---
+title: STUDIO Complete Guide
+version: 5.0.0
+type: guide
+audience: [developers, ai-agents]
+last_updated: 2026-02-02
+---
+
 # STUDIO Complete Guide
 
 > **S**elf-**T**eaching **U**nified **D**evelopment & **I**ntelligent **O**rchestration
@@ -19,7 +27,9 @@ A Claude Code plugin that transforms goals into verified outcomes through intell
 9. [Memory System](#memory-system)
 10. [Quality Assurance](#quality-assurance)
 11. [Advanced Features](#advanced-features)
-12. [File Reference](#file-reference)
+12. [Enterprise Features](#enterprise-features)
+13. [File Reference](#file-reference)
+14. [Knowledge Evolution System](#knowledge-evolution-system)
 
 ---
 
@@ -964,6 +974,131 @@ Track your build metrics:
 
 ---
 
+## Enterprise Features
+
+For large-scale projects (10+ tasks or enterprise migrations), STUDIO provides additional capabilities.
+
+### SICVF Validation Protocol
+
+Every task must pass SICVF validation before execution:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        SICVF VALIDATION CRITERIA                         │
+├───────────┬─────────────────────────────────────────────────────────────┤
+│           │                                                             │
+│  Single   │ Can be completed in one build cycle                         │
+│  pass     │ No external dependencies that would block completion        │
+│           │                                                             │
+├───────────┼─────────────────────────────────────────────────────────────┤
+│           │                                                             │
+│  Independ │ No circular dependencies in the task graph                  │
+│  ent      │ Can be executed without waiting for unrelated tasks         │
+│           │                                                             │
+├───────────┼─────────────────────────────────────────────────────────────┤
+│           │                                                             │
+│  Clear    │ Well-defined inputs, outputs, and acceptance criteria       │
+│  boundar  │ No ambiguous requirements or fuzzy success conditions       │
+│           │                                                             │
+├───────────┼─────────────────────────────────────────────────────────────┤
+│           │                                                             │
+│  Verifi   │ Has executable validation commands                          │
+│  able     │ Success/failure can be determined programmatically          │
+│           │                                                             │
+├───────────┼─────────────────────────────────────────────────────────────┤
+│           │                                                             │
+│  Fits     │ Within token budget for agent context (~30K active tier)    │
+│  context  │ Can be understood without loading entire codebase           │
+│           │                                                             │
+└───────────┴─────────────────────────────────────────────────────────────┘
+```
+
+**Usage:**
+```bash
+./scripts/sicvf-validate.sh --task-id <task_id>
+```
+
+### 4-Tier Context System
+
+Context is preserved across tasks using a tiered system:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        4-TIER CONTEXT SYSTEM                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  TIER 0: INVARIANTS (5K tokens)                                         │
+│  ├── Always loaded, never summarized                                    │
+│  ├── Project identity, tech stack, core patterns                        │
+│  └── Stored in: studio/context/invariants.md                            │
+│                                                                         │
+│  TIER 1: ACTIVE (30K tokens)                                            │
+│  ├── Current task context                                               │
+│  ├── Plan, code being modified, immediate dependencies                  │
+│  └── Refreshed each task                                                │
+│                                                                         │
+│  TIER 2: SUMMARIZED (15K tokens)                                        │
+│  ├── Recent completed tasks, compressed                                 │
+│  ├── Key decisions and patterns from last 5-10 tasks                    │
+│  └── Auto-summarized after task completion                              │
+│                                                                         │
+│  TIER 3: INDEXED (5K tokens)                                            │
+│  ├── On-demand reference lookup                                         │
+│  ├── File paths, function signatures, API schemas                       │
+│  └── Loaded only when explicitly needed                                 │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Usage:**
+```bash
+./scripts/context-inject.sh --task-id <task_id> --goal "<goal>"
+./scripts/context-manager.sh status   # Check budget pools
+./scripts/context-manager.sh scan     # Find optimization targets
+```
+
+### Enterprise Decomposition
+
+For projects with 10+ tasks, the Planner generates a **Decomposition Map**:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     DECOMPOSITION MAP COMPONENTS                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  1. PILLAR ANALYSIS                                                     │
+│     Score 6 architectural pillars (0-10 each):                          │
+│     ├── Data (persistence, models, migrations)                          │
+│     ├── Auth (authentication, authorization, sessions)                  │
+│     ├── API (endpoints, contracts, versioning)                          │
+│     ├── UI (components, flows, styling)                                 │
+│     ├── Integration (external services, third-party APIs)               │
+│     └── Infra (deployment, monitoring, scaling)                         │
+│                                                                         │
+│  2. HIERARCHY                                                           │
+│     Three-level decomposition:                                          │
+│     EPIC (large initiative)                                             │
+│     └── FEATURE (user-facing capability)                                │
+│         └── TASK (atomic, SICVF-validated)                              │
+│                                                                         │
+│  3. DEPENDENCY GRAPH                                                    │
+│     ├── Critical path identification                                    │
+│     ├── Parallel batch calculation                                      │
+│     └── Blocking relationship mapping                                   │
+│                                                                         │
+│  4. CONTEXT PLAN                                                        │
+│     ├── Tier 0: Project invariants, patterns                            │
+│     ├── Tier 1: Current epic/feature context                            │
+│     ├── Tier 2: Completed task summaries                                │
+│     └── Tier 3: Reference docs, schemas                                 │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Protocol:** See `studio/prompts/enterprise-decomposition.md` for the full specification.
+
+---
+
 ## File Reference
 
 ### Key Files Quick Reference
@@ -982,9 +1117,13 @@ Track your build metrics:
 | `scripts/signal-audit.sh` | Signal vs. noise filtering |
 | `scripts/sprint-evolution.sh` | Post-sprint self-correction |
 | `scripts/orchestrator.sh` | Multi-agent orchestration |
-| `scripts/context-manager.sh` | Context optimization |
+| `scripts/context-manager.sh` | Context budget management |
+| `scripts/context-inject.sh` | 4-tier context injection |
+| `scripts/sicvf-validate.sh` | SICVF task validation |
+| `scripts/skills.sh` | Skill detection/injection |
 | `STUDIO_KNOWLEDGE_BASE.md` | Active architectural constraints |
 | `studio/prompts/self-learning.md` | Self-learning protocol |
+| `studio/prompts/enterprise-decomposition.md` | Enterprise decomposition protocol |
 | `studio/config/tracked-frameworks.json` | Framework signal detection |
 
 ### Generated Files

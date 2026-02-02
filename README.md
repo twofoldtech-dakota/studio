@@ -1,3 +1,11 @@
+---
+title: STUDIO
+version: 5.0.0
+type: overview
+audience: [developers, ai-agents]
+last_updated: 2026-02-02
+---
+
 # STUDIO
 
 > **S**elf-**T**eaching **U**nified **D**evelopment & **I**ntelligent **O**rchestration
@@ -16,6 +24,19 @@
 ║                                                                                 ║
 ╚═════════════════════════════════════════════════════════════════════════════════╝
 ```
+
+---
+
+## Table of Contents
+
+1. [Why STUDIO?](#why-studio)
+2. [Quick Start](#quick-start)
+3. [Core Concepts](#core-concepts)
+4. [Commands](#commands)
+5. [Knowledge System](#knowledge-system)
+6. [Enterprise Features](#enterprise-features)
+7. [Architecture](#architecture)
+8. [Documentation](#documentation)
 
 ---
 
@@ -77,52 +98,23 @@ STUDIO will:
 └───────────────────────┴───────────────────────┴───────────────────────────────┘
 ```
 
-### The Knowledge System
+### The Five Challenges
 
-STUDIO actively evolves its understanding through the **Dynamic SOP System**:
+Before any plan executes, it must answer:
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                          STUDIO KNOWLEDGE BASE                                   │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────────┐   │
-│  │  STRICT CONSTRAINTS                    (Never Violate)                  │   │
-│  │  Rules that kill performance/quality — promoted after 2+ occurrences    │   │
-│  │  Example: "Never mutate React state directly"                           │   │
-│  └─────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────────┐   │
-│  │  SLOP LEDGER                           (Avoid These Mistakes)           │   │
-│  │  Naming, structural mistakes — captured on 1st occurrence + rework cost │   │
-│  │  Example: "Mixed camelCase and kebab-case in component files"           │   │
-│  └─────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────────┐   │
-│  │  PERFORMANCE DELTA                     (Measured Improvements)          │   │
-│  │  Before/after metrics — must have concrete numbers                      │   │
-│  │  Example: "LCP: 2.4s → 1.1s (54% improvement) via lazy loading"         │   │
-│  └─────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────────┐   │
-│  │  PENDING QUEUE                         (Awaiting Promotion)             │   │
-│  │  Signals with 1 occurrence — moves to Strict Constraints after 2nd      │   │
-│  └─────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                 │
-└─────────────────────────────────────────────────────────────────────────────────┘
-```
+1. **REQUIREMENTS** — Does this solve what was asked?
+2. **EDGE CASES** — What inputs would break this?
+3. **SIMPLICITY** — Is this the simplest solution?
+4. **INTEGRATION** — Does this fit the codebase?
+5. **FAILURE MODES** — What happens when it fails?
 
-### Sprint Evolution
+### Quality Gate Verdicts
 
-Every **5 tasks**, STUDIO proposes knowledge base evolution:
-
-```
-Task 1 → Task 2 → Task 3 → Task 4 → Task 5 → 🔄 EVOLUTION
-                                              │
-                                              ├── Propose deletable rules (stale, no violations)
-                                              ├── Propose new enforcement (recurring patterns)
-                                              └── User approves → Knowledge base updated
-```
+| Verdict | Meaning |
+|---------|---------|
+| **STRONG** | All checks passed |
+| **SOUND** | Required passed, optional warnings |
+| **BLOCKED** | Required check failed — fix required |
 
 ---
 
@@ -170,40 +162,115 @@ Task 1 → Task 2 → Task 3 → Task 4 → Task 5 → 🔄 EVOLUTION
 
 ---
 
-## Quality Assurance
+## Knowledge System
 
-### Confidence Scoring
+STUDIO actively evolves its understanding through the **Dynamic SOP System**.
 
-Every plan gets scored before execution:
+### Knowledge Base Structure
 
 ```
-╔══════════════════════════════════════════════════════════════════╗
-║  PLAN CONFIDENCE: 85% (MEDIUM)                                   ║
-╠══════════════════════════════════════════════════════════════════╣
-║  Requirements:    [████████░░] 80%                               ║
-║  Step Quality:    [██████████] 100%                              ║
-║  Context:         [████████░░] 80%                               ║
-║  Risk:            [████████░░] 80%                               ║
-╚══════════════════════════════════════════════════════════════════╝
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          STUDIO KNOWLEDGE BASE                                   │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │  STRICT CONSTRAINTS                    (Never Violate)                  │   │
+│  │  Rules that kill performance/quality — promoted after 2+ occurrences    │   │
+│  │  Example: "Never mutate React state directly"                           │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │  SLOP LEDGER                           (Avoid These Mistakes)           │   │
+│  │  Naming, structural mistakes — captured on 1st occurrence + rework cost │   │
+│  │  Example: "Mixed camelCase and kebab-case in component files"           │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │  PERFORMANCE DELTA                     (Measured Improvements)          │   │
+│  │  Before/after metrics — must have concrete numbers                      │   │
+│  │  Example: "LCP: 2.4s → 1.1s (54% improvement) via lazy loading"         │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │  PENDING QUEUE                         (Awaiting Promotion)             │   │
+│  │  Signals with 1 occurrence — moves to Strict Constraints after 2nd      │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### The Five Challenges
+### Sprint Evolution
 
-Before any plan executes, it must answer:
+Every **5 tasks**, STUDIO proposes knowledge base evolution:
 
-1. **REQUIREMENTS** — Does this solve what was asked?
-2. **EDGE CASES** — What inputs would break this?
-3. **SIMPLICITY** — Is this the simplest solution?
-4. **INTEGRATION** — Does this fit the codebase?
-5. **FAILURE MODES** — What happens when it fails?
+```
+Task 1 → Task 2 → Task 3 → Task 4 → Task 5 → 🔄 EVOLUTION
+                                              │
+                                              ├── Propose deletable rules (stale, no violations)
+                                              ├── Propose new enforcement (recurring patterns)
+                                              └── User approves → Knowledge base updated
+```
 
-### Quality Gate Verdicts
+### Learning System Scripts
 
-| Verdict | Meaning |
-|---------|---------|
-| **STRONG** | All checks passed |
-| **SOUND** | Required passed, optional warnings |
-| **BLOCKED** | Required check failed — fix required |
+| Script | Purpose |
+|--------|---------|
+| `./scripts/learnings.sh classify <text>` | Classify learning and determine destination |
+| `./scripts/learnings.sh check-duplicate <title>` | Check for existing similar entries |
+| `./scripts/learnings.sh extract-metrics <text>` | Extract before/after metrics |
+| `./scripts/signal-audit.sh classify <text>` | Full signal classification as JSON |
+| `./scripts/signal-audit.sh is-noise <text>` | Check if entry should be filtered |
+| `./scripts/sprint-evolution.sh status` | Show sprint progress |
+| `./scripts/sprint-evolution.sh propose` | Generate evolution proposals |
+| `./scripts/sprint-evolution.sh reset` | Start new sprint after review |
+
+---
+
+## Enterprise Features
+
+### SICVF Validation Protocol
+
+For large-scale projects, every task must pass SICVF validation:
+
+| Criterion | Description |
+|-----------|-------------|
+| **S**ingle-pass | Can be completed in one build cycle |
+| **I**ndependent | No circular dependencies |
+| **C**lear boundaries | Well-defined inputs and outputs |
+| **V**erifiable | Has executable acceptance criteria |
+| **F**its context | Within token budget for agent |
+
+```bash
+# Validate a task
+./scripts/sicvf-validate.sh --task-id <task_id>
+```
+
+### 4-Tier Context System
+
+Context is preserved across tasks in tiers:
+
+| Tier | Budget | Contents |
+|------|--------|----------|
+| **Tier 0** | 5K tokens | Invariants (always loaded) |
+| **Tier 1** | 30K tokens | Active task context |
+| **Tier 2** | 15K tokens | Summarized recent context |
+| **Tier 3** | 5K tokens | Indexed reference (on-demand) |
+
+```bash
+# Inject context for a task
+./scripts/context-inject.sh --task-id <task_id> --goal "<goal>"
+```
+
+### Enterprise Decomposition
+
+For projects with 10+ tasks, the Planner generates a **Decomposition Map**:
+
+1. **Pillar Analysis** — Score 6 architectural pillars (data, auth, api, ui, integration, infra)
+2. **Hierarchy** — Epic → Feature → Task decomposition
+3. **Dependency Graph** — DAG with critical path and parallel batches
+4. **Context Plan** — 4-tier context preservation strategy
+
+See `studio/prompts/enterprise-decomposition.md` for the full protocol.
 
 ---
 
@@ -241,9 +308,7 @@ Before any plan executes, it must answer:
     └──────────────────────────────────────────────────────────────────────────┘
 ```
 
----
-
-## Project Structure
+### Project Structure
 
 ```
 .
@@ -259,72 +324,23 @@ Before any plan executes, it must answer:
     ├── 🔗 hooks/                 # Lifecycle hooks (v5.0.0)
     ├── 📐 schemas/               # Validation schemas
     ├── 🎨 brand/                 # Brand source of truth
-    ├── 🔧 scripts/
+    ├── 🔧 scripts/               # Runtime scripts
     │   ├── learnings.sh          # Learning capture & classification
     │   ├── signal-audit.sh       # Signal vs. noise filtering
     │   ├── sprint-evolution.sh   # Post-sprint self-correction
-    │   └── orchestrator.sh       # Multi-agent orchestration
+    │   ├── orchestrator.sh       # Multi-agent orchestration
+    │   ├── context-manager.sh    # Context budget management
+    │   ├── context-inject.sh     # 4-tier context injection
+    │   ├── sicvf-validate.sh     # SICVF task validation
+    │   └── skills.sh             # Skill detection/injection
     ├── 📊 data/                  # Error patterns, analytics
     ├── 📝 templates/             # Code templates
     ├── 📖 docs/                  # Documentation
     ├── 💾 learnings/             # Domain-specific learnings
     ├── ⚙️ config/                # Framework tracking, signals
     └── 📄 prompts/               # System prompts
-```
-
----
-
-## Learning System Scripts
-
-| Script | Purpose |
-|--------|---------|
-| `./scripts/learnings.sh classify <text>` | Classify learning and determine destination |
-| `./scripts/learnings.sh check-duplicate <title>` | Check for existing similar entries |
-| `./scripts/learnings.sh extract-metrics <text>` | Extract before/after metrics |
-| `./scripts/signal-audit.sh classify <text>` | Full signal classification as JSON |
-| `./scripts/signal-audit.sh is-noise <text>` | Check if entry should be filtered |
-| `./scripts/sprint-evolution.sh status` | Show sprint progress |
-| `./scripts/sprint-evolution.sh propose` | Generate evolution proposals |
-| `./scripts/sprint-evolution.sh reset` | Start new sprint after review |
-
----
-
-## Advanced Features
-
-### Parallel Execution
-Steps without dependencies run simultaneously for faster builds.
-
-### Project Orchestration
-Manage multiple related tasks with dependency graphs:
-```
-[Auth] ────┐
-           ├───▶ [Cart] ───▶ [Checkout]
-[Catalog] ─┘
-```
-
-### Rollback System
-Git-based snapshots let you recover to any pre-task state:
-```bash
-/rollback:list              # See available points
-/rollback:to <task> --force # Restore pre-task state
-```
-
-### Error Classification
-20+ error patterns with contextual fix suggestions and auto-fix options.
-
-### Optional MCP Integrations
-
-Enhance STUDIO with additional AI capabilities:
-
-```bash
-# Up-to-date documentation for any library
-claude mcp add context7 --transport http https://mcp.context7.com/mcp
-
-# Manage Vercel projects and deployments
-claude mcp add vercel --transport http https://mcp.vercel.com
-
-# AI-powered design assistance
-claude mcp add gemini-design-mcp --env API_KEY=<key> -- npx -y gemini-design-mcp@latest
+        ├── self-learning.md      # Self-learning protocol
+        └── enterprise-decomposition.md  # Enterprise workflow
 ```
 
 ---
@@ -336,6 +352,7 @@ claude mcp add gemini-design-mcp --env API_KEY=<key> -- npx -y gemini-design-mcp
 | [STUDIO-GUIDE.md](docs/STUDIO-GUIDE.md) | Complete system documentation with visuals |
 | [QUICK-REFERENCE.md](docs/QUICK-REFERENCE.md) | Quick lookup card for commands |
 | [WORKFLOW-VISUAL.md](docs/WORKFLOW-VISUAL.md) | Visual workflow diagrams |
+| [ARCH.md](docs/ARCH.md) | Technical architecture reference |
 
 ---
 
@@ -349,6 +366,7 @@ claude mcp add gemini-design-mcp --env API_KEY=<key> -- npx -y gemini-design-mcp
 | Hooks | Shell + LLM prompts (v5.0.0) |
 | Storage | File-based (JSON, YAML, Markdown) |
 | Learning | Signal classification + Sprint evolution |
+| Enterprise | SICVF validation + 4-tier context |
 
 ---
 
