@@ -5,14 +5,17 @@
 
 set -e
 
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
 
 # Read hook input (contains the user's prompt)
 INPUT=$(cat)
 
 # Find active task
 find_active_task() {
-    for manifest in "$STUDIO_DIR"/projects/*/tasks/*/manifest.json; do
+    for manifest in "$STUDIO_OUTPUT_DIR"/projects/*/tasks/*/manifest.json; do
         if [ -f "$manifest" ]; then
             status=$(jq -r '.status // empty' "$manifest" 2>/dev/null)
             if [ "$status" = "BUILDING" ] || [ "$status" = "IN_PROGRESS" ] || [ "$status" = "READY_TO_BUILD" ]; then

@@ -1,9 +1,9 @@
 ---
 name: build
-description: Execute a task through STUDIO's plan-then-build workflow
+description: Execute tasks through STUDIO's plan-then-build workflow with smart work selection
 arguments:
-  - name: goal
-    description: The goal to accomplish (required for new builds)
+  - name: target
+    description: "Task ID (T1), Feature ID (F1), Epic ID (E1), or goal text"
     required: false
   - name: subcommand
     description: "Optional subcommand: resume, status, abort, list, preview"
@@ -21,6 +21,36 @@ triggers:
 # STUDIO Build Command
 
 You are initiating a **STUDIO Build** - an autonomous workflow that transforms goals into verified outcomes through two phases: **Plan** then **Build**.
+
+## Smart Command Parsing
+
+The `/build` command intelligently handles multiple input types:
+
+| Command | Behavior |
+|---------|----------|
+| `/build` | Execute next highest-priority ready task from backlog |
+| `/build T7` | Build specific task T7 |
+| `/build F3` | Build all tasks in Feature F3 |
+| `/build E1` | Build all tasks in Epic E1 |
+| `/build "text"` | Plan text first, add to backlog, then build |
+| `/build login` | Fuzzy match "login" to find task/feature |
+
+### ID Resolution
+
+Short IDs are resolved automatically:
+- `E1` → `EPIC-001`
+- `F3` → `FEAT-003`
+- `T7` → `task_20260201_120000`
+
+Fuzzy matching works on names:
+- `login` → matches "Feature: Login Flow"
+- `auth` → matches "Epic: Authentication"
+
+```bash
+# Resolve ID using backlog script
+"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" resolve-id "T7"
+"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" resolve-id "login"
+```
 
 ## Terminal Output
 
@@ -50,10 +80,115 @@ You are initiating a **STUDIO Build** - an autonomous workflow that transforms g
 "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" banner failed
 ```
 
+## Work Selection Algorithm
+
+When `/build` is run without arguments, the system selects the next task using:
+
+```
+SCORE = (0.35 × priority) +
+        (0.25 × dependency_unlock) +
+        (0.20 × business_value) +
+        (0.20 × readiness)
+```
+
+Where:
+- **priority**: User-assigned (1-5, where 1 is highest)
+- **dependency_unlock**: How many tasks this unblocks (0-100)
+- **business_value**: From parent epic (critical=100, high=75, medium=50, low=25)
+- **readiness**: All dependencies satisfied = 100, else 0
+
+```bash
+# Get next highest-priority ready task
+"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" next-task
+
+# Score a specific task
+"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" score-task T7
+
+# Get all ready tasks
+"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" ready-tasks
+```
+
 ## Command Variants
 
+### `/build`
+Execute the next highest-priority ready task from the backlog.
+
+```
+/build
+  │
+  ▼
+┌─────────────────────────────────────────┐
+│  SELECTING NEXT TASK...                 │
+│                                         │
+│  Ready tasks (deps satisfied):          │
+│  1. T8 - Password reset email (score:92)│
+│  2. T15 - Add Stripe SDK (score: 78)    │
+│  3. T12 - Unit tests (score: 65)        │
+│                                         │
+│  Executing: T8 - Password reset email   │
+│  ───────────────────────────────────    │
+│  [Planner phase...]                     │
+│  [Builder phase...]                     │
+│  ✓ Task complete                        │
+│                                         │
+│  Next ready: T15 - Add Stripe SDK       │
+│  Run /build to continue                 │
+└─────────────────────────────────────────┘
+```
+
+### `/build <id>`
+Build a specific item by ID (task, feature, or epic).
+
+```bash
+/build T7   # Build task T7
+/build F3   # Build all tasks in Feature F3 (in dependency order)
+/build E1   # Build all tasks in Epic E1 (in dependency order)
+```
+
+```
+/build F3
+  │
+  ▼
+┌─────────────────────────────────────────┐
+│  BUILDING FEATURE: F3 - User Profile    │
+│                                         │
+│  Tasks in this feature:                 │
+│  ├── T9 - Profile API endpoint          │
+│  ├── T10 - Profile UI component         │
+│  └── T11 - Profile tests                │
+│                                         │
+│  Executing in dependency order...       │
+│  [T9] ✓ Complete                        │
+│  [T10] ⟳ Building...                    │
+└─────────────────────────────────────────┘
+```
+
+### `/build "text"`
+Plan the text first, add to backlog, then build.
+
+```
+/build "Add dark mode toggle"
+  │
+  ▼
+┌─────────────────────────────────────────┐
+│  NEW GOAL DETECTED                      │
+│                                         │
+│  This will:                             │
+│  1. Decompose into tasks                │
+│  2. Add to backlog under appropriate    │
+│     epic/feature (or create new)        │
+│  3. Execute the first task              │
+│                                         │
+│  Decomposing...                         │
+│  → Added to: E1/F2 - UI Settings        │
+│  → Created: T20 - Dark mode toggle      │
+│                                         │
+│  Executing T20...                       │
+└─────────────────────────────────────────┘
+```
+
 ### `/build <goal>`
-Start a new build with the specified goal.
+Start a new build with the specified goal (legacy behavior).
 
 ### `/build:preview <goal>`
 Preview what the build would do without executing. Shows:
@@ -127,8 +262,40 @@ Output: Working code + `manifest.json` with status
 
 ## Execution Protocol
 
+### With Backlog Integration
+
+```
+/build
+  │
+  ├── Backlog exists?
+  │   ├── Yes: Get next ready task from backlog
+  │   │   └── Execute task (Plan → Build)
+  │   │       └── Update task status to COMPLETE
+  │   │           └── Show next ready task
+  │   └── No: Prompt for goal
+  │
+  └── Argument provided?
+      ├── Looks like ID (E1, F3, T7)?
+      │   └── Resolve ID → Execute item(s)
+      └── Text goal?
+          └── Decompose → Add to backlog → Execute
+```
+
+### Full Execution Flow
+
 ```
 /build "Add user authentication"
+         │
+         ▼
+┌─────────────────────────────────────────┐
+│  PHASE 0: BACKLOG INTEGRATION           │
+│                                         │
+│  1. Check if backlog exists             │
+│  2. Decompose goal into tasks           │
+│  3. Add to backlog (or create new)      │
+│  4. Select first task to execute        │
+│                                         │
+└─────────────────────────────────────────┘
          │
          ▼
 ┌─────────────────────────────────────────┐
@@ -162,35 +329,51 @@ Output: Working code + `manifest.json` with status
 └─────────────────────────────────────────┘
          │
          ▼
+┌─────────────────────────────────────────┐
+│  PHASE 3: BACKLOG UPDATE                │
+│                                         │
+│  1. Update task status to COMPLETE      │
+│  2. Update feature/epic progress        │
+│  3. Show next ready task                │
+│                                         │
+└─────────────────────────────────────────┘
+         │
+         ▼
     ✓ BUILD COMPLETE
 ```
 
 ## File Structure
 
 ```
-studio/
-├── projects/
-│   └── [project_id]/
-│       ├── project.json
-│       └── tasks/
-│           └── [task_id]/
-│               ├── plan.json      # Execution-ready plan
-│               ├── manifest.json  # State and progress
-│               └── build-log.json # Execution history
-│
-├── memory/                # User preferences
+.studio/                        # Project output directory
+├── backlog.json               # Epic > Feature > Task hierarchy
+├── id-map.json                # Short ID to full ID mapping
+├── project.json               # Project metadata
+└── tasks/
+    └── [task_id]/
+        ├── plan.json          # Execution-ready plan
+        ├── manifest.json      # State and progress
+        └── build-log.json     # Execution history
+
+studio/                        # Plugin source (this repo)
+├── memory/                    # User preferences
 │   ├── global.md
 │   └── [domain].md
 │
-├── team/                  # Domain experts
+├── team/                      # Domain experts
 │   ├── tier1/
 │   ├── tier2/
 │   └── tier3/
 │
-└── playbooks/             # Methodologies
-    ├── planning/
-    ├── building/
-    └── memory/
+├── playbooks/                 # Methodologies
+│   ├── planning/
+│   ├── building/
+│   └── memory/
+│
+└── scripts/
+    ├── backlog.sh             # Backlog CRUD operations
+    ├── project.sh             # Project management
+    └── output.sh              # Terminal formatting
 ```
 
 ## Build States
@@ -262,7 +445,113 @@ Verdicts:
 - **SOUND** - Required pass, optional warnings
 - **BLOCK** - Required check failed
 
-## Example Session
+## Example Sessions
+
+### Auto-Select Next Task
+
+```
+User: /build
+
+Build: Checking backlog...
+       ✓ Found 12 tasks, 4 ready
+
+       Scoring ready tasks:
+       ├── T8 - Password reset email (score: 92)
+       ├── T15 - Add Stripe SDK (score: 78)
+       └── T12 - Unit tests (score: 65)
+
+       Executing: T8 - Password reset email
+
+Planner: Loading context from backlog...
+         ✓ Task: T8 - Password reset email
+         ✓ Feature: F2 - Password Reset
+         ✓ Epic: E1 - User Management
+
+         Creating plan for T8...
+         ✓ 3 steps identified
+         ✓ Plan saved
+
+Builder: Executing T8...
+         [Step 1/3] ✓ Create email template
+         [Step 2/3] ✓ Add send function
+         [Step 3/3] ✓ Integration test
+
+         Quality Gate: STRONG ✓
+
+Build: ✓ T8 Complete
+       Updating backlog...
+       ├── T8: PENDING → COMPLETE
+       └── F2 Progress: 67% → 100%
+
+       Next ready: T15 - Add Stripe SDK
+       Run /build to continue
+```
+
+### Build Specific Feature
+
+```
+User: /build F3
+
+Build: Building Feature: F3 - User Profile
+       ├── T9 - Profile API endpoint
+       ├── T10 - Profile UI component
+       └── T11 - Profile tests
+
+       Executing in dependency order...
+
+       [T9] Creating plan...
+            Executing...
+            ✓ Complete
+
+       [T10] Creating plan...
+             Executing...
+             ✓ Complete
+
+       [T11] Creating plan...
+             Executing...
+             ✓ Complete
+
+       ╔═══════════════════════════════════════╗
+       ║  FEATURE COMPLETE: F3 - User Profile  ║
+       ╚═══════════════════════════════════════╝
+
+       Next: F4 - Settings (3 tasks)
+```
+
+### Plan Then Build
+
+```
+User: /build "Add dark mode toggle"
+
+Build: New goal detected - decomposing...
+
+Architect: Analyzing goal...
+           This fits under existing structure:
+           └── E1 - User Management
+               └── F2 - UI Settings (creating)
+
+           Created:
+           └── T20 - Dark mode toggle
+
+           Executing T20...
+
+Planner: Creating plan for T20...
+         ✓ 4 steps identified
+
+Builder: Executing...
+         [Step 1/4] ✓ Theme context
+         [Step 2/4] ✓ CSS variables
+         [Step 3/4] ✓ Toggle component
+         [Step 4/4] ✓ Tests
+
+         Quality Gate: STRONG ✓
+
+         ╔═══════════════════════════════════════╗
+         ║      BUILD COMPLETE: T20              ║
+         ╚═══════════════════════════════════════╝
+```
+
+### Traditional Goal Build
 
 ```
 User: /build Add user registration with email verification
@@ -289,9 +578,9 @@ Planner: Creating plan...
          ✓ 6 steps identified
          ✓ Context embedded (4 rules, 5 patterns)
          ✓ Validation hooks defined
-         ✓ Plan saved: studio/projects/.../plan.json
+         ✓ Plan saved: .studio/tasks/.../plan.json
 
-         Ready for /build execution.
+         Ready for execution.
 
 Builder: Loading plan...
          ✓ 6 steps to execute
@@ -324,3 +613,20 @@ Builder: All steps executed
 
          BUILD COMPLETE
 ```
+
+## Backlog Status Updates
+
+After each task completes, the build command updates the backlog:
+
+```bash
+# Update task status
+"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" update-status T8 COMPLETE "Build successful" builder
+
+# Get next task
+"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" next-task
+```
+
+This maintains:
+- Immutable changelog for each item
+- Progress metrics (completion percentage)
+- Feature/Epic status propagation

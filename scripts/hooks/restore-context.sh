@@ -5,8 +5,11 @@
 
 set -e
 
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-RECOVERY_FILE="${STUDIO_DIR}/.recovery.json"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
+RECOVERY_FILE="${STUDIO_OUTPUT_DIR}/.recovery.json"
 
 # Check if we have saved state
 if [ ! -f "$RECOVERY_FILE" ]; then

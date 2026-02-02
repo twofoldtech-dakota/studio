@@ -18,8 +18,11 @@
 
 set -euo pipefail
 
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-PROJECTS_DIR="${STUDIO_DIR}/projects"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
+PROJECTS_DIR="${STUDIO_OUTPUT_DIR}/projects"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Log completed build to analytics

@@ -13,8 +13,11 @@
 
 set -euo pipefail
 
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-TASKS_DIR="${STUDIO_DIR}/tasks"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
+TASKS_DIR="${STUDIO_OUTPUT_DIR}/tasks"
 
 # Check if this is an STUDIO session by looking for active tasks
 check_studio_session() {

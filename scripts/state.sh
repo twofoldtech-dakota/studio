@@ -23,8 +23,11 @@
 set -euo pipefail
 
 # Configuration
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-TASKS_DIR="${STUDIO_DIR}/tasks"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
+TASKS_DIR="${STUDIO_OUTPUT_DIR}/tasks"
 
 # Colors for output (if terminal supports them)
 if [[ -t 1 ]]; then
@@ -65,14 +68,14 @@ generate_task_id() {
     echo "task_${timestamp}"
 }
 
-# Ensure the STUDIO directory structure exists
+# Ensure the STUDIO output directory structure exists
 ensure_studio_dir() {
-    mkdir -p "${STUDIO_DIR}"
+    mkdir -p "${STUDIO_OUTPUT_DIR}"
     mkdir -p "${TASKS_DIR}"
 
     # Create config if it doesn't exist
-    if [[ ! -f "${STUDIO_DIR}/config.json" ]]; then
-        cat > "${STUDIO_DIR}/config.json" << 'EOF'
+    if [[ ! -f "${STUDIO_OUTPUT_DIR}/config.json" ]]; then
+        cat > "${STUDIO_OUTPUT_DIR}/config.json" << 'EOF'
 {
   "version": "1.0.0",
   "checkpoint_enabled": true,

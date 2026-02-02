@@ -13,8 +13,11 @@
 
 set -euo pipefail
 
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-TASKS_DIR="${STUDIO_DIR}/tasks"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
+TASKS_DIR="${STUDIO_OUTPUT_DIR}/tasks"
 
 # Read hook input from stdin
 INPUT=$(cat)

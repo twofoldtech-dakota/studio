@@ -4,8 +4,11 @@
 
 set -e
 
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-RECOVERY_FILE="${STUDIO_DIR}/.recovery.json"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
+RECOVERY_FILE="${STUDIO_OUTPUT_DIR}/.recovery.json"
 
 # Read hook input
 INPUT=$(cat)
@@ -13,7 +16,7 @@ INPUT=$(cat)
 # Find current task directory
 find_current_task() {
     # Look for task with in_progress status
-    for manifest in "$STUDIO_DIR"/projects/*/tasks/*/manifest.json; do
+    for manifest in "$STUDIO_OUTPUT_DIR"/projects/*/tasks/*/manifest.json; do
         if [ -f "$manifest" ]; then
             status=$(jq -r '.status // empty' "$manifest" 2>/dev/null)
             if [ "$status" = "BUILDING" ] || [ "$status" = "IN_PROGRESS" ]; then
@@ -24,7 +27,7 @@ find_current_task() {
     done
 
     # Fallback: most recent task
-    ls -td "$STUDIO_DIR"/projects/*/tasks/*/ 2>/dev/null | head -1
+    ls -td "$STUDIO_OUTPUT_DIR"/projects/*/tasks/*/ 2>/dev/null | head -1
 }
 
 TASK_DIR=$(find_current_task)

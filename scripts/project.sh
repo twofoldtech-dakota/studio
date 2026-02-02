@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # STUDIO Project Orchestration
 # Manage multiple related tasks as a project with dependencies
+# Integrates with backlog.sh for Epic > Feature > Task hierarchy
 #
 # Usage:
 #   project.sh init <name>
@@ -8,12 +9,16 @@
 #   project.sh status
 #   project.sh run [task_id]
 #   project.sh graph
+#   project.sh backlog-init       # Initialize backlog integration
+#   project.sh backlog-status     # Show backlog dashboard
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-PROJECTS_DIR="${STUDIO_DIR}/projects"
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
+PROJECTS_DIR="${STUDIO_OUTPUT_DIR}/projects"
+BACKLOG_SCRIPT="${SCRIPT_DIR}/backlog.sh"
 
 # Colors
 BOLD='\033[1m'
@@ -26,7 +31,7 @@ NC='\033[0m'
 
 # Get current project
 get_current_project() {
-    local current_file="${STUDIO_DIR}/.current_project"
+    local current_file="${STUDIO_OUTPUT_DIR}/.current_project"
     if [[ -f "$current_file" ]]; then
         cat "$current_file"
     else
@@ -37,7 +42,8 @@ get_current_project() {
 # Set current project
 set_current_project() {
     local project_id="$1"
-    echo "$project_id" > "${STUDIO_DIR}/.current_project"
+    mkdir -p "${STUDIO_OUTPUT_DIR}"
+    echo "$project_id" > "${STUDIO_OUTPUT_DIR}/.current_project"
 }
 
 # Generate project ID
@@ -86,11 +92,15 @@ init_project() {
     "patterns": {},
     "decisions": []
   },
-  "execution_order": []
+  "execution_order": [],
+  "backlog_enabled": true
 }
 EOF
 
     set_current_project "$project_id"
+
+    # Also initialize the backlog
+    init_backlog_integration "$name"
 
     echo ""
     echo -e "${BOLD}╔══════════════════════════════════════════════════════════════╗${NC}"
@@ -100,13 +110,57 @@ EOF
     echo -e "${BOLD}║${NC}  ID:       ${CYAN}${project_id}${NC}"
     echo -e "${BOLD}║${NC}  Name:     ${name}"
     echo -e "${BOLD}║${NC}  Location: ${project_dir}"
+    echo -e "${BOLD}║${NC}  Backlog:  ${STUDIO_OUTPUT_DIR}/backlog.json"
     echo -e "${BOLD}║${NC}"
     echo -e "${BOLD}║${NC}  Next steps:"
-    echo -e "${BOLD}║${NC}  1. Add tasks:  /project:task <goal>"
-    echo -e "${BOLD}║${NC}  2. View graph: /project:graph"
-    echo -e "${BOLD}║${NC}  3. Run build:  /project:run"
+    echo -e "${BOLD}║${NC}  1. Decompose: /plan \"goal\""
+    echo -e "${BOLD}║${NC}  2. Build:     /build"
+    echo -e "${BOLD}║${NC}  3. Status:    /status"
     echo -e "${BOLD}║${NC}"
     echo -e "${BOLD}╚══════════════════════════════════════════════════════════════╝${NC}"
+}
+
+# Initialize backlog integration
+init_backlog_integration() {
+    local name="${1:-$(basename "$(pwd)")}"
+
+    if [[ -f "${BACKLOG_SCRIPT}" ]]; then
+        "${BACKLOG_SCRIPT}" init "$name" 2>/dev/null || true
+    fi
+}
+
+# Show backlog status
+show_backlog_status() {
+    local filter_id="${1:-}"
+
+    if [[ -f "${BACKLOG_SCRIPT}" ]]; then
+        "${BACKLOG_SCRIPT}" status "$filter_id"
+    else
+        echo "Backlog script not found at ${BACKLOG_SCRIPT}" >&2
+        exit 1
+    fi
+}
+
+# Get next task from backlog
+get_next_backlog_task() {
+    if [[ -f "${BACKLOG_SCRIPT}" ]]; then
+        "${BACKLOG_SCRIPT}" next-task
+    fi
+}
+
+# Resolve ID (short, full, or fuzzy)
+resolve_backlog_id() {
+    local id="$1"
+    local type="${2:-any}"
+
+    if [[ -f "${BACKLOG_SCRIPT}" ]]; then
+        "${BACKLOG_SCRIPT}" resolve-id "$id" "$type"
+    fi
+}
+
+# Check if backlog exists
+backlog_exists() {
+    [[ -f "${STUDIO_OUTPUT_DIR}/backlog.json" ]]
 }
 
 # Add a task to current project
@@ -419,12 +473,31 @@ case "${1:-status}" in
     order)
         calc_execution_order
         ;;
+    # Backlog integration commands
+    backlog-init)
+        shift
+        init_backlog_integration "${1:-}"
+        ;;
+    backlog-status)
+        shift
+        show_backlog_status "${1:-}"
+        ;;
+    backlog-next)
+        get_next_backlog_task
+        ;;
+    backlog-resolve)
+        shift
+        resolve_backlog_id "$@"
+        ;;
+    backlog-exists)
+        backlog_exists && echo "true" || echo "false"
+        ;;
     help|--help|-h)
         cat << 'EOF'
 STUDIO Project Orchestration
 
 Usage:
-  project.sh init <name>           Initialize a new project
+  project.sh init <name>           Initialize a new project (+ backlog)
   project.sh task <goal> [deps]    Add a task (deps: comma-separated task IDs)
   project.sh status                Show project status
   project.sh graph                 Show dependency graph
@@ -432,13 +505,23 @@ Usage:
   project.sh list                  List all projects
   project.sh switch <project_id>   Switch active project
 
+Backlog Integration:
+  project.sh backlog-init [name]   Initialize backlog separately
+  project.sh backlog-status [id]   Show backlog dashboard
+  project.sh backlog-next          Get next ready task
+  project.sh backlog-resolve <id>  Resolve short/fuzzy ID
+  project.sh backlog-exists        Check if backlog exists
+
+ID Formats (for backlog):
+  Short: E1, F1, T1
+  Full: EPIC-001, FEAT-001, task_20260201_120000
+  Fuzzy: "login" matches "User Login"
+
 Examples:
   project.sh init "E-commerce Platform"
-  project.sh task "User authentication"
-  project.sh task "Product catalog"
-  project.sh task "Shopping cart" "task_001,task_002"
-  project.sh graph
-  project.sh run
+  project.sh backlog-status
+  project.sh backlog-next
+  project.sh backlog-resolve T7
 EOF
         ;;
     *)

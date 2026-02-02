@@ -12,7 +12,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
 
 # Tag prefix for STUDIO snapshots
 TAG_PREFIX="studio-task-"
@@ -56,7 +59,7 @@ create_snapshot() {
     git tag -a "$tag" -m "STUDIO snapshot before task: $task_id"
 
     # Record in snapshot log
-    local log_file="${STUDIO_DIR}/data/snapshots.json"
+    local log_file="${STUDIO_OUTPUT_DIR}/data/snapshots.json"
     mkdir -p "$(dirname "$log_file")"
 
     if [[ ! -f "$log_file" ]]; then

@@ -8,7 +8,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
 
 # Read input from stdin (hook context)
 INPUT=$(cat)
@@ -25,7 +28,7 @@ find_active_manifest() {
     local latest=""
     local latest_time=0
 
-    for manifest in "${STUDIO_DIR}"/projects/*/tasks/*/manifest.json; do
+    for manifest in "${STUDIO_OUTPUT_DIR}"/projects/*/tasks/*/manifest.json; do
         if [[ -f "$manifest" ]]; then
             local status
             status=$(jq -r '.status // "UNKNOWN"' "$manifest" 2>/dev/null)
@@ -84,7 +87,7 @@ if command -v git &> /dev/null; then
     DIFF=$(git diff HEAD -- "$FILE_PATH" 2>/dev/null || echo "")
 fi
 
-# Log the correction
+# Log the correction (note: corrections go to plugin source dir, not output dir, as they affect rules)
 CORRECTIONS_FILE="${STUDIO_DIR}/memory/corrections.md"
 mkdir -p "$(dirname "$CORRECTIONS_FILE")"
 

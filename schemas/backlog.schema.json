@@ -1,0 +1,295 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/backlog.schema.json",
+  "title": "STUDIO Project Backlog",
+  "description": "Enterprise project decomposition with Epic > Feature > Task hierarchy and immutable changelog",
+  "type": "object",
+  "required": ["project_id", "project_name", "created_at", "epics", "id_counter"],
+
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "pattern": "^proj_[a-f0-9]{8}$",
+      "description": "Unique project identifier"
+    },
+    "project_name": {
+      "type": "string",
+      "description": "Human-readable project name"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "description": {
+      "type": "string",
+      "description": "Project description or vision statement"
+    },
+    "epics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/epic" },
+      "description": "All epics in the project (APPEND-ONLY)"
+    },
+    "id_counter": {
+      "type": "object",
+      "required": ["epic", "feature", "task"],
+      "properties": {
+        "epic": { "type": "integer", "minimum": 0 },
+        "feature": { "type": "integer", "minimum": 0 },
+        "task": { "type": "integer", "minimum": 0 }
+      },
+      "description": "Counters for generating short IDs"
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "total_epics": { "type": "integer" },
+        "total_features": { "type": "integer" },
+        "total_tasks": { "type": "integer" },
+        "completed_tasks": { "type": "integer" },
+        "completion_percentage": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    }
+  },
+
+  "$defs": {
+    "epic": {
+      "type": "object",
+      "required": ["id", "short_id", "name", "status", "features", "changelog", "created_at"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^EPIC-[0-9]{3}$",
+          "description": "Full epic identifier (e.g., EPIC-001)"
+        },
+        "short_id": {
+          "type": "string",
+          "pattern": "^E[0-9]+$",
+          "description": "Short ID for CLI use (e.g., E1)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Epic name (business domain)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed epic description"
+        },
+        "status": { "$ref": "#/$defs/status" },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 3,
+          "description": "Priority 1 (highest) to 5 (lowest)"
+        },
+        "business_value": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low"],
+          "description": "Business impact level"
+        },
+        "features": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/feature" },
+          "description": "Features within this epic (APPEND-ONLY)"
+        },
+        "source_paths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Paths to existing code mapped to this epic"
+        },
+        "changelog": { "$ref": "#/$defs/changelog" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "feature": {
+      "type": "object",
+      "required": ["id", "short_id", "name", "status", "tasks", "changelog", "created_at"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^FEAT-[0-9]{3}$",
+          "description": "Full feature identifier (e.g., FEAT-001)"
+        },
+        "short_id": {
+          "type": "string",
+          "pattern": "^F[0-9]+$",
+          "description": "Short ID for CLI use (e.g., F1)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Feature name (user capability)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed feature description"
+        },
+        "status": { "$ref": "#/$defs/status" },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 3
+        },
+        "tasks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/task" },
+          "description": "Tasks within this feature (APPEND-ONLY)"
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Criteria for feature completion"
+        },
+        "source_paths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Paths to existing code mapped to this feature"
+        },
+        "changelog": { "$ref": "#/$defs/changelog" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "task": {
+      "type": "object",
+      "required": ["id", "short_id", "name", "status", "changelog", "created_at"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^task_[0-9]{8}_[0-9]{6}$",
+          "description": "Full task identifier (e.g., task_20260201_120000)"
+        },
+        "short_id": {
+          "type": "string",
+          "pattern": "^T[0-9]+$",
+          "description": "Short ID for CLI use (e.g., T1)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Task name (buildable unit)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed task description"
+        },
+        "status": { "$ref": "#/$defs/status" },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 3
+        },
+        "effort": { "$ref": "#/$defs/effort" },
+        "depends_on": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Task IDs this task depends on (short or full IDs)"
+        },
+        "blocks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Task IDs blocked by this task"
+        },
+        "plan_id": {
+          "type": "string",
+          "pattern": "^bp_[0-9]{8}_[0-9]{6}_[a-f0-9]{4}$",
+          "description": "Associated plan ID once planned"
+        },
+        "branch": {
+          "type": "string",
+          "description": "Git branch for this task (e.g., claude/T7)"
+        },
+        "actor": {
+          "type": "string",
+          "enum": ["architect", "planner", "builder", "user"],
+          "description": "Who created/owns this task"
+        },
+        "changelog": { "$ref": "#/$defs/changelog" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "status": {
+      "type": "string",
+      "enum": ["PENDING", "IN_PROGRESS", "COMPLETE", "CANCELLED", "BLOCKED"],
+      "description": "Item status - transitions are immutable and logged"
+    },
+
+    "effort": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "string",
+          "enum": ["XS", "S", "M", "L", "XL"],
+          "description": "T-shirt sizing for effort"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low"],
+          "description": "Confidence in estimate"
+        },
+        "actual_size": {
+          "type": "string",
+          "enum": ["XS", "S", "M", "L", "XL"],
+          "description": "Actual size after completion (for drift tracking)"
+        }
+      }
+    },
+
+    "changelog": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/changelog_entry" },
+      "description": "Immutable audit trail - NEVER delete entries"
+    },
+
+    "changelog_entry": {
+      "type": "object",
+      "required": ["timestamp", "action", "actor"],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "CREATED",
+            "STATUS_CHANGED",
+            "PRIORITY_CHANGED",
+            "DEPENDENCY_ADDED",
+            "DEPENDENCY_REMOVED",
+            "DESCRIPTION_UPDATED",
+            "EFFORT_UPDATED",
+            "BLOCKED",
+            "UNBLOCKED",
+            "MERGED",
+            "ROLLED_BACK"
+          ]
+        },
+        "actor": {
+          "type": "string",
+          "description": "Who made the change (architect/planner/builder/user)"
+        },
+        "previous_value": {
+          "description": "Value before change (for audit)"
+        },
+        "new_value": {
+          "description": "Value after change"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why the change was made"
+        }
+      }
+    }
+  }
+}

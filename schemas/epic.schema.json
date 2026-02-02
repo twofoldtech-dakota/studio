@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/epic.schema.json",
+  "title": "STUDIO Epic",
+  "description": "Epic definition for project decomposition - represents a business domain or major capability",
+  "type": "object",
+  "required": ["id", "short_id", "name", "status", "features", "changelog", "created_at"],
+
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^EPIC-[0-9]{3}$",
+      "description": "Full epic identifier (e.g., EPIC-001)"
+    },
+    "short_id": {
+      "type": "string",
+      "pattern": "^E[0-9]+$",
+      "description": "Short ID for CLI use (e.g., E1)"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Epic name - should describe a business domain"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed epic description including business goals"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["PENDING", "IN_PROGRESS", "COMPLETE", "CANCELLED", "BLOCKED"],
+      "description": "Epic status - automatically computed from features"
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "default": 3,
+      "description": "Business priority: 1 (critical) to 5 (nice-to-have)"
+    },
+    "business_value": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low"],
+      "description": "Business impact assessment"
+    },
+    "owner": {
+      "type": "string",
+      "description": "Person or team responsible for this epic"
+    },
+    "features": {
+      "type": "array",
+      "items": { "$ref": "feature.schema.json" },
+      "description": "Features within this epic (APPEND-ONLY - never delete)"
+    },
+    "source_paths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Codebase paths mapped to this epic during analysis"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Labels for categorization"
+    },
+    "changelog": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["timestamp", "action", "actor"],
+        "properties": {
+          "timestamp": { "type": "string", "format": "date-time" },
+          "action": { "type": "string" },
+          "actor": { "type": "string" },
+          "previous_value": {},
+          "new_value": {},
+          "reason": { "type": "string" }
+        }
+      },
+      "description": "Immutable audit trail"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When first feature started"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When all features completed"
+    },
+    "git_branch": {
+      "type": "string",
+      "description": "Long-lived epic branch (e.g., epic/E1-user-management)"
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "feature_count": { "type": "integer" },
+        "task_count": { "type": "integer" },
+        "completed_features": { "type": "integer" },
+        "completed_tasks": { "type": "integer" },
+        "progress_percentage": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    }
+  }
+}

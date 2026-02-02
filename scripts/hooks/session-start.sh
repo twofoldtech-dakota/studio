@@ -16,20 +16,23 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
-TASKS_DIR="${STUDIO_DIR}/tasks"
-PROJECTS_DIR="${STUDIO_DIR}/projects"
-RULES_DIR="${STUDIO_DIR}/rules"
-MEMORY_DIR="${STUDIO_DIR}/memory"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
+TASKS_DIR="${STUDIO_OUTPUT_DIR}/tasks"
+PROJECTS_DIR="${STUDIO_OUTPUT_DIR}/projects"
+RULES_DIR="${STUDIO_DIR}/rules"  # Rules stay in plugin source
+MEMORY_DIR="${STUDIO_DIR}/memory"  # Memory stays in plugin source
 OUTPUT_SCRIPT="${SCRIPT_DIR}/../output.sh"
 
-# Create directories on-demand if they don't exist
+# Create output directories on-demand if they don't exist
 ensure_directories() {
     if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
+        mkdir -p "$STUDIO_OUTPUT_DIR" 2>/dev/null || true
         mkdir -p "$TASKS_DIR" 2>/dev/null || true
         mkdir -p "$PROJECTS_DIR" 2>/dev/null || true
-        mkdir -p "$RULES_DIR" 2>/dev/null || true
-        mkdir -p "$MEMORY_DIR" 2>/dev/null || true
+        # Rules and Memory stay in plugin source directory, not created here
     fi
 }
 

@@ -14,9 +14,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STUDIO_ROOT="${SCRIPT_DIR}/../.."
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
 
-CACHE_DIR="${STUDIO_DIR}/.cache"
+CACHE_DIR="${STUDIO_OUTPUT_DIR}/.cache"
 CACHE_FILE="${CACHE_DIR}/context-cache.json"
 CACHE_TTL=3600  # 1 hour in seconds
 

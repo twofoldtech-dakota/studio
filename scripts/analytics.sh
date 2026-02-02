@@ -10,9 +10,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
 
-ANALYTICS_FILE="${STUDIO_DIR}/data/analytics.json"
+ANALYTICS_FILE="${STUDIO_OUTPUT_DIR}/data/analytics.json"
 
 # Colors
 BOLD='\033[1m'

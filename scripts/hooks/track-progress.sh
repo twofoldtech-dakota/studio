@@ -5,7 +5,10 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Plugin source directory (for reading agents, playbooks, etc.)
 STUDIO_DIR="${STUDIO_DIR:-studio}"
+# Output directory in user's project (for writing data)
+STUDIO_OUTPUT_DIR="${STUDIO_OUTPUT_DIR:-.studio}"
 BUILD_OUTPUT_SCRIPT="${SCRIPT_DIR}/../build-output.sh"
 
 # Read hook input
@@ -29,7 +32,7 @@ fi
 
 # Find active task
 find_active_task() {
-    for manifest in "$STUDIO_DIR"/projects/*/tasks/*/manifest.json; do
+    for manifest in "$STUDIO_OUTPUT_DIR"/projects/*/tasks/*/manifest.json; do
         if [ -f "$manifest" ]; then
             status=$(jq -r '.status // empty' "$manifest" 2>/dev/null)
             if [ "$status" = "BUILDING" ] || [ "$status" = "IN_PROGRESS" ]; then

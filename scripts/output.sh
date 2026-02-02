@@ -98,6 +98,18 @@ cmd_header() {
             color="$BRIGHT_RED"
             title="TASK FAILED"
             ;;
+        architect|decomposition)
+            color="$BRIGHT_MAGENTA"
+            title="THE ARCHITECT"
+            ;;
+        status|dashboard)
+            color="$BRIGHT_CYAN"
+            title="PROJECT STATUS"
+            ;;
+        build)
+            color="$BRIGHT_YELLOW"
+            title="STUDIO BUILD"
+            ;;
         *)
             color="$BRIGHT_WHITE"
             title="$type"
@@ -145,9 +157,73 @@ cmd_phase() {
             num="0"
             phase="REQUIREMENTS GATHERING"
             ;;
+        # Architect phases
+        context-gathering)
+            color="$BRIGHT_MAGENTA"
+            icon="🔍"
+            num="1"
+            phase="CONTEXT GATHERING"
+            ;;
+        domain-analysis)
+            color="$BRIGHT_MAGENTA"
+            icon="🏗️"
+            num="2"
+            phase="DOMAIN ANALYSIS"
+            ;;
+        decomposition)
+            color="$BRIGHT_MAGENTA"
+            icon="📊"
+            num="3"
+            phase="DECOMPOSITION"
+            ;;
+        dependency-mapping)
+            color="$BRIGHT_MAGENTA"
+            icon="🔗"
+            num="4"
+            phase="DEPENDENCY MAPPING"
+            ;;
+        prioritization)
+            color="$BRIGHT_MAGENTA"
+            icon="⚖️"
+            num="5"
+            phase="PRIORITIZATION"
+            ;;
+        # Planner extra phases
+        playbook-load)
+            color="$BRIGHT_BLUE"
+            icon="📚"
+            num="-1"
+            phase="PLAYBOOK LOAD"
+            ;;
+        context-lock)
+            color="$BRIGHT_BLUE"
+            icon="🔒"
+            num="0"
+            phase="CONTEXT LOCK"
+            ;;
+        challenge)
+            color="$BRIGHT_BLUE"
+            icon="⚔️"
+            num="3"
+            phase="CHALLENGE"
+            ;;
+        confidence)
+            color="$BRIGHT_BLUE"
+            icon="📈"
+            num="4"
+            phase="CONFIDENCE SCORING"
+            ;;
+        reviewing)
+            color="$BRIGHT_CYAN"
+            icon="🔎"
+            num="3"
+            phase="REVIEWING"
+            ;;
         *)
-            echo "Unknown phase: $phase" >&2
-            exit 1
+            # Allow custom phase names
+            color="$BRIGHT_WHITE"
+            icon="•"
+            num=""
             ;;
     esac
 
@@ -187,6 +263,14 @@ cmd_agent() {
         init|Init)
             color="$BRIGHT_MAGENTA"
             agent="Init"
+            ;;
+        architect|Architect)
+            color="$BRIGHT_MAGENTA"
+            agent="Architect"
+            ;;
+        status|Status)
+            color="$BRIGHT_CYAN"
+            agent="Status"
             ;;
         *)
             color="$BRIGHT_WHITE"
