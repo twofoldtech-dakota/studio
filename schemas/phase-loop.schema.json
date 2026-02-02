@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/phase-loop.schema.json",
+  "title": "STUDIO Phase Loop Configuration",
+  "description": "Universal loop configuration schema for all STUDIO agents. Defines the ATTEMPT → OBSERVE → EVALUATE → NEXT/RETRY pattern.",
+  "type": "object",
+  "required": ["name", "loop_type", "max_iterations", "phases"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Identifier for this loop configuration"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what this loop does"
+    },
+    "loop_type": {
+      "type": "string",
+      "enum": ["execute-validate-fix", "question-respond-clarify", "analyze-decompose-refine", "custom"],
+      "description": "Type of loop pattern"
+    },
+    "max_iterations": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "default": 5,
+      "description": "Maximum loop iterations before escalation"
+    },
+    "trigger": {
+      "type": "string",
+      "enum": ["each_step", "requirement_gathering", "decomposition", "on_failure", "manual"],
+      "description": "What triggers this loop to start"
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "$ref": "#/$defs/loopPhase"
+      },
+      "description": "Ordered phases within the loop"
+    },
+    "state_tracking": {
+      "type": "object",
+      "description": "Configuration for state persistence",
+      "properties": {
+        "checkpoint_after": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Phase IDs after which to save checkpoint"
+        },
+        "state_file_pattern": {
+          "type": "string",
+          "default": ".studio/tasks/{task_id}/loop_state.json",
+          "description": "Pattern for state file location"
+        },
+        "persist_across_sessions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether state survives session restart"
+        }
+      }
+    },
+    "escalation": {
+      "type": "object",
+      "description": "What happens when max_iterations exceeded",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["halt", "escalate_to_user", "escalate_to_orchestrator", "fallback_action"],
+          "default": "escalate_to_user"
+        },
+        "message_template": {
+          "type": "string",
+          "description": "Message to display on escalation"
+        },
+        "fallback_action": {
+          "type": "string",
+          "description": "Action to take if strategy is fallback_action"
+        }
+      }
+    },
+    "retry_config": {
+      "type": "object",
+      "description": "Retry behavior configuration",
+      "properties": {
+        "backoff_type": {
+          "type": "string",
+          "enum": ["none", "linear", "exponential"],
+          "default": "none"
+        },
+        "backoff_base_ms": {
+          "type": "integer",
+          "default": 1000,
+          "description": "Base delay in milliseconds"
+        },
+        "max_backoff_ms": {
+          "type": "integer",
+          "default": 30000,
+          "description": "Maximum delay in milliseconds"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "loopPhase": {
+      "type": "object",
+      "required": ["id", "name", "state"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this phase"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable phase name"
+        },
+        "state": {
+          "type": "string",
+          "enum": ["ATTEMPT", "OBSERVE", "EVALUATE", "NEXT", "RETRY", "HALT", "ESCALATE", "CHECKPOINT"],
+          "description": "State machine state for this phase"
+        },
+        "description": {
+          "type": "string",
+          "description": "What happens in this phase"
+        },
+        "action": {
+          "type": "string",
+          "description": "Action to perform in this phase"
+        },
+        "success_criteria": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["condition", "command", "user_response", "timeout"]
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Conditions that indicate success"
+        },
+        "transitions": {
+          "type": "object",
+          "description": "State transitions from this phase",
+          "properties": {
+            "on_success": {
+              "type": "string",
+              "description": "Phase ID to transition to on success"
+            },
+            "on_failure": {
+              "type": "string",
+              "description": "Phase ID to transition to on failure"
+            },
+            "on_timeout": {
+              "type": "string",
+              "description": "Phase ID to transition to on timeout"
+            }
+          }
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "description": "Timeout in milliseconds for this phase"
+        },
+        "outputs": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Variables/artifacts produced by this phase"
+        }
+      }
+    },
+    "loopState": {
+      "type": "object",
+      "description": "Runtime state of a loop instance",
+      "properties": {
+        "loop_id": {
+          "type": "string",
+          "description": "Unique identifier for this loop instance"
+        },
+        "config_name": {
+          "type": "string",
+          "description": "Name of the loop configuration being used"
+        },
+        "current_iteration": {
+          "type": "integer",
+          "description": "Current iteration number (1-based)"
+        },
+        "current_phase": {
+          "type": "string",
+          "description": "Current phase ID"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["running", "paused", "completed", "failed", "escalated"]
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "phase_history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "phase_id": {"type": "string"},
+              "iteration": {"type": "integer"},
+              "started_at": {"type": "string", "format": "date-time"},
+              "completed_at": {"type": "string", "format": "date-time"},
+              "outcome": {"type": "string", "enum": ["success", "failure", "timeout", "skipped"]},
+              "outputs": {"type": "object"}
+            }
+          }
+        },
+        "accumulated_outputs": {
+          "type": "object",
+          "description": "All outputs accumulated across iterations"
+        },
+        "error_log": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "iteration": {"type": "integer"},
+              "phase_id": {"type": "string"},
+              "error": {"type": "string"},
+              "timestamp": {"type": "string", "format": "date-time"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

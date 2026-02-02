@@ -1,0 +1,88 @@
+name: testing
+description: Testing practices for unit tests, integration tests, and test-driven development
+
+team_members:
+  - tier: tier2
+    member: qa-refiner
+    focus: Test strategy and coverage
+  - tier: tier1
+    member: tech-lead
+    focus: Testing architecture patterns
+
+triggers:
+  keywords:
+    - test
+    - spec
+    - coverage
+    - unit test
+    - integration test
+    - e2e
+    - mock
+    - stub
+    - fixture
+    - jest
+    - vitest
+    - playwright
+    - cypress
+    - tdd
+    - assertion
+  domains:
+    - testing
+    - qa
+    - quality
+  file_patterns:
+    - "**/*.test.*"
+    - "**/*.spec.*"
+    - "**/__tests__/**"
+    - "**/test/**"
+    - "**/tests/**"
+    - "**/*.mock.*"
+    - "**/fixtures/**"
+
+injection:
+  questions: |
+    ## Testing Checkpoint
+
+    Before proceeding, consider:
+    - What is the existing test framework?
+    - What level of testing is appropriate? (unit, integration, e2e)
+    - What edge cases need coverage?
+    - Are there existing test utilities to reuse?
+    - What mocking is needed?
+
+  guidelines: |
+    ## Testing Guidelines
+
+    ### Test Structure
+    - Arrange, Act, Assert pattern
+    - One assertion per test (ideally)
+    - Descriptive test names that explain behavior
+    - Group related tests with describe blocks
+
+    ### Unit Tests
+    - Test single functions/components in isolation
+    - Mock external dependencies
+    - Cover happy path and edge cases
+    - Test error handling
+
+    ### Integration Tests
+    - Test module interactions
+    - Use realistic (but controlled) data
+    - Test API endpoints end-to-end
+    - Verify database interactions
+
+    ### Test Quality
+    - Tests should be deterministic
+    - Avoid testing implementation details
+    - Keep tests independent (no shared state)
+    - Fast tests (use mocks where appropriate)
+
+  checklist:
+    - "Tests follow existing patterns"
+    - "Happy path covered"
+    - "Edge cases covered"
+    - "Error handling tested"
+    - "Tests are deterministic"
+    - "No shared test state"
+
+priority: 60

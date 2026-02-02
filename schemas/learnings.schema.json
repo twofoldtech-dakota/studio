@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/learnings.schema.json",
+  "title": "STUDIO Learnings",
+  "description": "Schema for learnings captured during build cycles",
+  "type": "object",
+  "required": ["id", "date", "title", "context", "domain"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^learn_[0-9]{8}_[0-9]{6}$",
+      "description": "Unique learning identifier (format: learn_YYYYMMDD_HHMMSS)"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the learning was captured (YYYY-MM-DD)"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Brief title describing the learning"
+    },
+    "context": {
+      "type": "object",
+      "required": ["task_id"],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "description": "Task ID where this learning was discovered"
+        },
+        "task_name": {
+          "type": "string",
+          "description": "Human-readable task name"
+        },
+        "feature_id": {
+          "type": "string",
+          "description": "Parent feature ID if applicable"
+        },
+        "epic_id": {
+          "type": "string",
+          "description": "Parent epic ID if applicable"
+        }
+      }
+    },
+    "domain": {
+      "type": "string",
+      "enum": ["global", "frontend", "backend", "testing", "security", "performance"],
+      "description": "Domain where this learning belongs"
+    },
+    "integration": {
+      "type": "string",
+      "description": "Library/framework name if this is an integration-specific learning (e.g., 'nextjs', 'prisma')"
+    },
+    "what_worked": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Patterns and approaches that worked well"
+    },
+    "problems_solved": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["problem", "solution"],
+        "properties": {
+          "problem": {
+            "type": "string",
+            "description": "Description of the problem encountered"
+          },
+          "solution": {
+            "type": "string",
+            "description": "How the problem was solved"
+          },
+          "root_cause": {
+            "type": "string",
+            "description": "Root cause of the problem if identified"
+          }
+        }
+      },
+      "description": "Problems encountered and their solutions"
+    },
+    "patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Pattern name"
+          },
+          "description": {
+            "type": "string",
+            "description": "What the pattern does"
+          },
+          "code_example": {
+            "type": "string",
+            "description": "Code snippet demonstrating the pattern"
+          },
+          "when_to_use": {
+            "type": "string",
+            "description": "Conditions when this pattern is appropriate"
+          }
+        }
+      },
+      "description": "New patterns discovered during this task"
+    },
+    "anti_patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pattern", "why_bad"],
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "The anti-pattern to avoid"
+          },
+          "why_bad": {
+            "type": "string",
+            "description": "Why this approach should be avoided"
+          },
+          "better_approach": {
+            "type": "string",
+            "description": "What to do instead"
+          }
+        }
+      },
+      "description": "Approaches that didn't work and should be avoided"
+    },
+    "performance_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Observations about performance, efficiency, or optimization"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags for categorization and search"
+    }
+  }
+}

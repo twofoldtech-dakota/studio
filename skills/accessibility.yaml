@@ -1,0 +1,81 @@
+name: accessibility
+description: Accessibility practices ensuring inclusive design for all users
+
+team_members:
+  - tier: tier1
+    member: ui-ux-designer
+    focus: Inclusive design patterns
+  - tier: tier1
+    member: frontend-specialist
+    focus: ARIA and semantic HTML implementation
+
+triggers:
+  keywords:
+    - a11y
+    - accessibility
+    - aria
+    - screen reader
+    - keyboard navigation
+    - wcag
+    - focus
+    - tab order
+    - alt text
+    - color contrast
+    - skip link
+    - assistive
+  domains:
+    - accessibility
+    - a11y
+    - frontend
+  file_patterns:
+    - "**/components/**"
+    - "**/*.tsx"
+    - "**/*.jsx"
+
+injection:
+  questions: |
+    ## Accessibility Checkpoint
+
+    Before proceeding, consider:
+    - Is all content accessible via keyboard?
+    - Do images have alt text?
+    - Is the focus order logical?
+    - Are color contrast ratios sufficient?
+    - Do form inputs have labels?
+
+  guidelines: |
+    ## Accessibility Guidelines
+
+    ### Semantic HTML
+    - Use proper heading hierarchy (h1-h6)
+    - Use button for actions, a for navigation
+    - Use lists for groups of related items
+    - Use landmarks (main, nav, aside, footer)
+
+    ### Keyboard Navigation
+    - All interactive elements must be focusable
+    - Focus order should be logical
+    - Provide visible focus indicators
+    - Support keyboard shortcuts where appropriate
+
+    ### Screen Readers
+    - Add alt text to all meaningful images
+    - Use aria-label for icon buttons
+    - Announce dynamic content changes
+    - Hide decorative elements from screen readers
+
+    ### Visual Design
+    - Maintain 4.5:1 contrast for normal text
+    - Maintain 3:1 contrast for large text
+    - Don't rely on color alone to convey meaning
+    - Support zoom to 200% without horizontal scroll
+
+  checklist:
+    - "All interactive elements keyboard accessible"
+    - "Images have appropriate alt text"
+    - "Form inputs have associated labels"
+    - "Color contrast meets WCAG AA"
+    - "Focus indicators visible"
+    - "Page landmarks present"
+
+priority: 60

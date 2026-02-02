@@ -1,116 +1,43 @@
 {
-  "description": "STUDIO Intelligent Hook System - Self-correcting autonomous workflow with progress visualization, error classification, self-review, and interactive mode",
-  "version": "2.3.0",
+  "description": "STUDIO Orchestration Hook System - Wires orchestration to commands and agents",
+  "version": "4.0.0",
 
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Before spawning a subagent, check if orchestration is active (.studio/orchestration/.current exists). If active and the subagent is planner or builder: 1) Run scripts/skills.sh detect \"$GOAL\" to find matching skills. 2) For each detected skill, run scripts/skills.sh inject <skill> to get injection content. 3) Prepend this skill context to the agent's prompt so it receives domain-specific guidance."
+          }
+        ]
+      }
+    ],
+
+    "PreCommand": [
+      {
+        "matcher": "build",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "ORCHESTRATION TRIGGER: A /build command was invoked.\n\n1. INITIALIZE orchestration session:\n   - Run: scripts/orchestrator.sh init \"$ARGUMENTS\" implicit\n   - This creates .studio/orchestration/<session_id>/state.json\n\n2. ROUTE the goal:\n   - Run: scripts/orchestrator.sh route\n   - Check routing.selected_workflow in the output\n\n3. IF workflow is 'plan_then_build':\n   - First invoke the Planner agent with the goal\n   - After Planner completes, record handoff: scripts/orchestrator.sh handoff planner builder '{\"task_id\": \"<task_id>\", \"plan_path\": \"<plan_path>\"}'\n   - Then proceed with Builder\n\n4. IF workflow is 'build_only':\n   - Proceed directly to Builder execution\n\n5. Before starting each agent:\n   - Run: scripts/orchestrator.sh agent-start <agent_name>\n\n6. After each agent completes:\n   - Run: scripts/orchestrator.sh agent-complete <agent_name>\n   - Run: scripts/orchestrator.sh checkpoint '<agent_name>_complete'\n\nThe orchestration state is persisted in .studio/orchestration/ for recovery."
+          }
+        ]
+      }
+    ],
+
     "SessionStart": [
       {
         "matcher": "startup",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/session-start.sh",
-            "timeout": 5000
-          }
-        ]
-      },
-      {
-        "matcher": "compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/restore-context.sh"
-          }
-        ]
-      }
-    ],
-
-    "PreCompact": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/save-context.sh"
-          }
-        ]
-      }
-    ],
-
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/inject-context.sh"
-          }
-        ]
-      }
-    ],
-
-    "SubagentStart": [
-      {
-        "matcher": "builder",
-        "hooks": [
-          {
-            "type": "agent",
-            "prompt": "Pre-flight check before building. Verify: 1) A valid plan.json exists in the current task directory 2) The plan has status READY_TO_BUILD or challenge_results.overall_verdict is APPROVED 3) All dependencies mentioned in the plan are available. If ANY check fails, return {\"ok\": false, \"reason\": \"Cannot start build: [specific issue]\"}. If all checks pass, return {\"ok\": true}.",
-            "timeout": 30
-          }
-        ]
-      }
-    ],
-
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
+            "type": "prompt",
+            "prompt": "STUDIO INITIALIZATION:\n\n1. ENSURE directories exist:\n   - mkdir -p .studio/orchestration\n   - mkdir -p .studio/tasks\n   - mkdir -p .studio/.cache/summaries\n\n2. LOAD learnings from studio/learnings/*.md files.\n   Report: 'STUDIO ready. Loaded [N] learnings from [domains].'\n\n3. CHECK for tasks with IN_PROGRESS status in .studio/tasks/ and notify user if found.\n\n4. CHECK context budget status using scripts/context-manager.sh status.\n   If any pool is at WARNING (80%+) or CRITICAL (95%+) level, notify:\n   'Context pressure detected in [pool]. Consider running context optimization.'"
+          },
           {
             "type": "prompt",
-            "prompt": "You are a plan alignment checker. The builder should only make changes that align with the current plan. Check if this file operation aligns with the plan steps. Tool: $TOOL_NAME, File: $FILE_PATH. If this appears to be an unauthorized change or drift from the plan, return {\"ok\": false, \"reason\": \"This change doesn't align with the current plan step. Please follow the plan.\"}. If it aligns or there's no active plan, return {\"ok\": true}.",
-            "model": "haiku"
-          }
-        ]
-      }
-    ],
-
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/track-progress.sh",
-            "timeout": 5000
-          },
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/emit-progress.sh",
-            "timeout": 3000
-          },
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/detect-corrections.sh",
-            "timeout": 5000
-          }
-        ]
-      }
-    ],
-
-    "PostToolUseFailure": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/classify-error.sh",
-            "timeout": 5000
-          },
-          {
-            "type": "agent",
-            "prompt": "A tool call failed. The error has been classified above (if a pattern matched). Review the classification and: 1) If an auto-fix is available, ask the user if they want to apply it 2) If no auto-fix, provide the suggested manual fixes 3) Check if this is a recurring pattern worth remembering in studio/memory/failures.md. Return {\"ok\": true} after analysis.",
-            "timeout": 30
+            "prompt": "ORCHESTRATION RESUME CHECK:\n\n1. Check if .studio/orchestration/.current exists\n2. If it does, read the session ID and load .studio/orchestration/<session_id>/state.json\n3. Check the 'status' field:\n   - If 'paused': Notify user 'Paused orchestration found: [session_id]. Goal: [goal]. Resume with /orchestrate resume or start fresh?'\n   - If 'recovering': Notify user 'Orchestration in recovery: [session_id]. Last failure: [error]. Resume recovery or abort?'\n   - If 'executing': Notify user 'Interrupted orchestration detected: [session_id]. Would you like to resume from the last checkpoint?'\n4. If user wants to resume, run: scripts/orchestrator.sh resume"
           }
         ]
       }
@@ -118,12 +45,11 @@
 
     "SubagentStop": [
       {
-        "matcher": "planner",
+        "matcher": "planner|builder|architect",
         "hooks": [
           {
-            "type": "agent",
-            "prompt": "Validate the planner's output and calculate confidence score.\n\n1. PLAN VALIDATION:\n   - Check plan.json was written with all sections\n   - Verify challenge_results.overall_verdict is APPROVED\n   - Confirm all steps have validation_commands\n\n2. CONFIDENCE SCORING:\n   Run: ${CLAUDE_PLUGIN_ROOT}/scripts/manifest.sh confidence\n   \n   If confidence < 70%, warn the user and ask if they want to:\n   - Improve the plan (add more requirements, edge cases)\n   - Proceed anyway\n   - Abort\n\n3. RESPONSE:\n   If plan invalid: {\"ok\": false, \"reason\": \"Plan incomplete: [issue]\"}\n   If confidence < 70%: {\"ok\": true, \"warning\": \"Low confidence ([X]%). Consider improving plan.\"}\n   If all good: {\"ok\": true, \"confidence\": [score]}",
-            "timeout": 90
+            "type": "prompt",
+            "prompt": "AGENT COMPLETION PROTOCOL:\n\n1. CHECK if orchestration is active (.studio/orchestration/.current exists)\n\n2. IF orchestration active:\n   a) Run: scripts/orchestrator.sh agent-complete [agent_name]\n   b) Run: scripts/orchestrator.sh checkpoint '[agent_name]_complete'\n   c) This auto-saves state for recovery\n\n3. IF this was the Planner:\n   - Prepare handoff context with task_id, plan_path, detected skills\n   - Run: scripts/orchestrator.sh handoff planner builder '{\"task_id\": \"...\", \"plan_path\": \"...\", \"skills\": [...]}'\n\n4. IF this was the Builder (and agent_name matches):\n   - Continue to learning capture phase"
           }
         ]
       },
@@ -132,8 +58,8 @@
         "hooks": [
           {
             "type": "agent",
-            "prompt": "Perform SELF-REVIEW of the build before completion.\n\n1. VALIDATION CHECK:\n   For each step in plan.json:\n   - Run validation_command from success_criteria\n   - Verify output matches expected_output\n   - Check manifest shows step completed\n\n2. SELF-REVIEW (compare against plan):\n   For each file created/modified:\n   - Does it match the specification in the plan?\n   - Does it follow embedded_context.memory_rules?\n   - Are there obvious security issues? (injection, XSS, exposed secrets)\n   - Does the code match discovered_patterns?\n\n3. REVIEW SUMMARY:\n   Generate a review like:\n   ```json\n   {\n     \"reviewed_files\": [\"file1.ts\", \"file2.ts\"],\n     \"requirements_met\": [\"REQ-001\", \"REQ-002\"],\n     \"requirements_missing\": [],\n     \"suggestions\": [\"Consider adding rate limiting\"],\n     \"security_concerns\": [],\n     \"verdict\": \"APPROVED|NEEDS_REVIEW|REJECTED\"\n   }\n   ```\n\n4. RESPONSE:\n   If validation fails: {\"ok\": false, \"reason\": \"Build incomplete: [details]\"}\n   If review finds issues: {\"ok\": true, \"review\": {...}, \"warning\": \"Review found [N] suggestions\"}\n   If all good: {\"ok\": true, \"review\": {...}}",
-            "timeout": 180
+            "prompt": "LEARN PHASE: Capture learnings from this build cycle.\n\n1. DETECT domain automatically:\n   - Run: git diff --name-only HEAD~1 (or check changed files in this session)\n   - Map file patterns to domains:\n     - **/components/**, *.tsx, *.css → frontend\n     - **/api/**, **/services/** → backend\n     - **/*test*, **/__tests__/** → testing\n     - **/auth/**, **/security/** → security\n     - Otherwise → global\n\n2. SUMMARIZE what worked well during this build:\n   - Patterns that were effective\n   - Approaches that succeeded on first try\n   - Code that was clean and maintainable\n\n3. LIST any problems encountered and their solutions:\n   - Errors that required fixes\n   - Unexpected issues and how they were resolved\n   - Retry attempts and what finally worked\n\n4. NOTE any new patterns discovered:\n   - Novel approaches used\n   - Reusable code structures\n   - Integration techniques\n\n5. CONFIRM with user:\n   Detected domain: [detected_domain]\n   Save learning here? Or choose:\n   - global (project-wide)\n   - frontend (UI/components)\n   - backend (API/services)\n   - testing (test strategies)\n   - security (security patterns)\n   - performance (optimizations)\n   - integration:<name> (library-specific)\n\n6. WRITE the learning to studio/learnings/{domain}.md using this format:\n   ## YYYY-MM-DD: Brief Title\n   \n   **Context:** Task description\n   \n   **What Worked:**\n   - Item 1\n   - Item 2\n   \n   **Problems Solved:**\n   - Problem: Description\n     Solution: How it was fixed\n   \n   **Pattern:**\n   ```\n   code example if applicable\n   ```\n\nReturn {\"ok\": true, \"learnings_saved_to\": \"domain.md\"} when complete.",
+            "timeout": 120
           }
         ]
       }
@@ -144,9 +70,36 @@
         "matcher": "",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/check-stop.sh",
-            "timeout": 5000
+            "type": "prompt",
+            "prompt": "Check if there is an active build task with status BUILDING that has not passed quality gates. If found, warn the user: 'Build in progress without quality gate verification. Are you sure you want to stop?' and ask for confirmation before allowing stop."
+          },
+          {
+            "type": "prompt",
+            "prompt": "Check for active orchestration session in .studio/orchestration/.current. If found, save a checkpoint using scripts/orchestrator.sh checkpoint 'session_interrupted' before stopping. Report: 'Orchestration checkpoint saved. Resume with /orchestrate resume.'"
+          }
+        ]
+      }
+    ],
+
+    "SubagentStart": [
+      {
+        "matcher": "planner|builder|architect",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "AGENT STARTUP PROTOCOL:\n\n1. CHECK if orchestration is active (.studio/orchestration/.current exists)\n\n2. IF orchestration active:\n   a) Run: scripts/orchestrator.sh agent-start [agent_name]\n   b) Check for incoming handoff: scripts/orchestrator.sh get-handoff [agent_name]\n      - If handoff exists, include the context_passed data in agent context\n      - This contains task_id, plan_path, learnings, and other workflow context\n\n3. DETECT relevant skills for this agent's work:\n   a) Get the current goal from orchestration state or user input\n   b) Run: scripts/skills.sh detect \"$GOAL\"\n   c) For each detected skill (sorted by score):\n      - Run: scripts/skills.sh inject <skill_name>\n      - Include the injection content (questions, guidelines, checklist) in agent context\n\n4. SKILL INJECTION FORMAT:\n   If skills detected, prepend to agent context:\n   ---\n   ## Active Skills: [skill1, skill2]\n   \n   [Injection content from each skill]\n   ---\n\nThis ensures agents receive domain-specific guidance before execution."
+          }
+        ]
+      }
+    ],
+
+    "ContextPressure": [
+      {
+        "matcher": "warning|critical",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Context pressure detected at {level} level. Run scripts/context-manager.sh scan to identify optimization opportunities. For learnings pool: consider summarizing entries older than 30 days. For plans pool: consider removing completed task plans. For context7 pool: clear cached docs for unused libraries."
           }
         ]
       }

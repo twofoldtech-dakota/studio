@@ -1,0 +1,276 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/orchestration-state.schema.json",
+  "title": "STUDIO Orchestration State",
+  "description": "State tracking schema for the STUDIO orchestrator agent. Manages multi-agent workflows, routing, failures, and context coordination.",
+  "type": "object",
+  "required": ["id", "mode", "status", "created_at"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^orch_[0-9]{8}_[0-9]{6}_[a-f0-9]{4}$",
+      "description": "Unique orchestration session identifier"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["implicit", "explicit"],
+      "description": "Whether orchestration is implicit (via /build) or explicit (via /orchestrate)"
+    },
+    "trigger": {
+      "type": "string",
+      "enum": ["build_command", "orchestrate_command", "project_run", "auto_retry", "context_exceeded"],
+      "description": "What triggered this orchestration"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["initializing", "routing", "executing", "waiting", "recovering", "completed", "failed", "paused"],
+      "description": "Current orchestration status"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When orchestration started"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last state update time"
+    },
+    "goal": {
+      "type": "string",
+      "description": "The user's original goal/request"
+    },
+    "routing": {
+      "type": "object",
+      "description": "Routing decisions and agent selection",
+      "properties": {
+        "analyzed_goal": {
+          "type": "string",
+          "description": "Goal analysis result"
+        },
+        "selected_workflow": {
+          "type": "string",
+          "enum": ["plan_then_build", "build_only", "multi_task", "custom"],
+          "description": "Selected workflow type"
+        },
+        "agent_sequence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "agent": {"type": "string"},
+              "order": {"type": "integer"},
+              "status": {"type": "string", "enum": ["pending", "active", "completed", "failed", "skipped"]},
+              "reason": {"type": "string"}
+            }
+          },
+          "description": "Ordered sequence of agents to invoke"
+        },
+        "routing_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence in routing decision"
+        }
+      }
+    },
+    "context_budget": {
+      "type": "object",
+      "description": "Context budget allocation and tracking",
+      "properties": {
+        "total_allocated": {
+          "type": "integer",
+          "description": "Total tokens allocated to this orchestration"
+        },
+        "pools": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "allocated": {"type": "integer"},
+              "used": {"type": "integer"},
+              "available": {"type": "integer"}
+            }
+          },
+          "description": "Per-pool budget allocation"
+        },
+        "pressure_level": {
+          "type": "string",
+          "enum": ["normal", "warning", "critical"],
+          "description": "Current context pressure"
+        },
+        "optimization_triggered": {
+          "type": "boolean",
+          "description": "Whether optimization was triggered"
+        }
+      }
+    },
+    "agent_states": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/agentExecution"
+      },
+      "description": "State of each agent execution"
+    },
+    "handoffs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from_agent": {"type": "string"},
+          "to_agent": {"type": "string"},
+          "timestamp": {"type": "string", "format": "date-time"},
+          "context_passed": {
+            "type": "object",
+            "description": "Context data passed between agents"
+          },
+          "reason": {"type": "string"}
+        }
+      },
+      "description": "Record of agent-to-agent handoffs"
+    },
+    "checkpoints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/checkpoint"
+      },
+      "description": "Recovery checkpoints"
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/failure"
+      },
+      "description": "Failures encountered and recovery attempts"
+    },
+    "outcome": {
+      "type": "object",
+      "description": "Final outcome when orchestration completes",
+      "properties": {
+        "success": {"type": "boolean"},
+        "summary": {"type": "string"},
+        "artifacts_produced": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "learnings_captured": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "duration_ms": {"type": "integer"},
+        "agents_invoked": {"type": "integer"},
+        "retries_needed": {"type": "integer"}
+      }
+    }
+  },
+  "$defs": {
+    "agentExecution": {
+      "type": "object",
+      "required": ["agent_name", "status"],
+      "properties": {
+        "agent_name": {
+          "type": "string",
+          "description": "Name of the agent"
+        },
+        "invocation_id": {
+          "type": "string",
+          "description": "Unique ID for this agent invocation"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "active", "completed", "failed", "paused", "skipped"]
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "input": {
+          "type": "object",
+          "description": "Input provided to the agent"
+        },
+        "output": {
+          "type": "object",
+          "description": "Output from the agent"
+        },
+        "loop_state": {
+          "type": "object",
+          "description": "Current loop state if agent uses loops"
+        },
+        "context_used": {
+          "type": "integer",
+          "description": "Tokens used by this agent"
+        },
+        "error": {
+          "type": "string",
+          "description": "Error message if failed"
+        }
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "required": ["id", "timestamp", "state"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Checkpoint identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable checkpoint name"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "after_agent": {
+          "type": "string",
+          "description": "Agent that completed before checkpoint"
+        },
+        "state": {
+          "type": "object",
+          "description": "Full state snapshot at checkpoint"
+        },
+        "can_resume_from": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "failure": {
+      "type": "object",
+      "required": ["timestamp", "agent", "error_type"],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "agent": {
+          "type": "string",
+          "description": "Agent where failure occurred"
+        },
+        "error_type": {
+          "type": "string",
+          "enum": ["recoverable", "unrecoverable", "timeout", "context_exceeded", "user_abort"]
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "recovery_action": {
+          "type": "string",
+          "enum": ["retry", "replan", "escalate", "abort", "skip"],
+          "description": "Action taken to recover"
+        },
+        "recovery_successful": {
+          "type": "boolean"
+        },
+        "retry_count": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

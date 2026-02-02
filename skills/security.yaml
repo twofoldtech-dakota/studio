@@ -1,0 +1,92 @@
+name: security
+description: Security-focused development practices for authentication, authorization, and data protection
+
+team_members:
+  - tier: tier1
+    member: tech-lead
+    focus: Architecture security patterns
+  - tier: tier2
+    member: security-analyst
+    focus: Vulnerability assessment and security best practices
+
+triggers:
+  keywords:
+    - auth
+    - login
+    - password
+    - credentials
+    - token
+    - encryption
+    - jwt
+    - oauth
+    - session
+    - permission
+    - role
+    - access control
+    - api key
+    - secret
+    - hash
+    - sanitize
+    - xss
+    - csrf
+    - sql injection
+  domains:
+    - backend
+    - api
+    - auth
+    - identity
+  file_patterns:
+    - "**/auth/**"
+    - "**/security/**"
+    - "**/*password*"
+    - "**/*token*"
+    - "**/*session*"
+    - "**/middleware/auth*"
+
+injection:
+  questions: |
+    ## Security Checkpoint
+
+    Before proceeding, consider:
+    - What data is being handled? (PII, credentials, tokens)
+    - What authentication/authorization is required?
+    - Are there input validation concerns?
+    - How is sensitive data stored and transmitted?
+    - What audit logging is needed?
+
+  guidelines: |
+    ## Security Guidelines
+
+    ### Authentication
+    - Always hash passwords with bcrypt (cost factor 10+) or argon2
+    - Never store plain text passwords
+    - Use secure session management with proper expiration
+    - Implement rate limiting on auth endpoints
+
+    ### Authorization
+    - Validate permissions on every request (server-side)
+    - Use principle of least privilege
+    - Never trust client-side authorization
+
+    ### Input Handling
+    - Validate and sanitize ALL user input
+    - Use parameterized queries for database access
+    - Escape output to prevent XSS
+    - Implement CSRF tokens for state-changing operations
+
+    ### Data Protection
+    - Use HTTPS everywhere (TLS 1.2+)
+    - Encrypt sensitive data at rest
+    - Never log passwords, tokens, or PII
+    - Apply Content Security Policy headers
+
+  checklist:
+    - "Passwords hashed with bcrypt/argon2"
+    - "Input validation on all user data"
+    - "Parameterized queries (no string concatenation)"
+    - "CSRF protection on mutations"
+    - "Rate limiting on auth endpoints"
+    - "Sensitive data not logged"
+    - "HTTPS enforced"
+
+priority: 90

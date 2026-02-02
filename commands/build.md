@@ -1,632 +1,541 @@
 ---
 name: build
-description: Execute tasks through STUDIO's plan-then-build workflow with smart work selection
+description: Execute tasks through iterative build loop with quality gates and learning capture
 arguments:
   - name: target
-    description: "Task ID (T1), Feature ID (F1), Epic ID (E1), or goal text"
-    required: false
-  - name: subcommand
-    description: "Optional subcommand: resume, status, abort, list, preview"
+    description: "Task ID, Feature ID, Epic ID, goal string, or omit for next priority task"
     required: false
 triggers:
   - "/build"
-  - "/build:preview"
-  - "/build:interactive"
-  - "/build:resume"
-  - "/build:status"
-  - "/build:abort"
-  - "/build:list"
+orchestration:
+  mode: implicit
+  auto_plan: true
+  confidence_threshold: 0.70
 ---
 
 # STUDIO Build Command
 
-You are initiating a **STUDIO Build** - an autonomous workflow that transforms goals into verified outcomes through two phases: **Plan** then **Build**.
+The `/build` command executes tasks through an iterative build loop that validates each step, retries on failure, runs quality gates, and captures learnings.
 
-## Smart Command Parsing
+## Orchestration Awareness
 
-The `/build` command intelligently handles multiple input types:
+The `/build` command includes **implicit orchestration**. When given a complex goal, it automatically routes through the Planner before building.
 
-| Command | Behavior |
-|---------|----------|
-| `/build` | Execute next highest-priority ready task from backlog |
-| `/build T7` | Build specific task T7 |
-| `/build F3` | Build all tasks in Feature F3 |
-| `/build E1` | Build all tasks in Epic E1 |
-| `/build "text"` | Plan text first, add to backlog, then build |
-| `/build login` | Fuzzy match "login" to find task/feature |
+### Orchestration Flow
 
-### ID Resolution
+```
+/build "complex goal"
+│
+├─ Orchestrator analyzes goal
+│   ├─ Simple/has plan → Direct to Builder
+│   └─ Complex/new → Route to Planner first
+│
+├─ [If needs planning]
+│   ├─ Planner: Questioning loop
+│   ├─ Planner: Plan construction
+│   └─ Handoff to Builder with context
+│
+├─ Builder: Execute plan
+│   ├─ Iterative build loop
+│   ├─ Quality gates
+│   └─ Learning capture
+│
+└─ Orchestrator: Finalize
+    ├─ Handle success/failure
+    └─ Update state
+```
 
-Short IDs are resolved automatically:
-- `E1` → `EPIC-001`
-- `F3` → `FEAT-003`
-- `T7` → `task_20260201_120000`
+### When Orchestration Triggers
 
-Fuzzy matching works on names:
-- `login` → matches "Feature: Login Flow"
-- `auth` → matches "Epic: Authentication"
+| Command | Orchestration |
+|---------|--------------|
+| `/build` | Select from backlog, build only |
+| `/build task_xxx` | Load plan, build only |
+| `/build "Add feature X"` | **Analyze → Plan → Build** |
+| `/build "Fix typo"` | Build only (simple goal) |
+
+### Explicit Orchestration
+
+For more control and visibility, use `/orchestrate build`:
 
 ```bash
-# Resolve ID using backlog script
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" resolve-id "T7"
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" resolve-id "login"
+/orchestrate build "Add user auth"  # Shows routing decision, allows confirmation
 ```
-
-## Terminal Output
-
-**IMPORTANT**: Use the output.sh script for all formatted terminal output.
-
-```bash
-# Display headers
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" header build
-
-# Display phase transitions
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase planning
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase building
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase reviewing
-
-# Display agent messages
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent planner "Analyzing goal..."
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent builder "Executing step 1..."
-
-# Display status messages
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status success "Step complete"
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status error "Step failed"
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status warning "Issue detected"
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status info "Processing..."
-
-# Display banners
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" banner complete
-"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" banner failed
-```
-
-## Work Selection Algorithm
-
-When `/build` is run without arguments, the system selects the next task using:
-
-```
-SCORE = (0.35 × priority) +
-        (0.25 × dependency_unlock) +
-        (0.20 × business_value) +
-        (0.20 × readiness)
-```
-
-Where:
-- **priority**: User-assigned (1-5, where 1 is highest)
-- **dependency_unlock**: How many tasks this unblocks (0-100)
-- **business_value**: From parent epic (critical=100, high=75, medium=50, low=25)
-- **readiness**: All dependencies satisfied = 100, else 0
-
-```bash
-# Get next highest-priority ready task
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" next-task
-
-# Score a specific task
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" score-task T7
-
-# Get all ready tasks
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" ready-tasks
-```
-
-## Command Variants
-
-### `/build`
-Execute the next highest-priority ready task from the backlog.
-
-```
-/build
-  │
-  ▼
-┌─────────────────────────────────────────┐
-│  SELECTING NEXT TASK...                 │
-│                                         │
-│  Ready tasks (deps satisfied):          │
-│  1. T8 - Password reset email (score:92)│
-│  2. T15 - Add Stripe SDK (score: 78)    │
-│  3. T12 - Unit tests (score: 65)        │
-│                                         │
-│  Executing: T8 - Password reset email   │
-│  ───────────────────────────────────    │
-│  [Planner phase...]                     │
-│  [Builder phase...]                     │
-│  ✓ Task complete                        │
-│                                         │
-│  Next ready: T15 - Add Stripe SDK       │
-│  Run /build to continue                 │
-└─────────────────────────────────────────┘
-```
-
-### `/build <id>`
-Build a specific item by ID (task, feature, or epic).
-
-```bash
-/build T7   # Build task T7
-/build F3   # Build all tasks in Feature F3 (in dependency order)
-/build E1   # Build all tasks in Epic E1 (in dependency order)
-```
-
-```
-/build F3
-  │
-  ▼
-┌─────────────────────────────────────────┐
-│  BUILDING FEATURE: F3 - User Profile    │
-│                                         │
-│  Tasks in this feature:                 │
-│  ├── T9 - Profile API endpoint          │
-│  ├── T10 - Profile UI component         │
-│  └── T11 - Profile tests                │
-│                                         │
-│  Executing in dependency order...       │
-│  [T9] ✓ Complete                        │
-│  [T10] ⟳ Building...                    │
-└─────────────────────────────────────────┘
-```
-
-### `/build "text"`
-Plan the text first, add to backlog, then build.
-
-```
-/build "Add dark mode toggle"
-  │
-  ▼
-┌─────────────────────────────────────────┐
-│  NEW GOAL DETECTED                      │
-│                                         │
-│  This will:                             │
-│  1. Decompose into tasks                │
-│  2. Add to backlog under appropriate    │
-│     epic/feature (or create new)        │
-│  3. Execute the first task              │
-│                                         │
-│  Decomposing...                         │
-│  → Added to: E1/F2 - UI Settings        │
-│  → Created: T20 - Dark mode toggle      │
-│                                         │
-│  Executing T20...                       │
-└─────────────────────────────────────────┘
-```
-
-### `/build <goal>`
-Start a new build with the specified goal (legacy behavior).
-
-### `/build:preview <goal>`
-Preview what the build would do without executing. Shows:
-- Requirements that would be gathered
-- Steps that would be created
-- Quality checks that would run
-
-### `/build:interactive <goal>`
-Step-by-step build with confirmation at each step.
-
-Sets `STUDIO_INTERACTIVE=true` environment variable, which triggers interactive confirmation hooks.
-
-Before each file change, you'll see:
-```
-╔══════════════════════════════════════════════════════════════╗
-║  INTERACTIVE MODE                                            ║
-╠══════════════════════════════════════════════════════════════╣
-║                                                              ║
-║  About to: Write src/schemas/auth.ts                         ║
-║                                                              ║
-║  Preview:                                                    ║
-║  import { z } from 'zod';                                    ║
-║  export const registerSchema = z.object({...                 ║
-║                                                              ║
-║  Options:                                                    ║
-║  [y] Execute this change                                     ║
-║  [e] Edit first                                              ║
-║  [s] Skip this step                                          ║
-║  [a] Abort build                                             ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
-```
-
-### `/build resume [task_id]`
-Resume a paused or failed build.
-
-### `/build status [task_id]`
-Check the status of a build.
-
-### `/build abort [task_id]`
-Cancel an active build.
-
-### `/build list`
-List all builds in current project.
 
 ## Workflow Phases
 
-### Phase 1: PLAN (The Planner)
-
-The Planner creates an execution-ready plan:
-
-1. **Playbook Load** - Load planning methodology
-2. **Context Lock** - Load and embed all Memory rules
-3. **Requirements Gathering** - Use team member questions
-4. **Plan Construction** - Create steps with validation commands
-
-Output: `studio/projects/[project]/tasks/[task]/plan.json`
-
-### Phase 2: BUILD (The Builder)
-
-The Builder executes the plan exactly as specified:
-
-1. **Plan Load** - Read the execution-ready plan
-2. **Execution Loop** - For each step:
-   - Execute micro-actions
-   - Run validation commands
-   - Follow retry behavior on failure
-3. **Quality Gate** - Run final validation checks
-
-Output: Working code + `manifest.json` with status
-
-## Execution Protocol
-
-### With Backlog Integration
-
 ```
-/build
-  │
-  ├── Backlog exists?
-  │   ├── Yes: Get next ready task from backlog
-  │   │   └── Execute task (Plan → Build)
-  │   │       └── Update task status to COMPLETE
-  │   │           └── Show next ready task
-  │   └── No: Prompt for goal
-  │
-  └── Argument provided?
-      ├── Looks like ID (E1, F3, T7)?
-      │   └── Resolve ID → Execute item(s)
-      └── Text goal?
-          └── Decompose → Add to backlog → Execute
+/build [target]
+    -> PHASE 1: Task Selection (next priority or specified)
+    -> PHASE 2: Iterative Build Loop (execute -> validate -> fix -> repeat)
+    -> PHASE 3: Quality Gates (lint, typecheck, tests, security)
+    -> PHASE 4: Learn (capture good/bad/patterns -> studio/learnings/)
+    -> Output: Updated backlog, learnings captured
 ```
 
-### Full Execution Flow
+## Phase 1: Task Selection
 
-```
-/build "Add user authentication"
-         │
-         ▼
-┌─────────────────────────────────────────┐
-│  PHASE 0: BACKLOG INTEGRATION           │
-│                                         │
-│  1. Check if backlog exists             │
-│  2. Decompose goal into tasks           │
-│  3. Add to backlog (or create new)      │
-│  4. Select first task to execute        │
-│                                         │
-└─────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────┐
-│  PHASE 1: PLAN                          │
-│                                         │
-│  1. Load playbooks (planning, memory)   │
-│  2. Load team (BA, orchestrator, etc.)  │
-│  3. Ask requirements questions          │
-│  4. Create execution-ready plan         │
-│  5. Save plan.json                      │
-│                                         │
-│  Output: plan.json with embedded        │
-│          context and validation hooks   │
-└─────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────┐
-│  PHASE 2: BUILD                         │
-│                                         │
-│  For each step:                         │
-│    1. Execute micro-actions             │
-│    2. Run validation commands           │
-│    3. On fail: apply fix hints, retry   │
-│    4. On success: continue              │
-│                                         │
-│  Quality Gate (Stop hook):              │
-│    - Run all quality checks             │
-│    - STRONG/SOUND = complete            │
-│    - BLOCK = fix required               │
-│                                         │
-└─────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────┐
-│  PHASE 3: BACKLOG UPDATE                │
-│                                         │
-│  1. Update task status to COMPLETE      │
-│  2. Update feature/epic progress        │
-│  3. Show next ready task                │
-│                                         │
-└─────────────────────────────────────────┘
-         │
-         ▼
-    ✓ BUILD COMPLETE
+### Auto-Select Next Task
+
+When run without arguments:
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" header builder
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent builder "Selecting next task..."
 ```
 
-## File Structure
+1. Read `.studio/backlog.json` (if exists)
+2. Find tasks with status `PENDING` and no blockers
+3. Score by priority and select highest
+4. If no backlog, look in `.studio/tasks/` for plans
+
+### Specify Target
+
+```bash
+/build                  # Auto-select next priority task
+/build task_20260202... # Build specific task
+/build T7               # Build by short ID
+/build F3               # Build all tasks in feature
+/build E1               # Build all tasks in epic
+```
+
+## Phase 2: Iterative Build Loop (Ralph-Wiggum Pattern)
+
+The core innovation: execute, validate, fix, repeat.
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase building
+```
+
+### For Each Step
 
 ```
-.studio/                        # Project output directory
-├── backlog.json               # Epic > Feature > Task hierarchy
-├── id-map.json                # Short ID to full ID mapping
-├── project.json               # Project metadata
-└── tasks/
-    └── [task_id]/
-        ├── plan.json          # Execution-ready plan
-        ├── manifest.json      # State and progress
-        └── build-log.json     # Execution history
+for each step in plan.steps:
+    for attempt in 1..5:
+        execute(step.action)
+        result = validate(step.success_criteria)
+        if result.passed:
+            break
+        else:
+            analyze_error(result)
+            apply_fix()
+            # retry
+```
 
-studio/                        # Plugin source (this repo)
-├── memory/                    # User preferences
-│   ├── global.md
-│   └── [domain].md
-│
-├── team/                      # Domain experts
-│   ├── tier1/
-│   ├── tier2/
-│   └── tier3/
-│
-├── playbooks/                 # Methodologies
-│   ├── planning/
-│   ├── building/
-│   └── memory/
-│
-└── scripts/
-    ├── backlog.sh             # Backlog CRUD operations
-    ├── project.sh             # Project management
-    └── output.sh              # Terminal formatting
+### Step Execution
+
+1. **Announce Step**
+   ```bash
+   "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" step_header [n] [total] "[step.name]"
+   ```
+
+2. **Execute Action**
+   - Read the step's action description
+   - Perform the required tool calls (Write, Edit, Bash, etc.)
+
+3. **Validate**
+   Run each success criterion's verification:
+
+   | Type | Validation |
+   |------|------------|
+   | `command` | Run command, check exit code 0 |
+   | `file_exists` | Check path exists |
+   | `file_contains` | Grep for pattern |
+   | `test_passes` | Run test command |
+
+4. **On Failure: Analyze and Fix**
+   - Read the error output
+   - Check `retry_behavior.fix_hints` for guidance
+   - Apply fix and retry (up to `max_attempts`)
+
+5. **On Success: Continue**
+   ```bash
+   "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status success "Step [n] complete"
+   ```
+
+### Acceptance Criteria Loop
+
+After all steps complete, verify acceptance criteria:
+
+```
+for each criterion in plan.acceptance_criteria:
+    result = verify(criterion)
+    if not result.passed and criterion.priority == "must":
+        iterate_and_fix()
+```
+
+### Playwright MCP Integration (for UI criteria)
+
+For acceptance criteria with `type: "playwright"`:
+
+1. **Navigate**: `playwright_navigate(url)`
+2. **Perform Actions**:
+   - `playwright_click(selector)`
+   - `playwright_fill(selector, value)`
+   - `playwright_check(selector)`
+3. **Assert**:
+   - Check element visibility
+   - Check text content
+   - Check URL
+4. **Screenshot**: `playwright_screenshot()` for evidence
+
+Example flow:
+```
+AC-2: Error messages display inline
+-> playwright_navigate("http://localhost:3000/register")
+-> playwright_fill("#email", "invalid")
+-> playwright_click("button[type=submit]")
+-> Assert: .error-message is visible
+-> playwright_screenshot() for evidence
+```
+
+## Phase 3: Quality Gates
+
+After all acceptance criteria pass, run quality gates:
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase quality-gates
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent builder "Running quality gates..."
+```
+
+### Gate Sequence
+
+1. **Lint**
+   ```bash
+   npm run lint
+   # or detected linter
+   ```
+
+2. **Typecheck**
+   ```bash
+   npx tsc --noEmit
+   ```
+
+3. **Unit Tests**
+   ```bash
+   npm test
+   ```
+
+4. **Security**
+   ```bash
+   npm audit --audit-level=high
+   ```
+
+### Gate Results
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status success "Lint: PASS"
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status success "Typecheck: PASS"
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status success "Tests: PASS (24 tests)"
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" status warning "Security: 2 moderate vulnerabilities"
+```
+
+If a gate fails, attempt to fix and re-run (lint fixes, type errors, etc.).
+
+## Phase 4: Learn
+
+**After build completes, capture learnings.**
+
+This phase is triggered by the SubagentStop hook but can also run manually.
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase learn
+"${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent builder "Capturing learnings from this build..."
+```
+
+### 4.1 Summarize What Worked
+
+- Patterns that were effective
+- Approaches that succeeded on first try
+- Code that was clean and maintainable
+
+### 4.2 Document Problems and Solutions
+
+- Errors that required fixes
+- Unexpected issues and resolutions
+- Retry attempts and what finally worked
+
+### 4.3 Note New Patterns
+
+- Novel approaches discovered
+- Reusable code structures
+- Integration techniques
+
+### 4.4 Ask User for Domain
+
+Prompt the user:
+```
+Where should this learning be saved?
+- global (project-wide)
+- frontend (UI/components)
+- backend (API/services)
+- testing (test strategies)
+- security (security patterns)
+- performance (optimizations)
+- integration:<name> (e.g., integration:nextjs)
+```
+
+### 4.5 Write to Learnings File
+
+Write to `studio/learnings/{domain}.md`:
+
+```markdown
+## 2026-02-02: Form Validation Pattern
+
+**Context:** Building user registration (task_20260202_143052)
+
+**What Worked:**
+- Zod + react-hook-form for client-side validation
+- Inline error display with immediate feedback
+
+**Problems Solved:**
+- Problem: Form submission not showing errors
+  Solution: Added `mode: "onBlur"` to react-hook-form config
+
+**Pattern:**
+```typescript
+const schema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8)
+});
+
+const form = useForm({
+  resolver: zodResolver(schema),
+  mode: "onBlur"
+});
+```
 ```
 
 ## Build States
 
 | State | Description |
 |-------|-------------|
-| `PLANNING` | Planner gathering requirements |
-| `READY_TO_BUILD` | Plan complete, ready to execute |
-| `BUILDING` | Builder executing steps |
-| `AWAITING_QUALITY_GATE` | All steps done, running checks |
-| `BLOCKED` | Quality gate failed, fixes needed |
-| `COMPLETE` | All done, quality gate passed |
-| `HALTED` | Step failed after max retries |
-| `ABORTED` | User cancelled |
+| `BUILDING` | Executing steps |
+| `VALIDATING` | Running acceptance criteria |
+| `QUALITY_GATES` | Running quality checks |
+| `LEARNING` | Capturing learnings |
+| `COMPLETE` | All done |
+| `BLOCKED` | Gate failed, needs fix |
+| `HALTED` | Max retries exceeded |
 
-## Memory Integration
+## Output Files
 
-The Planner loads rules from `studio/memory/`:
-- `global.md` - Always applied
-- `frontend.md` - For frontend tasks
-- `backend.md` - For backend tasks
-- `testing.md` - For test requirements
-- `security.md` - For security requirements
+### Manifest Update
 
-Rules are **embedded in the plan** so the Builder never needs to reload them.
-
-## Team Members
-
-The Planner uses team member question frameworks:
-
-**Tier 1 - Core (always loaded):**
-- Business Analyst - Detailed requirements
-- Orchestrator - Scope & success criteria
-- Tech Lead - Architecture decisions
-
-**Tier 1 - Domain (loaded by task type):**
-- Frontend Specialist
-- Backend Specialist
-- UI/UX Designer
-
-**Tier 2 - Quality:**
-- QA Refiner
-- Security Analyst
-- DevOps Engineer
-
-**Tier 3 - Growth:**
-- Content Strategist
-- Legal/Compliance
-- SEO/Growth
-
-## Quality Gate
-
-The Stop hook runs quality checks before completion:
+Update `.studio/tasks/{task_id}/manifest.json`:
 
 ```json
 {
-  "quality_gate": {
-    "checks": [
-      {"name": "All tests pass", "command": "npm test", "required": true},
-      {"name": "No type errors", "command": "npx tsc --noEmit", "required": true},
-      {"name": "No lint errors", "command": "npm run lint", "required": false}
-    ]
-  }
+  "task_id": "task_20260202_143052",
+  "status": "COMPLETE",
+  "started_at": "...",
+  "completed_at": "...",
+  "steps_completed": 8,
+  "acceptance_criteria_passed": 6,
+  "quality_gates": {
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "test": "PASS",
+    "security": "WARN"
+  },
+  "learnings_captured": "frontend.md"
 }
 ```
 
-Verdicts:
-- **STRONG** - All checks pass
-- **SOUND** - Required pass, optional warnings
-- **BLOCK** - Required check failed
+### Backlog Update
 
-## Example Sessions
+If using backlog, update task status:
 
-### Auto-Select Next Task
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" update-status T7 COMPLETE "Build successful"
+```
+
+## Example Session
 
 ```
 User: /build
 
-Build: Checking backlog...
-       ✓ Found 12 tasks, 4 ready
+Builder: Selecting next task...
+         Found: task_20260202_143052 - User registration with email verification
+         Priority: HIGH (score: 92)
 
-       Scoring ready tasks:
-       ├── T8 - Password reset email (score: 92)
-       ├── T15 - Add Stripe SDK (score: 78)
-       └── T12 - Unit tests (score: 65)
+         PHASE 2: Building
 
-       Executing: T8 - Password reset email
+         [Step 1/8] Create validation schema
+         -> Writing src/schemas/auth.ts
+         -> Validating... PASS
 
-Planner: Loading context from backlog...
-         ✓ Task: T8 - Password reset email
-         ✓ Feature: F2 - Password Reset
-         ✓ Epic: E1 - User Management
+         [Step 2/8] Create registration API
+         -> Writing src/api/auth/register.ts
+         -> Validating... FAIL (import error)
+         -> Applying fix: Check bcrypt import
+         -> Retrying (2/5)...
+         -> Validating... PASS
 
-         Creating plan for T8...
-         ✓ 3 steps identified
-         ✓ Plan saved
+         [Step 3/8] Create email service
+         ...
 
-Builder: Executing T8...
-         [Step 1/3] ✓ Create email template
-         [Step 2/3] ✓ Add send function
-         [Step 3/3] ✓ Integration test
+         PHASE 3: Acceptance Criteria
 
-         Quality Gate: STRONG ✓
+         [AC-1] Registration form renders... PASS
+         [AC-2] Validation errors show inline...
+         -> playwright_navigate("http://localhost:3000/register")
+         -> playwright_fill("#email", "invalid")
+         -> playwright_click("button[type=submit]")
+         -> Asserting .error-message visible... PASS
+         [AC-3] Email sent on submit... PASS
+         ...
 
-Build: ✓ T8 Complete
-       Updating backlog...
-       ├── T8: PENDING → COMPLETE
-       └── F2 Progress: 67% → 100%
+         PHASE 4: Quality Gates
 
-       Next ready: T15 - Add Stripe SDK
-       Run /build to continue
-```
+         Lint: PASS
+         Typecheck: PASS
+         Tests: PASS (24 tests)
+         Security: PASS
 
-### Build Specific Feature
+         PHASE 5: Learn
 
-```
-User: /build F3
+         Where should I save this learning?
+         1. global
+         2. frontend
+         3. backend
 
-Build: Building Feature: F3 - User Profile
-       ├── T9 - Profile API endpoint
-       ├── T10 - Profile UI component
-       └── T11 - Profile tests
+User: 2
 
-       Executing in dependency order...
-
-       [T9] Creating plan...
-            Executing...
-            ✓ Complete
-
-       [T10] Creating plan...
-             Executing...
-             ✓ Complete
-
-       [T11] Creating plan...
-             Executing...
-             ✓ Complete
-
-       ╔═══════════════════════════════════════╗
-       ║  FEATURE COMPLETE: F3 - User Profile  ║
-       ╚═══════════════════════════════════════╝
-
-       Next: F4 - Settings (3 tasks)
-```
-
-### Plan Then Build
-
-```
-User: /build "Add dark mode toggle"
-
-Build: New goal detected - decomposing...
-
-Architect: Analyzing goal...
-           This fits under existing structure:
-           └── E1 - User Management
-               └── F2 - UI Settings (creating)
-
-           Created:
-           └── T20 - Dark mode toggle
-
-           Executing T20...
-
-Planner: Creating plan for T20...
-         ✓ 4 steps identified
-
-Builder: Executing...
-         [Step 1/4] ✓ Theme context
-         [Step 2/4] ✓ CSS variables
-         [Step 3/4] ✓ Toggle component
-         [Step 4/4] ✓ Tests
-
-         Quality Gate: STRONG ✓
-
-         ╔═══════════════════════════════════════╗
-         ║      BUILD COMPLETE: T20              ║
-         ╚═══════════════════════════════════════╝
-```
-
-### Traditional Goal Build
-
-```
-User: /build Add user registration with email verification
-
-Planner: Loading playbooks...
-         ✓ Plan-and-Solve methodology loaded
-         ✓ Memory protocol loaded
-
-Planner: Loading team...
-         ✓ Business Analyst
-         ✓ Orchestrator
-         ✓ Tech Lead
-         ✓ Backend Specialist
-
-Planner: Before I create a plan, I need to understand your requirements.
-
-         1. What fields should registration capture?
-         2. How should email verification work?
-         3. What happens after verification?
-
-User: Email, password, name. Send verification link. Redirect to dashboard.
-
-Planner: Creating plan...
-         ✓ 6 steps identified
-         ✓ Context embedded (4 rules, 5 patterns)
-         ✓ Validation hooks defined
-         ✓ Plan saved: .studio/tasks/.../plan.json
-
-         Ready for execution.
-
-Builder: Loading plan...
-         ✓ 6 steps to execute
-         ✓ Context embedded
-
-Builder: Step 1/6: Create validation schema
-         → mkdir -p src/schemas
-         → Write src/schemas/auth.ts
-         ✓ Validating... PASS
-
-Builder: Step 2/6: Create auth service
-         → Write src/services/auth.ts
-         ✗ Validating... FAIL (import error)
-         → Applying fix hint: check bcrypt import
-         → Retrying (1/3)...
-         ✓ Validating... PASS
-
-[...continues...]
-
-Builder: All steps executed
-         Triggering quality gate...
-
-         ✓ npm test - PASS (12 tests)
-         ✓ tsc --noEmit - PASS
-         ✓ npm run lint - PASS
-
-         ╔═══════════════════════════════════════╗
-         ║         VERDICT: STRONG ✓             ║
-         ╚═══════════════════════════════════════╝
+Builder: Learning captured to studio/learnings/frontend.md
 
          BUILD COMPLETE
+
+         Summary:
+         - Task: task_20260202_143052
+         - Steps: 8/8 complete
+         - Acceptance: 6/6 passed
+         - Quality: All gates passed
+         - Learning: Saved to frontend.md
+
+         Next ready task: task_20260202_150000
+         Run /build to continue
 ```
 
-## Backlog Status Updates
+## Integration with /plan
 
-After each task completes, the build command updates the backlog:
+The build command reads plans created by `/plan`:
+
+1. Load plan from `.studio/tasks/{task_id}/plan.json`
+2. Execute steps with iterative validation
+3. Verify acceptance criteria
+4. Run quality gates
+5. Capture learnings
+
+## Integration with /orchestrate
+
+For explicit control over orchestration:
 
 ```bash
-# Update task status
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" update-status T8 COMPLETE "Build successful" builder
-
-# Get next task
-"${CLAUDE_PLUGIN_ROOT}/scripts/backlog.sh" next-task
+/orchestrate build "goal"     # Full visibility mode
+/orchestrate status           # Check orchestration state
+/orchestrate resume           # Resume interrupted work
 ```
 
-This maintains:
-- Immutable changelog for each item
-- Progress metrics (completion percentage)
-- Feature/Epic status propagation
+## Implicit Orchestration Details
+
+When `/build "goal"` triggers orchestration:
+
+### 1. Goal Analysis (via PreCommand hook)
+
+```bash
+scripts/orchestrator.sh init "$GOAL" implicit
+scripts/orchestrator.sh route
+```
+
+The orchestrator analyzes:
+- Goal complexity (simple fix vs new feature)
+- Whether a plan exists
+- Required agents
+- Returns routing confidence score
+
+### 2. Routing Decision
+
+| Signal | Route | Confidence |
+|--------|-------|------------|
+| "fix", "bug", "typo" | Builder only | 0.7 |
+| "add", "create", "implement" | Planner → Builder | 0.85 |
+| "refactor", "reorganize" | Planner → Builder | 0.9 |
+| Existing plan file | Builder only | 1.0 |
+
+### 3. Skill Detection (via SubagentStart hook)
+
+Before each agent starts:
+```bash
+scripts/skills.sh detect "$GOAL"   # Returns matching skills with scores
+scripts/skills.sh inject <skill>   # Gets injection content
+```
+
+Skills provide domain-specific guidance:
+- Security skill: Auth patterns, input validation, OWASP checks
+- Frontend skill: Component patterns, accessibility, responsive design
+- Backend skill: API design, error handling, database patterns
+- Testing skill: Test strategies, coverage requirements
+
+### 4. Agent Handoffs
+
+Context is passed between agents via orchestrator:
+
+```bash
+# After Planner completes
+scripts/orchestrator.sh handoff planner builder '{"task_id":"task_xxx","plan_path":".studio/tasks/task_xxx/plan.json","skills":["security","backend"]}'
+
+# Builder retrieves handoff
+scripts/orchestrator.sh get-handoff builder  # Returns the context JSON
+```
+
+### 5. Failure Recovery
+
+On agent failure, orchestrator determines action:
+```bash
+scripts/orchestrator.sh agent-fail builder "Error message"
+scripts/orchestrator.sh recover builder
+```
+
+Recovery thresholds:
+| Failures | Action | Description |
+|----------|--------|-------------|
+| < 3 | retry | Retry same step with fixes |
+| 3-4 | replan | Send back to Planner for revision |
+| 5+ | escalate | Ask user for help |
+
+### 6. Auto-Checkpoints (via SubagentStop hook)
+
+After each agent completes:
+```bash
+scripts/orchestrator.sh agent-complete <agent>
+scripts/orchestrator.sh checkpoint '<agent>_complete'
+```
+
+State saved to:
+```
+.studio/orchestration/orch_xxx/
+├── state.json            # Current state
+├── cp_xxx.json           # Checkpoint snapshots
+└── (session continues)
+```
+
+### 7. Session Resume (via SessionStart hook)
+
+On session start, checks for interrupted orchestration:
+- If `status: "paused"` → Prompt to resume
+- If `status: "recovering"` → Show last failure, offer recovery
+- If `status: "executing"` → Offer to resume from checkpoint
+
+Resume:
+```bash
+scripts/orchestrator.sh resume
+```
+
+## Agent Definition
+
+This command invokes the **Builder** agent defined in `agents/builder.yaml`.
+
+When orchestration is active, it also coordinates with:
+- **Orchestrator** agent (`agents/orchestrator.yaml`)
+- **Planner** agent (`agents/planner.yaml`) if planning needed

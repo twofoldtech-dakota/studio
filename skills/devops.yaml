@@ -1,0 +1,93 @@
+name: devops
+description: DevOps practices for deployment, CI/CD, containers, and infrastructure
+
+team_members:
+  - tier: tier2
+    member: devops-engineer
+    focus: CI/CD and infrastructure patterns
+  - tier: tier1
+    member: tech-lead
+    focus: Deployment architecture
+
+triggers:
+  keywords:
+    - deploy
+    - deployment
+    - ci
+    - cd
+    - pipeline
+    - docker
+    - kubernetes
+    - k8s
+    - container
+    - helm
+    - terraform
+    - aws
+    - gcp
+    - azure
+    - github actions
+    - vercel
+    - netlify
+    - environment
+    - staging
+    - production
+  domains:
+    - devops
+    - infrastructure
+    - deployment
+    - ci-cd
+  file_patterns:
+    - "**/Dockerfile*"
+    - "**/.github/**"
+    - "**/docker-compose*"
+    - "**/*.yaml"
+    - "**/terraform/**"
+    - "**/k8s/**"
+    - "**/helm/**"
+
+injection:
+  questions: |
+    ## DevOps Checkpoint
+
+    Before proceeding, consider:
+    - What is the current deployment process?
+    - Are there CI/CD pipelines to update?
+    - What environments exist (dev, staging, prod)?
+    - Are there infrastructure changes needed?
+    - What rollback strategy exists?
+
+  guidelines: |
+    ## DevOps Guidelines
+
+    ### CI/CD
+    - Run tests before deployment
+    - Use consistent build environments
+    - Cache dependencies for faster builds
+    - Require PR approval before merging
+
+    ### Containers
+    - Use multi-stage builds to reduce image size
+    - Don't run containers as root
+    - Pin base image versions
+    - Include health checks
+
+    ### Infrastructure
+    - Use infrastructure as code (Terraform, Pulumi)
+    - Separate environments clearly
+    - Use secrets management (not env files)
+    - Monitor and alert on failures
+
+    ### Deployment
+    - Use blue-green or rolling deployments
+    - Test in staging before production
+    - Have clear rollback procedures
+    - Document deployment runbooks
+
+  checklist:
+    - "CI pipeline updated if needed"
+    - "Docker image optimized"
+    - "Secrets properly managed"
+    - "Rollback procedure documented"
+    - "Health checks included"
+
+priority: 50

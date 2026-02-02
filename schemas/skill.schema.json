@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.twofold.dev/schemas/skill.schema.json",
+  "title": "STUDIO Skill Definition",
+  "description": "Schema for skill definitions that bundle playbooks, team members, and domain-specific guidance",
+  "type": "object",
+  "required": ["name", "description"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique identifier for the skill (e.g., 'security', 'frontend')",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of what this skill provides"
+    },
+    "playbook": {
+      "type": "string",
+      "description": "Optional playbook reference (e.g., 'security' loads playbooks/security/SKILL.md)"
+    },
+    "team_members": {
+      "type": "array",
+      "description": "Team members to consult when this skill is active",
+      "items": {
+        "type": "object",
+        "required": ["tier", "member"],
+        "properties": {
+          "tier": {
+            "type": "string",
+            "enum": ["tier1", "tier2", "tier3"],
+            "description": "Team tier containing this member"
+          },
+          "member": {
+            "type": "string",
+            "description": "Member filename without .md extension (e.g., 'tech-lead')"
+          },
+          "focus": {
+            "type": "string",
+            "description": "Optional focus area for this member in this skill context"
+          }
+        }
+      }
+    },
+    "triggers": {
+      "type": "object",
+      "description": "Conditions that activate this skill",
+      "properties": {
+        "keywords": {
+          "type": "array",
+          "description": "Keywords in goals that trigger this skill",
+          "items": {
+            "type": "string"
+          }
+        },
+        "domains": {
+          "type": "array",
+          "description": "Domain categories that trigger this skill",
+          "items": {
+            "type": "string"
+          }
+        },
+        "file_patterns": {
+          "type": "array",
+          "description": "File glob patterns that trigger this skill",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "injection": {
+      "type": "object",
+      "description": "Content to inject when skill is active",
+      "properties": {
+        "questions": {
+          "type": "string",
+          "description": "Questions to consider before proceeding (markdown)"
+        },
+        "guidelines": {
+          "type": "string",
+          "description": "Guidelines and best practices (markdown)"
+        },
+        "checklist": {
+          "type": "array",
+          "description": "Verification checklist items",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "priority": {
+      "type": "integer",
+      "description": "Priority when multiple skills match (higher = more important)",
+      "default": 50,
+      "minimum": 1,
+      "maximum": 100
+    }
+  }
+}

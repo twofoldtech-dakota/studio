@@ -1,0 +1,93 @@
+name: frontend
+description: Frontend development patterns for React, components, styling, and user interfaces
+
+team_members:
+  - tier: tier1
+    member: frontend-specialist
+    focus: Component architecture and React patterns
+  - tier: tier1
+    member: ui-ux-designer
+    focus: User experience and design consistency
+  - tier: tier1
+    member: brand-strategist
+    focus: Visual consistency and brand guidelines
+
+triggers:
+  keywords:
+    - react
+    - component
+    - ui
+    - css
+    - style
+    - tailwind
+    - frontend
+    - layout
+    - responsive
+    - animation
+    - form
+    - button
+    - modal
+    - dropdown
+    - navigation
+    - theme
+    - dark mode
+  domains:
+    - frontend
+    - ui
+    - components
+    - design
+  file_patterns:
+    - "**/components/**"
+    - "**/*.tsx"
+    - "**/*.jsx"
+    - "**/*.css"
+    - "**/*.scss"
+    - "**/styles/**"
+    - "**/hooks/**"
+
+injection:
+  questions: |
+    ## Frontend Checkpoint
+
+    Before proceeding, consider:
+    - Does this follow existing component patterns?
+    - Is the component reusable or page-specific?
+    - What states does this component need (loading, error, empty)?
+    - Is this responsive across breakpoints?
+    - Does it match the design system?
+
+  guidelines: |
+    ## Frontend Guidelines
+
+    ### Component Architecture
+    - Keep components small and focused (single responsibility)
+    - Use composition over prop drilling
+    - Separate container (logic) from presentational components
+    - Co-locate styles with components
+
+    ### React Patterns
+    - Use functional components with hooks
+    - Memoize expensive computations with useMemo
+    - Use useCallback for event handlers passed to children
+    - Handle all states: loading, error, empty, success
+
+    ### Styling
+    - Follow existing naming conventions (BEM, CSS modules, etc.)
+    - Use design system tokens (colors, spacing, typography)
+    - Mobile-first responsive design
+    - Support dark mode if applicable
+
+    ### Accessibility
+    - Use semantic HTML elements
+    - Include aria-labels where needed
+    - Ensure keyboard navigation works
+    - Maintain color contrast ratios
+
+  checklist:
+    - "Component follows existing patterns"
+    - "All states handled (loading, error, empty)"
+    - "Responsive design tested"
+    - "Keyboard navigation works"
+    - "Design system tokens used"
+
+priority: 70

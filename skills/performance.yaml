@@ -1,0 +1,87 @@
+name: performance
+description: Performance optimization practices for speed, caching, and resource efficiency
+
+team_members:
+  - tier: tier1
+    member: tech-lead
+    focus: Architecture optimization patterns
+  - tier: tier2
+    member: devops-engineer
+    focus: Infrastructure and caching strategies
+
+triggers:
+  keywords:
+    - optimize
+    - performance
+    - speed
+    - cache
+    - caching
+    - latency
+    - throughput
+    - memory
+    - cpu
+    - slow
+    - fast
+    - lazy load
+    - preload
+    - bundle size
+    - lighthouse
+    - web vitals
+  domains:
+    - performance
+    - optimization
+    - infrastructure
+  file_patterns:
+    - "**/cache/**"
+    - "**/*cache*"
+    - "**/workers/**"
+    - "**/*.worker.*"
+
+injection:
+  questions: |
+    ## Performance Checkpoint
+
+    Before proceeding, consider:
+    - What is the current performance baseline?
+    - Where are the bottlenecks?
+    - What is the acceptable performance target?
+    - Is caching appropriate here?
+    - Are there memory/CPU constraints?
+
+  guidelines: |
+    ## Performance Guidelines
+
+    ### Frontend Performance
+    - Lazy load non-critical components
+    - Use code splitting for large bundles
+    - Optimize images (compression, proper formats)
+    - Minimize JavaScript bundle size
+    - Use virtualization for long lists
+
+    ### Backend Performance
+    - Add database indexes for slow queries
+    - Use connection pooling
+    - Implement caching (Redis, in-memory)
+    - Paginate large result sets
+    - Use async/await properly
+
+    ### Caching Strategy
+    - Cache at the right level (CDN, API, database)
+    - Set appropriate TTLs
+    - Invalidate cache correctly
+    - Use cache headers for HTTP responses
+
+    ### Measurement
+    - Profile before optimizing
+    - Set performance budgets
+    - Monitor Core Web Vitals
+    - Test with realistic data volumes
+
+  checklist:
+    - "Baseline performance measured"
+    - "Bottleneck identified"
+    - "Caching strategy appropriate"
+    - "No N+1 queries"
+    - "Bundle size acceptable"
+
+priority: 50

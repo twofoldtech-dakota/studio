@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.plugin/schemas/context-config.schema.json",
+  "title": "STUDIO Context Configuration",
+  "description": "Configuration for intelligent context management including token budgets, tier thresholds, and optimization triggers",
+  "type": "object",
+  "required": ["version", "budgets", "tiers", "optimization"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Schema version"
+    },
+    "budgets": {
+      "type": "object",
+      "description": "Token budget allocation per context pool",
+      "required": ["reserved", "learnings", "backlog", "plans", "context7", "working"],
+      "properties": {
+        "reserved": {
+          "$ref": "#/$defs/budgetPool",
+          "description": "System prompts, playbooks, current task",
+          "default": {"soft_limit": 30000, "hard_limit": 35000}
+        },
+        "learnings": {
+          "$ref": "#/$defs/budgetPool",
+          "description": "Project learnings from previous builds",
+          "default": {"soft_limit": 20000, "hard_limit": 25000}
+        },
+        "backlog": {
+          "$ref": "#/$defs/budgetPool",
+          "description": "Epic/Feature/Task hierarchy",
+          "default": {"soft_limit": 15000, "hard_limit": 20000}
+        },
+        "plans": {
+          "$ref": "#/$defs/budgetPool",
+          "description": "Current plan details",
+          "default": {"soft_limit": 30000, "hard_limit": 35000}
+        },
+        "context7": {
+          "$ref": "#/$defs/budgetPool",
+          "description": "External documentation from Context7 MCP",
+          "default": {"soft_limit": 25000, "hard_limit": 30000}
+        },
+        "working": {
+          "$ref": "#/$defs/budgetPool",
+          "description": "Agent workspace, tool results",
+          "default": {"soft_limit": 30000, "hard_limit": 40000}
+        }
+      }
+    },
+    "tiers": {
+      "type": "object",
+      "description": "Context tier definitions for content aging",
+      "required": ["full", "summary", "index"],
+      "properties": {
+        "full": {
+          "type": "object",
+          "description": "TIER 1: Full content (Recent/Active) - 100% tokens",
+          "properties": {
+            "max_age_days": {
+              "type": "integer",
+              "default": 30,
+              "description": "Maximum age in days before promotion to summary tier"
+            },
+            "token_retention": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0,
+              "description": "Percentage of original tokens retained"
+            },
+            "preserve_if_referenced": {
+              "type": "boolean",
+              "default": true,
+              "description": "Keep in tier 1 if referenced by active tasks"
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "description": "TIER 2: Summary (Older/30+ days) - 20-30% tokens",
+          "properties": {
+            "min_age_days": {
+              "type": "integer",
+              "default": 30,
+              "description": "Minimum age before entry qualifies for this tier"
+            },
+            "max_age_days": {
+              "type": "integer",
+              "default": 90,
+              "description": "Maximum age before promotion to index tier"
+            },
+            "token_retention": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.25,
+              "description": "Target percentage of original tokens"
+            },
+            "summarization_method": {
+              "type": "string",
+              "enum": ["llm", "extractive", "hybrid"],
+              "default": "llm",
+              "description": "Method used to create summaries"
+            }
+          }
+        },
+        "index": {
+          "type": "object",
+          "description": "TIER 3: Index only (Archived/90+ days) - 5% tokens",
+          "properties": {
+            "min_age_days": {
+              "type": "integer",
+              "default": 90,
+              "description": "Minimum age before entry qualifies for this tier"
+            },
+            "token_retention": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.05,
+              "description": "Target percentage of original tokens"
+            },
+            "index_fields": {
+              "type": "array",
+              "items": {"type": "string"},
+              "default": ["date", "title", "domain", "tags", "ref_path"],
+              "description": "Fields preserved in index-only entries"
+            }
+          }
+        }
+      }
+    },
+    "optimization": {
+      "type": "object",
+      "description": "Optimization trigger thresholds",
+      "properties": {
+        "warning_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.80,
+          "description": "Percentage of budget that triggers warning"
+        },
+        "force_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.95,
+          "description": "Percentage of budget that forces optimization"
+        },
+        "auto_summarize": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically summarize entries exceeding age threshold"
+        },
+        "cache_summaries": {
+          "type": "boolean",
+          "default": true,
+          "description": "Cache summaries to avoid re-summarization"
+        },
+        "cache_path": {
+          "type": "string",
+          "default": ".studio/.cache/summaries/",
+          "description": "Path for cached summaries"
+        }
+      }
+    },
+    "estimation": {
+      "type": "object",
+      "description": "Token estimation configuration",
+      "properties": {
+        "code_ratio": {
+          "type": "number",
+          "default": 0.25,
+          "description": "Characters per token for code (chars/4)"
+        },
+        "markdown_ratio": {
+          "type": "number",
+          "default": 1.3,
+          "description": "Words times multiplier for markdown (words*1.3)"
+        },
+        "json_ratio": {
+          "type": "number",
+          "default": 0.3,
+          "description": "Characters per token for JSON"
+        }
+      }
+    },
+    "summarization_prompt": {
+      "type": "object",
+      "description": "LLM summarization prompt configuration",
+      "properties": {
+        "system_prompt": {
+          "type": "string",
+          "default": "You are a technical summarizer. Create concise summaries that preserve key information."
+        },
+        "template": {
+          "type": "string",
+          "default": "Summarize this learning entry, preserving:\n1. The key insight (one sentence)\n2. Pattern names mentioned\n3. Code snippets (keep if < 10 lines, describe otherwise)\n4. Problem-solution pairs\n\nOriginal entry:\n{content}\n\nOutput format:\n## [Date]: [Title] (summarized)\n**Key Insight:** ...\n**Patterns:** ...\n**Ref:** {original_path}"
+        },
+        "max_output_tokens": {
+          "type": "integer",
+          "default": 500,
+          "description": "Maximum tokens for summary output"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "budgetPool": {
+      "type": "object",
+      "required": ["soft_limit"],
+      "properties": {
+        "soft_limit": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Token count that triggers warning"
+        },
+        "hard_limit": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Token count that forces optimization"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 5,
+          "description": "Priority for budget allocation (1=highest)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,93 @@
+name: backend
+description: Backend development patterns for APIs, services, databases, and server-side logic
+
+team_members:
+  - tier: tier1
+    member: backend-specialist
+    focus: API design and service architecture
+  - tier: tier1
+    member: tech-lead
+    focus: System architecture and patterns
+
+triggers:
+  keywords:
+    - api
+    - endpoint
+    - database
+    - service
+    - model
+    - schema
+    - query
+    - rest
+    - graphql
+    - middleware
+    - route
+    - controller
+    - repository
+    - migration
+    - orm
+    - prisma
+    - postgres
+    - mysql
+    - mongodb
+  domains:
+    - backend
+    - api
+    - services
+    - database
+  file_patterns:
+    - "**/api/**"
+    - "**/services/**"
+    - "**/models/**"
+    - "**/controllers/**"
+    - "**/routes/**"
+    - "**/middleware/**"
+    - "**/db/**"
+    - "**/prisma/**"
+
+injection:
+  questions: |
+    ## Backend Checkpoint
+
+    Before proceeding, consider:
+    - What existing patterns does this codebase use?
+    - What data entities are involved?
+    - How does data flow through the system?
+    - What error handling is needed?
+    - Are there database migrations required?
+
+  guidelines: |
+    ## Backend Guidelines
+
+    ### API Design
+    - Use consistent naming conventions (REST verbs, resource names)
+    - Return appropriate HTTP status codes
+    - Include pagination for list endpoints
+    - Version APIs when breaking changes are needed
+
+    ### Service Layer
+    - Keep controllers thin (delegate to services)
+    - Services should be stateless
+    - Use dependency injection for testability
+    - Handle all error cases explicitly
+
+    ### Database
+    - Use migrations for schema changes
+    - Add indexes for frequently queried columns
+    - Use transactions for multi-step operations
+    - Never trust user input in queries (parameterize)
+
+    ### Error Handling
+    - Use consistent error response format
+    - Log errors with context (but not sensitive data)
+    - Return user-friendly messages (hide internals)
+    - Handle all edge cases explicitly
+
+  checklist:
+    - "API follows existing conventions"
+    - "Error responses are consistent"
+    - "Database queries are parameterized"
+    - "Migrations created for schema changes"
+    - "Edge cases handled"
+
+priority: 70

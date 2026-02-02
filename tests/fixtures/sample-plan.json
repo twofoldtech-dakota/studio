@@ -1,0 +1,39 @@
+{
+  "id": "bp_test_001",
+  "task_id": "task_test_001",
+  "title": "Test Plan",
+  "goal": "Test the planning system",
+  "created_at": "2026-01-01T00:00:00Z",
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "Create test file",
+      "action": "Create a test file at src/test.ts",
+      "success_criteria": [
+        {
+          "type": "file_exists",
+          "path": "src/test.ts"
+        }
+      ]
+    },
+    {
+      "id": "step_2",
+      "name": "Run tests",
+      "action": "Run the test suite",
+      "success_criteria": [
+        {
+          "type": "command",
+          "command": "npm test",
+          "exit_code": 0
+        }
+      ]
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "ac_1",
+      "description": "Tests pass",
+      "priority": "must"
+    }
+  ]
+}

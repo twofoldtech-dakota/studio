@@ -1,0 +1,91 @@
+name: data
+description: Data handling practices for privacy, compliance, and data management
+
+team_members:
+  - tier: tier1
+    member: business-analyst
+    focus: Data requirements and business rules
+  - tier: tier3
+    member: legal-compliance
+    focus: Privacy regulations and compliance
+  - tier: tier1
+    member: backend-specialist
+    focus: Data architecture and storage
+
+triggers:
+  keywords:
+    - gdpr
+    - privacy
+    - pii
+    - data retention
+    - data deletion
+    - consent
+    - compliance
+    - personal data
+    - user data
+    - analytics
+    - tracking
+    - cookies
+    - ccpa
+    - hipaa
+    - data export
+    - data portability
+  domains:
+    - data
+    - privacy
+    - compliance
+    - legal
+  file_patterns:
+    - "**/analytics/**"
+    - "**/tracking/**"
+    - "**/consent/**"
+    - "**/privacy/**"
+    - "**/gdpr/**"
+
+injection:
+  questions: |
+    ## Data Handling Checkpoint
+
+    Before proceeding, consider:
+    - What personal data is being collected?
+    - Is user consent required?
+    - What is the data retention policy?
+    - How will data deletion requests be handled?
+    - What compliance frameworks apply?
+
+  guidelines: |
+    ## Data Handling Guidelines
+
+    ### Data Collection
+    - Collect only necessary data (data minimization)
+    - Document what data is collected and why
+    - Get explicit consent where required
+    - Provide clear privacy notices
+
+    ### Data Storage
+    - Encrypt PII at rest
+    - Use secure transmission (HTTPS)
+    - Implement access controls
+    - Log access to sensitive data
+
+    ### Data Retention
+    - Define retention periods for all data types
+    - Implement automated deletion
+    - Support user data export (portability)
+    - Handle deletion requests promptly
+
+    ### Compliance
+    - GDPR: Right to access, rectify, erase
+    - CCPA: Right to know, delete, opt-out
+    - Document data flows and processing
+    - Maintain records of processing activities
+
+  checklist:
+    - "Data minimization applied"
+    - "Consent mechanism in place"
+    - "Retention policy defined"
+    - "Deletion mechanism exists"
+    - "Privacy notice updated"
+    - "Data flows documented"
+
+priority: 80
