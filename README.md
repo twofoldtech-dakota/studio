@@ -1,30 +1,24 @@
+```mermaid
 ---
-title: STUDIO
-version: 5.0.0
-type: overview
-audience: [developers, ai-agents]
-last_updated: 2026-02-02
+config:
+  layout: dagre
+  theme: neo-dark
+  look: neo
 ---
+flowchart LR
+    Goal@{ label: "🎯 <b>GOAL</b><br>'Add user auth'" } --> Plan["📋 <b>PLAN</b><br>Atomic steps + validation"]
+    Plan --> Build["🔨 <b>BUILD</b><br>Execute &amp; validate"]
+    Build --> Verified["✅ <b>VERIFIED</b><br>Quality gates"]
+    Verified --> Learn["📚 <b>LEARN</b><br>Capture knowledge"]
+    Learn -. FEEDBACK LOOP .-> Plan
 
-# STUDIO
-
-> **S**elf-**T**eaching **U**nified **D**evelopment & **I**ntelligent **O**rchestration
-
-**Version 5.0.0** | AI builds code. STUDIO makes sure it's correct — and learns from every build.
-
+    Goal@{ shape: rect}
+    style Goal fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000000
+    style Plan fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000000
+    style Build fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000000
+    style Verified fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000000
+    style Learn fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000000
 ```
-╔═════════════════════════════════════════════════════════════════════════════════╗
-║                                                                                 ║
-║   🎯 GOAL          📋 PLAN           🔨 BUILD          ✅ VERIFIED    📚 LEARN   ║
-║                                                                                 ║
-║   "Add user   ───▶  Atomic steps  ───▶  Execute &  ───▶  Quality   ───▶  Capture ║
-║    auth"            + validation        validate         gates           knowledge║
-║                                                                                 ║
-║                              ◄─────────── FEEDBACK LOOP ───────────────┘        ║
-║                                                                                 ║
-╚═════════════════════════════════════════════════════════════════════════════════╝
-```
-
 ---
 
 ## Table of Contents
