@@ -109,6 +109,7 @@ cmd_init() {
     session_dir=$(get_session_dir "$session_id")
 
     mkdir -p "$session_dir"
+    mkdir -p "${STUDIO_DIR}/tasks"
 
     # Create initial state
     local now

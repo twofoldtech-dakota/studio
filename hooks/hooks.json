@@ -36,6 +36,10 @@
         "matcher": "startup",
         "hooks": [
           {
+            "type": "command",
+            "command": "mkdir -p .studio/tasks .studio/orchestration .studio/.cache/summaries 2>/dev/null || true"
+          },
+          {
             "type": "prompt",
             "prompt": "STUDIO INITIALIZATION:\n\n1. ENSURE directories exist:\n   - mkdir -p .studio/orchestration\n   - mkdir -p .studio/tasks\n   - mkdir -p .studio/.cache/summaries\n\n2. LOAD learnings from studio/learnings/*.md files.\n   Report: 'STUDIO ready. Loaded [N] learnings from [domains].'\n\n3. CHECK for tasks with IN_PROGRESS status in .studio/tasks/ and notify user if found.\n\n4. CHECK context budget status using scripts/context-manager.sh status.\n   If any pool is at WARNING (80%+) or CRITICAL (95%+) level, notify:\n   'Context pressure detected in [pool]. Consider running context optimization.'"
           },

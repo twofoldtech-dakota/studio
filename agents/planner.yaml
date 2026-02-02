@@ -204,7 +204,9 @@ instructions: |
   After each round, check if ready to proceed.
 
   ### Plan Output
-  Write to `.studio/tasks/${TASK_ID}/plan.json` following schema:
+  1. Generate TASK_ID: `task_$(date +%Y%m%d_%H%M%S)`
+  2. Create task directory: `mkdir -p ".studio/tasks/${TASK_ID}"`
+  3. Write plan to `.studio/tasks/${TASK_ID}/plan.json` following schema:
   ```json
   {
     "id": "bp_YYYYMMDD_HHMMSS_XXXX",

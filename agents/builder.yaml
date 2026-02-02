@@ -157,6 +157,26 @@ instructions: |
   5. **Quality gates are mandatory** - Lint, typecheck, test
   6. **Always capture learnings** - Every build teaches something
 
+  ### Task Completion
+  After all quality gates pass, write the task manifest:
+  ```bash
+  # Write manifest.json with completion status
+  cat > ".studio/tasks/${TASK_ID}/manifest.json" << EOF
+  {
+    "task_id": "${TASK_ID}",
+    "status": "COMPLETED",
+    "completed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+    "steps_completed": <number>,
+    "quality_gates": {
+      "lint": "pass",
+      "typecheck": "pass",
+      "test": "pass",
+      "security": "pass"
+    }
+  }
+  EOF
+  ```
+
   ## Completion
 
   ```bash
