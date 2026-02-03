@@ -11,7 +11,7 @@
       "name": "studio",
       "source": "./",
       "description": "Autonomous workflow orchestration through three phases: Planning, Building, and Verifying",
-      "version": "1.1.0",
+      "version": "2.0.0",
       "author": {
         "name": "STUDIO Contributors"
       },
@@ -27,7 +27,11 @@
         "plan-and-solve",
         "reflection"
       ],
-      "category": "productivity"
+      "category": "productivity",
+      "commands": "./commands/",
+      "agents": "./agents/",
+      "skills": "./skills/",
+      "hooks": "./hooks/hooks.json"
     }
   ]
 }
