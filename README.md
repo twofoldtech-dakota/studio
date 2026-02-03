@@ -53,11 +53,8 @@ flowchart LR
 ### Installation
 
 ```bash
-# Clone STUDIO into your project
-git clone https://github.com/twofoldtech-dakota/studio.git .studio
-
-# Or as a Claude Code plugin
-claude plugin add studio
+/plugin marketplace add https://github.com/twofoldtech-dakota/studio.git
+/plugin install studio@twofoldtech-dakota
 ```
 
 ### Your First Build
