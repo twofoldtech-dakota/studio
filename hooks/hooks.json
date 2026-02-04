@@ -1,7 +1,6 @@
 {
   "description": "STUDIO Orchestration Hook System - Wires orchestration to commands and agents",
   "version": "5.0.0",
-
   "hooks": {
     "PreToolUse": [
       {
@@ -14,23 +13,46 @@
         ]
       }
     ],
-
     "PreCommand": [
       {
         "matcher": "build",
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "ORCHESTRATION TRIGGER: A /build command was invoked.\n\n1. INITIALIZE orchestration session:\n   - Run: scripts/orchestrator.sh init \"$ARGUMENTS\" implicit\n   - This creates .studio/orchestration/<session_id>/state.json\n\n2. ROUTE the goal:\n   - Run: scripts/orchestrator.sh route\n   - Check routing.selected_workflow in the output\n\n3. IF workflow is 'plan_then_build':\n   - First invoke the Planner agent with the goal\n   - After Planner completes, record handoff: scripts/orchestrator.sh handoff planner builder '{\"task_id\": \"<task_id>\", \"plan_path\": \"<plan_path>\"}'\n   - Then proceed with Builder\n\n4. IF workflow is 'build_only':\n   - Proceed directly to Builder execution\n\n5. Before starting each agent:\n   - Run: scripts/orchestrator.sh agent-start <agent_name>\n\n6. After each agent completes:\n   - Run: scripts/orchestrator.sh agent-complete <agent_name>\n   - Run: scripts/orchestrator.sh checkpoint '<agent_name>_complete'\n\nThe orchestration state is persisted in .studio/orchestration/ for recovery."
+            "prompt": "PLAN-FIRST WORKFLOW ENFORCEMENT:\n\nThe /build command requires an EXISTING PLAN. It does NOT accept raw goal strings.\n\n1. CHECK the argument:\n   - If argument looks like a raw goal (quoted string describing work, e.g., 'Add user auth'):\n     STOP and tell the user:\n     \"The /build command requires an existing plan. Raw goals are not accepted.\n     \n     To build this feature:\n     1. First run: /studio \"<their goal>\"\n     2. Answer the planning questions\n     3. Then run: /build task_xxx\n     \n     This ensures requirements are gathered before coding begins.\"\n     DO NOT PROCEED with building.\n\n   - If argument is a task_id (task_YYYYMMDD_HHMMSS), feature ID (F#), epic ID (E#), or empty:\n     PROCEED with build - load the plan from .studio/tasks/\n\n2. IF proceeding with a valid task:\n   - Verify .studio/tasks/<task_id>/plan.json exists\n   - If plan doesn't exist, tell user to run /studio first\n   - Load the plan and proceed with execution\n\n3. VALIDATE the plan before building (BLOCKING GATE):\n   - Run: scripts/validate-plan.sh --task-id <task_id>\n   - Check exit code: 0 = pass, 1 = errors, 2 = warnings only\n   - IF exit code 1 (ERRORS):\n     * Show all errors in a red box using scripts/output.sh error_box\n     * DO NOT PROCEED - tell user:\n       \"Plan validation FAILED. Fix errors before build:\n       [list errors]\n       Edit .studio/tasks/<task_id>/plan.json or regenerate with /studio\"\n     * STOP - do not continue to build\n   - IF exit code 2 (WARNINGS only):\n     * Show warnings in yellow\n     * Ask: \"Plan has warnings. Continue anyway? (y/n)\"\n     * Only proceed if user confirms\n   - IF exit code 0: continue to build\n\n4. Initialize orchestration for tracking:\n   - Run: scripts/orchestrator.sh init \"executing task\" implicit\n   - Run: scripts/orchestrator.sh agent-start builder"
           },
           {
             "type": "prompt",
             "prompt": "KNOWLEDGE BASE INJECTION:\n\nBefore starting the build, inject Strict Constraints as a \"NEVER VIOLATE\" list:\n\n1. READ STUDIO_KNOWLEDGE_BASE.md\n2. EXTRACT the Strict Constraints section\n3. IF there are entries:\n   - Present them as: \"STRICT CONSTRAINTS (NEVER VIOLATE):\"\n   - List each SC-XXX entry with its \"What\" and \"Instead\" fields\n4. EXTRACT relevant Slop Ledger entries based on detected domains:\n   - Run: scripts/learnings.sh detect \"$GOAL\"\n   - For each detected domain, include matching slop entries\n5. Present slop entries as: \"AVOID THESE MISTAKES:\"\n   - List each SL-XXX entry with its \"Pattern\" and \"Fix\" fields\n\nThis ensures the build agent is aware of known constraints before writing code."
+          },
+          {
+            "type": "prompt",
+            "prompt": "QUALITY PRE-CHECK (OPTIONAL):\n\nBefore building, optionally run quality checks:\n\n1. RUN: scripts/quality-precheck.sh --json\n2. IF exit code 1 (errors): warn user but allow proceeding\n3. IF --skip-precheck flag passed: skip this step\n4. Show summary of issues found\n\nThis catches lint/type errors BEFORE the build."
+          },
+          {
+            "type": "prompt",
+            "prompt": "CONFIDENCE CHECK:\n\nBefore building, verify plan confidence:\n\n1. RUN: scripts/confidence-score.sh --task-id <task_id> --json\n2. CHECK the recommendation field:\n   - PROCEED_WITH_CONFIDENCE (>=80): Continue\n   - PROCEED_WITH_CAUTION (60-79): Warn user, allow proceed\n   - REVIEW_WARNINGS (40-59): Show warnings, ask to confirm\n   - DO_NOT_BUILD (<40): BLOCK - tell user to improve plan first\n3. IF blocked, show the warnings and suggest:\n   - Add more user confirmations (run questioning again)\n   - Add retry behavior to steps\n   - Define acceptance criteria\n\nThis prevents weak plans from wasting build cycles."
+          }
+        ]
+      },
+      {
+        "matcher": "studio",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "CONTEXT7 MCP INTEGRATION - FETCH LIBRARY DOCUMENTATION:\n\nDuring context gathering, use Context7 MCP to fetch relevant library documentation:\n\n1. DETECT libraries from the project:\n   - Read package.json dependencies and devDependencies\n   - Read requirements.txt or pyproject.toml if Python\n   - Read go.mod if Go, Cargo.toml if Rust\n\n2. IDENTIFY libraries relevant to the goal (max 3):\n   - Match goal keywords to library names\n   - Example: goal Add form validation + react-hook-form in deps = relevant\n\n3. FOR EACH relevant library:\n   a) Call Context7 MCP tool resolve-library-id:\n      - libraryName: package name (e.g., react-hook-form)\n      - query: the users goal\n   b) If found, call Context7 MCP tool query-docs:\n      - libraryId: resolved ID from step a\n      - query: specific question about the goal\n\n4. EMBED documentation in plan context:\n   - Add library_docs section to plan\n   - Include best practices and code patterns\n\n5. IF Context7 unavailable, continue without docs.\n\nThis ensures plans include up-to-date library guidance."
+          },
+          {
+            "type": "prompt",
+            "prompt": "BACKLOG & DECOMPOSITION CHECK:\n\nBEFORE starting the questioning protocol, determine the project state:\n\n1. CHECK if backlog exists: test -f .studio/backlog.json\n\n2. IF BACKLOG EXISTS (returning user):\n   - This is an EXISTING project with enterprise decomposition\n   - After questioning, add the new task to the EXISTING backlog\n   - Use: scripts/backlog.sh add-task <feature-id> \"<task-name>\" \"<description>\"\n   - If no matching feature exists, ask user which feature/epic to add to, or create new\n   - DO NOT create a new decomposition map\n   - Skip to the questioning protocol below\n\n3. IF NO BACKLOG (first-time user):\n   - Run: scripts/decomposition-check.sh json \"$GOAL\"\n   - IF should_trigger == true:\n     * Notify user: \"This appears to be a large-scale project (reason: [trigger_reason]).\"\n     * Ask: \"Would you like to:\n       1. Use enterprise decomposition (recommended for 10+ task projects)\n       2. Proceed with standard planning (single task)\n       \"\n     * WAIT FOR USER RESPONSE\n   - IF user chooses enterprise decomposition OR should_trigger == true and user confirms:\n     * Run: scripts/backlog.sh init\n     * Load: studio/prompts/enterprise-decomposition.md\n     * Follow the Decomposition Map output sequence\n     * Generate pillar analysis, hierarchy, SICVF validation, dependency graph\n     * WAIT FOR USER APPROVAL of decomposition map\n     * Tasks will be added to backlog, not .studio/tasks/\n   - IF should_trigger == false OR user chooses standard planning:\n     * Proceed with normal questioning protocol (creates standalone task in .studio/tasks/)"
+          },
+          {
+            "type": "prompt",
+            "prompt": "MANDATORY QUESTIONING PROTOCOL:\n\nThe /plan command MUST gather requirements through iterative questioning before creating a plan.\n\nYOU MUST FOLLOW THIS PROTOCOL:\n\n1. CONTEXT GATHERING (do silently):\n   - Load learnings from studio/learnings/*.md\n   - Scan codebase structure\n   - Detect relevant skills: scripts/skills.sh detect \"$GOAL\"\n\n2. MANDATORY QUESTIONING ROUNDS - YOU MUST ASK THESE QUESTIONS AND WAIT FOR ANSWERS:\n\n   ROUND 1 - Scope & Success (REQUIRED):\n   Ask the user:\n   - What functionality is IN scope for this task?\n   - What is explicitly OUT of scope?\n   - How will you know when this is complete?\n   \n   WAIT FOR USER RESPONSE before continuing.\n\n   ROUND 2 - Technical Constraints (REQUIRED):\n   Ask the user:\n   - Are there existing patterns I should follow?\n   - What dependencies or integrations are needed?\n   - Any technical constraints I should know about?\n   \n   WAIT FOR USER RESPONSE before continuing.\n\n   ROUND 3 - Edge Cases (REQUIRED):\n   Ask ADVERSARIAL questions specific to their goal:\n   - What if [likely error condition]?\n   - What happens when [external dependency] fails?\n   - Could this conflict with [existing feature]?\n   \n   WAIT FOR USER RESPONSE before continuing.\n\n3. READINESS CHECK (REQUIRED):\n   After Round 3, ask:\n   \"I have gathered requirements. Would you like to:\n   1. Continue with more questions\n   2. Create the plan now\"\n   \n   WAIT FOR USER RESPONSE.\n\n4. ONLY AFTER USER CONFIRMS proceed to plan creation.\n\nDO NOT skip questions. DO NOT create a plan without asking at least 3 rounds of questions."
           }
         ]
       }
     ],
-
     "SessionStart": [
       {
         "matcher": "startup",
@@ -54,7 +76,6 @@
         ]
       }
     ],
-
     "SubagentStop": [
       {
         "matcher": "planner|builder|architect",
@@ -74,9 +95,17 @@
             "timeout": 180
           }
         ]
+      },
+      {
+        "matcher": "builder",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "AUTO SPRINT EVOLUTION CHECK:\n\nAfter each build completes:\n\n1. RUN: scripts/sprint-evolution.sh status\n2. CHECK output for evolution_due field\n3. IF evolution_due == true:\n   - RUN: scripts/sprint-evolution.sh propose\n   - PRESENT proposals inline to user\n   - Ask: \"Sprint evolution proposals generated. Would you like to review and apply any?\"\n4. IF not due, silently continue\n\nThis triggers automatic improvement proposals every 5 completed tasks."
+          }
+        ]
       }
     ],
-
     "Stop": [
       {
         "matcher": "",
@@ -92,7 +121,6 @@
         ]
       }
     ],
-
     "SubagentStart": [
       {
         "matcher": "planner|builder|architect",
@@ -108,7 +136,6 @@
         ]
       }
     ],
-
     "ContextPressure": [
       {
         "matcher": "warning|critical",

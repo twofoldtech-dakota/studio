@@ -29,6 +29,8 @@ SKILLS_DIR="${SKILLS_DIR:-skills}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 SKILLS_PATH="${PROJECT_ROOT}/${SKILLS_DIR}"
+CACHE_DIR="${STUDIO_DIR}/.cache/skills"
+CACHE_TTL=300  # 5 minutes in seconds
 
 # Colors
 if [[ -t 1 ]]; then
@@ -61,6 +63,31 @@ check_yq() {
 }
 
 # ============================================================================
+# CACHING
+# ============================================================================
+
+# Get cache key for a goal (hash of goal text)
+get_cache_key() {
+    local goal="$1"
+    echo "$goal" | md5sum | cut -d' ' -f1
+}
+
+# Check if cache is valid
+cache_valid() {
+    local cache_file="$1"
+    if [[ ! -f "$cache_file" ]]; then
+        return 1
+    fi
+    
+    local now file_time age
+    now=$(date +%s)
+    file_time=$(stat -f %m "$cache_file" 2>/dev/null || stat -c %Y "$cache_file" 2>/dev/null)
+    age=$((now - file_time))
+    
+    [[ $age -lt $CACHE_TTL ]]
+}
+
+# ============================================================================
 # SKILL DETECTION
 # ============================================================================
 
@@ -68,6 +95,7 @@ check_yq() {
 # Returns JSON array of matching skills with scores
 cmd_detect() {
     local goal="${1:-}"
+    local no_cache="${2:-}"
 
     if [[ -z "$goal" ]]; then
         log_error "Usage: skills.sh detect <goal>"
@@ -75,6 +103,19 @@ cmd_detect() {
     fi
 
     check_yq
+
+    # Check cache first (unless --no-cache is specified)
+    if [[ "$no_cache" != "--no-cache" ]]; then
+        mkdir -p "$CACHE_DIR"
+        local cache_key cache_file
+        cache_key=$(get_cache_key "$goal")
+        cache_file="${CACHE_DIR}/${cache_key}.json"
+        
+        if cache_valid "$cache_file"; then
+            cat "$cache_file"
+            return 0
+        fi
+    fi
 
     if [[ ! -d "$SKILLS_PATH" ]]; then
         log_warn "Skills directory not found: $SKILLS_PATH"
@@ -155,7 +196,29 @@ cmd_detect() {
     done
 
     # Sort by score descending
-    echo "$matches" | jq 'sort_by(-.score)'
+    local result
+    result=$(echo "$matches" | jq 'sort_by(-.score)')
+    
+    # Cache the result
+    if [[ "$no_cache" != "--no-cache" ]]; then
+        mkdir -p "$CACHE_DIR"
+        local cache_key cache_file
+        cache_key=$(get_cache_key "$goal")
+        cache_file="${CACHE_DIR}/${cache_key}.json"
+        echo "$result" > "$cache_file"
+    fi
+    
+    echo "$result"
+}
+
+# Clear skill detection cache
+cmd_clear_cache() {
+    if [[ -d "$CACHE_DIR" ]]; then
+        rm -rf "$CACHE_DIR"/*
+        log_success "Skill cache cleared"
+    else
+        log_skill "No cache to clear"
+    fi
 }
 
 # ============================================================================
@@ -465,12 +528,14 @@ Usage: skills.sh <command> [arguments]
 
 Commands:
   detect <goal>          Detect skills matching a goal (returns JSON)
+  detect <goal> --no-cache  Skip cache for detection
   load <skill>           Load full skill content as JSON
   inject <skill>         Get injection content (questions, guidelines, checklist)
   inject-all <skills>    Get combined injection for comma-separated skills
   team <skill>           List team members for a skill
   list                   List all available skills
   validate [skill]       Validate skill(s) against schema
+  clear-cache            Clear the skill detection cache
 
 Detection Scoring:
   - Keyword match: +20 points per match
@@ -518,13 +583,14 @@ main() {
     shift || true
 
     case "$cmd" in
-        detect)     cmd_detect "$@" ;;
-        load)       cmd_load "$@" ;;
-        inject)     cmd_inject "$@" ;;
-        inject-all) cmd_inject_all "$@" ;;
-        team)       cmd_team "$@" ;;
-        list)       cmd_list "$@" ;;
-        validate)   cmd_validate "$@" ;;
+        detect)      cmd_detect "$@" ;;
+        load)        cmd_load "$@" ;;
+        inject)      cmd_inject "$@" ;;
+        inject-all)  cmd_inject_all "$@" ;;
+        team)        cmd_team "$@" ;;
+        list)        cmd_list "$@" ;;
+        validate)    cmd_validate "$@" ;;
+        clear-cache) cmd_clear_cache ;;
         help|--help|-h) cmd_help ;;
         *)
             log_error "Unknown command: $cmd"

@@ -1,26 +1,46 @@
 ---
-name: plan
-description: Create execution-ready plans through iterative questioning and context gathering
+name: studio
+description: Create execution-ready plans through MANDATORY iterative questioning and context gathering
 arguments:
   - name: goal
     description: The goal to plan (required)
     required: true
 triggers:
-  - "/plan"
+  - "/studio"
+  - "/s"
+questioning:
+  mandatory: true
+  min_rounds: 3
+  requires_confirmation: true
 ---
 
-# STUDIO Plan Command
+# STUDIO Planning Command
 
-The `/plan` command creates execution-ready plans through a structured workflow of context gathering, iterative questioning, and plan construction.
+The `/studio` command (alias `/s`) creates execution-ready plans through a structured workflow of context gathering, **MANDATORY iterative questioning**, and plan construction.
 
-## Workflow Phases
+## IMPORTANT: Questions Are Required
 
+The Planner MUST ask questions and wait for your answers before creating a plan. This is not optional.
+
+**Why?**
+- Assumptions lead to wrong implementations
+- Edge cases get missed without discussion
+- You control what gets built
+
+**The flow:**
 ```
-/plan "goal"
-    -> PHASE 1: Context Gathering (learnings, codebase, git, backlog, Context7)
-    -> PHASE 2: Iterative Questioning (clarifying + opposing questions)
-    -> PHASE 3: Plan Construction (acceptance criteria, steps, quality gates)
-    -> Output: .studio/tasks/{id}/plan.json
+/studio "goal"
+    │
+    ├─ PHASE 1: Context Gathering (silent - scans codebase)
+    │
+    ├─ PHASE 2: Questioning Rounds (MANDATORY - waits for your answers)
+    │   ├─ Round 1: Scope & Success → WAIT
+    │   ├─ Round 2: Technical Constraints → WAIT  
+    │   ├─ Round 3: Edge Cases (adversarial) → WAIT
+    │   └─ Readiness Check: "Create plan now?" → WAIT
+    │
+    └─ PHASE 3: Plan Construction (only after you confirm)
+           └─ Output: .studio/tasks/{id}/plan.json
 ```
 
 ## Phase 1: Context Gathering
@@ -85,58 +105,67 @@ Example: Planning "Add form validation"
 -> Embed best practices in plan
 ```
 
-## Phase 2: Iterative Questioning
+## Phase 2: MANDATORY Questioning Rounds
 
-The planner asks questions in rounds until the user indicates readiness. Each round builds understanding.
+**The Planner MUST ask these questions and WAIT for your answers. It will NOT proceed without your input.**
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" phase requirements-gathering
 "${CLAUDE_PLUGIN_ROOT}/scripts/output.sh" agent planner "Before I create a plan, I need to understand your requirements."
 ```
 
-### Round 1: Scope & Success
+### Round 1: Scope & Success (REQUIRED)
 
-Ask about what's IN and OUT of scope:
+The Planner will ask:
 
-- "What functionality is IN scope for this task?"
-- "What is explicitly OUT of scope?"
-- "How will you know when this is complete?"
+1. "What functionality is IN scope for this task?"
+2. "What is explicitly OUT of scope?"
+3. "How will you know when this is complete?"
 
-### Round 2: Technical Constraints
+**→ Planner WAITS for your response before continuing.**
 
-Understand existing patterns and dependencies:
+### Round 2: Technical Constraints (REQUIRED)
 
-- "Are there existing patterns in the codebase I should follow?"
-- "What dependencies or integrations are needed?"
-- "Are there any technical constraints I should be aware of?"
+The Planner will ask:
 
-### Round 3: Opposing Questions (Adversarial)
+1. "Are there existing patterns in the codebase I should follow?"
+2. "What dependencies or integrations are needed?"
+3. "Are there any technical constraints I should be aware of?"
 
-Challenge assumptions and find edge cases:
+**→ Planner WAITS for your response before continuing.**
+
+### Round 3: Edge Cases & Adversarial Questions (REQUIRED)
+
+The Planner will ask challenging questions specific to your goal:
 
 - "What if the user provides invalid input?"
 - "What happens if [external dependency] is unavailable?"
 - "Could this conflict with existing feature X?"
-- "Are you sure we need Y, or could we simplify?"
 - "What's the minimum viable implementation?"
 
-### Round 4: Quality
+**→ Planner WAITS for your response before continuing.**
 
-Understand quality expectations:
+### Readiness Confirmation (REQUIRED)
 
-- "What test coverage is needed?"
-- "Are there security considerations?"
-- "What performance requirements exist?"
-
-### Readiness Check
-
-After each round, check if the user is ready to proceed:
+After Round 3, the Planner will ask:
 
 ```
-"I have enough information to proceed. Would you like me to:
-1. Continue with more questions
-2. Create the plan now"
+"I have gathered your requirements. Would you like to:
+1. Continue with more questions to clarify further
+2. Create the plan now
+
+Which would you prefer?"
 ```
+
+**→ Planner WAITS for your confirmation before creating the plan.**
+
+### What If You Want to Skip Questions?
+
+You can't skip the initial rounds, but you can:
+- Give brief answers: "Follow existing patterns, standard deps, no special constraints"
+- Choose "Create the plan now" at the readiness check
+
+The goal is to ensure YOU have thought through the requirements, not to slow you down.
 
 ## Phase 3: Plan Construction
 
@@ -249,7 +278,7 @@ Write to `.studio/tasks/${TASK_ID}/plan.json`
 ## Example Session
 
 ```
-User: /plan "Add user registration with email verification"
+User: /studio "Add user registration with email verification"
 
 Planner: Loading project context...
          Found 3 learnings in frontend domain

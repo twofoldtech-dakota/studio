@@ -1,0 +1,272 @@
+# STUDIO Error Patterns Database
+# ==============================
+#
+# Maps common error patterns to:
+# - Human-readable explanation (why)
+# - Fix suggestion (fix)
+# - Optional auto-fix command (auto_fix)
+# - Category for grouping (category)
+#
+# Used by the build loop to provide helpful error messages.
+
+patterns:
+  # ===========================================================================
+  # NPM / Node.js Errors
+  # ===========================================================================
+  
+  - id: npm_module_not_found
+    pattern: "Cannot find module '(.+)'"
+    category: dependency
+    why: "A required package is not installed or the import path is incorrect"
+    fix: |
+      1. Check if the package is in package.json
+      2. Run: npm install
+      3. If it's a local file, verify the path is correct
+    auto_fix: "npm install"
+    
+  - id: npm_enoent_package
+    pattern: "ENOENT.*package.json"
+    category: setup
+    why: "No package.json found - this might not be a Node.js project root"
+    fix: |
+      1. Navigate to the project root directory
+      2. Or initialize: npm init -y
+    auto_fix: "npm init -y"
+    
+  - id: npm_peer_deps
+    pattern: "peer dep missing|ERESOLVE unable to resolve"
+    category: dependency
+    why: "Package version conflicts between dependencies"
+    fix: |
+      1. Try: npm install --legacy-peer-deps
+      2. Or update conflicting packages to compatible versions
+    auto_fix: "npm install --legacy-peer-deps"
+    
+  - id: npm_audit_vulnerability
+    pattern: "found \\d+ vulnerabilities"
+    category: security
+    why: "Security vulnerabilities detected in dependencies"
+    fix: |
+      1. Run: npm audit to see details
+      2. Run: npm audit fix to auto-fix
+      3. For breaking changes: npm audit fix --force (use with caution)
+    auto_fix: "npm audit fix"
+
+  # ===========================================================================
+  # TypeScript Errors
+  # ===========================================================================
+  
+  - id: ts_not_assignable
+    pattern: "Type '(.+)' is not assignable to type '(.+)'"
+    category: typecheck
+    why: "TypeScript type mismatch - the value doesn't match the expected type"
+    fix: |
+      1. Check if you need to add a type assertion: value as Type
+      2. Update the type definition to be more flexible
+      3. Fix the value to match the expected type
+    
+  - id: ts_property_not_exist
+    pattern: "Property '(.+)' does not exist on type"
+    category: typecheck
+    why: "Accessing a property that TypeScript doesn't know about"
+    fix: |
+      1. Add the property to the type definition
+      2. Check for typos in the property name
+      3. Use optional chaining: obj?.property
+    
+  - id: ts_implicit_any
+    pattern: "has an implicit 'any' type"
+    category: typecheck
+    why: "TypeScript cannot infer the type - explicit type annotation needed"
+    fix: |
+      1. Add explicit type annotation: (param: Type) => ...
+      2. If intentional, use explicit any: (param: any) => ...
+    
+  - id: ts_module_not_found
+    pattern: "Cannot find module '(.+)' or its corresponding type declarations"
+    category: typecheck
+    why: "Missing type definitions for a package"
+    fix: |
+      1. Install types: npm install -D @types/package-name
+      2. Check if the package has built-in types
+      3. Create a declaration file: declare module 'package-name'
+    auto_fix: "npm install -D @types/${1}"
+
+  # ===========================================================================
+  # React Errors
+  # ===========================================================================
+  
+  - id: react_invalid_hook
+    pattern: "Invalid hook call"
+    category: react
+    why: "Hooks can only be called inside React function components"
+    fix: |
+      1. Move the hook call inside a function component
+      2. Don't call hooks inside loops, conditions, or nested functions
+      3. Check for multiple React versions: npm ls react
+    
+  - id: react_key_prop
+    pattern: "Each child in a list should have a unique \"key\" prop"
+    category: react
+    why: "React needs keys to track list items for efficient updates"
+    fix: |
+      1. Add a key prop to each list item: <Item key={item.id} />
+      2. Use unique, stable IDs - avoid using array index if items can reorder
+    
+  - id: react_undefined_component
+    pattern: "is not defined|is not a function"
+    category: react
+    why: "Component is not imported or exported correctly"
+    fix: |
+      1. Check the import statement
+      2. Verify the component is exported from its file
+      3. Check for circular dependencies
+
+  # ===========================================================================
+  # Build / Compilation Errors
+  # ===========================================================================
+  
+  - id: syntax_error
+    pattern: "SyntaxError|Unexpected token"
+    category: syntax
+    why: "Invalid JavaScript/TypeScript syntax"
+    fix: |
+      1. Check for missing brackets, parentheses, or semicolons
+      2. Look for unclosed strings or template literals
+      3. Verify JSX is properly closed
+    
+  - id: eslint_error
+    pattern: "eslint.*error"
+    category: lint
+    why: "Code style or quality issue detected by ESLint"
+    fix: |
+      1. Run: npm run lint -- --fix to auto-fix
+      2. Check the specific rule and fix manually if needed
+    auto_fix: "npm run lint -- --fix"
+
+  # ===========================================================================
+  # Test Errors
+  # ===========================================================================
+  
+  - id: test_assertion_failed
+    pattern: "AssertionError|expect\\(.*\\)\\.to"
+    category: test
+    why: "Test assertion failed - actual value doesn't match expected"
+    fix: |
+      1. Check if the expected value is correct
+      2. Check if the implementation matches the expected behavior
+      3. Update the test if requirements have changed
+    
+  - id: test_timeout
+    pattern: "Timeout|exceeded timeout"
+    category: test
+    why: "Test took too long - possibly waiting for something that never happens"
+    fix: |
+      1. Increase timeout if operation is legitimately slow
+      2. Check for missing async/await
+      3. Verify mocked dependencies are set up correctly
+
+  # ===========================================================================
+  # Git Errors
+  # ===========================================================================
+  
+  - id: git_merge_conflict
+    pattern: "CONFLICT|merge conflict"
+    category: git
+    why: "Changes conflict with existing code"
+    fix: |
+      1. Open conflicting files and resolve manually
+      2. Look for <<<<<<< and >>>>>>> markers
+      3. After resolving: git add . && git commit
+    
+  - id: git_uncommitted_changes
+    pattern: "uncommitted changes|working tree not clean"
+    category: git
+    why: "You have changes that haven't been committed"
+    fix: |
+      1. Commit changes: git add . && git commit -m "message"
+      2. Or stash them: git stash
+      3. Or discard them: git checkout -- .
+
+  # ===========================================================================
+  # API / Network Errors
+  # ===========================================================================
+  
+  - id: fetch_failed
+    pattern: "fetch failed|ECONNREFUSED|ENOTFOUND"
+    category: network
+    why: "Network request failed - server might be down or unreachable"
+    fix: |
+      1. Check if the server/service is running
+      2. Verify the URL is correct
+      3. Check network connectivity
+      4. Look for CORS issues if in browser
+    
+  - id: cors_error
+    pattern: "CORS|Access-Control-Allow-Origin"
+    category: network
+    why: "Cross-origin request blocked by browser security policy"
+    fix: |
+      1. Add CORS headers to the server response
+      2. Use a proxy in development
+      3. Check if credentials mode is correct
+
+  # ===========================================================================
+  # Database Errors
+  # ===========================================================================
+  
+  - id: db_connection_refused
+    pattern: "ECONNREFUSED.*:5432|ECONNREFUSED.*:3306|ECONNREFUSED.*:27017"
+    category: database
+    why: "Cannot connect to database - it might not be running"
+    fix: |
+      1. Start the database server
+      2. Check the connection string/environment variables
+      3. Verify the port is not blocked
+    
+  - id: prisma_migration
+    pattern: "prisma.*migrate|migration failed"
+    category: database
+    why: "Database schema is out of sync with Prisma schema"
+    fix: |
+      1. Run: npx prisma migrate dev
+      2. Or reset: npx prisma migrate reset (WARNING: deletes data)
+    auto_fix: "npx prisma migrate dev"
+
+  # ===========================================================================
+  # Environment Errors
+  # ===========================================================================
+  
+  - id: env_var_missing
+    pattern: "process\\.env\\.(\\w+).*undefined|missing.*environment.*variable"
+    category: environment
+    why: "Required environment variable is not set"
+    fix: |
+      1. Add the variable to your .env file
+      2. Or export it: export VAR_NAME=value
+      3. Check .env.example for required variables
+    
+  - id: port_in_use
+    pattern: "EADDRINUSE|port.*already in use"
+    category: environment
+    why: "Another process is using this port"
+    fix: |
+      1. Kill the process using the port
+      2. Or use a different port
+      3. Find process: lsof -i :PORT
+    auto_fix: "kill $(lsof -t -i:${PORT:-3000})"
+
+# Categories for grouping
+categories:
+  dependency: "Package & Dependency Issues"
+  setup: "Project Setup Issues"
+  security: "Security Issues"
+  typecheck: "TypeScript Type Errors"
+  react: "React-Specific Errors"
+  syntax: "Syntax Errors"
+  lint: "Linting Errors"
+  test: "Test Failures"
+  git: "Git Issues"
+  network: "Network & API Errors"
+  database: "Database Errors"
+  environment: "Environment Configuration"

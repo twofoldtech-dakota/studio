@@ -1,65 +1,64 @@
 ---
 name: build
-description: Execute tasks through iterative build loop with quality gates and learning capture
+description: Execute approved plans through iterative build loop with quality gates and learning capture
 arguments:
   - name: target
-    description: "Task ID, Feature ID, Epic ID, goal string, or omit for next priority task"
+    description: "Task ID, Feature ID, Epic ID, or omit for next priority task from backlog"
     required: false
 triggers:
   - "/build"
+  - "/b"
 orchestration:
-  mode: implicit
-  auto_plan: true
-  confidence_threshold: 0.70
+  mode: none
+  requires_plan: true
 ---
 
 # STUDIO Build Command
 
-The `/build` command executes tasks through an iterative build loop that validates each step, retries on failure, runs quality gates, and captures learnings.
+The `/build` command executes **approved plans** through an iterative build loop that validates each step, retries on failure, runs quality gates, and captures learnings.
 
-## Orchestration Awareness
+## Plan-First Workflow
 
-The `/build` command includes **implicit orchestration**. When given a complex goal, it automatically routes through the Planner before building.
+**IMPORTANT:** The `/build` command requires an existing plan. It does NOT accept raw goal strings.
 
-### Orchestration Flow
-
-```
-/build "complex goal"
-│
-├─ Orchestrator analyzes goal
-│   ├─ Simple/has plan → Direct to Builder
-│   └─ Complex/new → Route to Planner first
-│
-├─ [If needs planning]
-│   ├─ Planner: Questioning loop
-│   ├─ Planner: Plan construction
-│   └─ Handoff to Builder with context
-│
-├─ Builder: Execute plan
-│   ├─ Iterative build loop
-│   ├─ Quality gates
-│   └─ Learning capture
-│
-└─ Orchestrator: Finalize
-    ├─ Handle success/failure
-    └─ Update state
-```
-
-### When Orchestration Triggers
-
-| Command | Orchestration |
-|---------|--------------|
-| `/build` | Select from backlog, build only |
-| `/build task_xxx` | Load plan, build only |
-| `/build "Add feature X"` | **Analyze → Plan → Build** |
-| `/build "Fix typo"` | Build only (simple goal) |
-
-### Explicit Orchestration
-
-For more control and visibility, use `/orchestrate build`:
+To build a new feature:
 
 ```bash
-/orchestrate build "Add user auth"  # Shows routing decision, allows confirmation
+# Step 1: Create a plan (asks questions, gathers requirements)
+/plan "Add user authentication"
+
+# Step 2: Review the plan, answer questions, approve
+
+# Step 3: Execute the approved plan
+/build task_xxx
+```
+
+### Why Plan-First?
+
+- **No assumptions** — Questions ensure requirements are clear before coding
+- **User control** — You review and approve the plan before execution
+- **Better outcomes** — Plans with full context produce higher quality code
+- **Recoverability** — Approved plans can be re-executed if interrupted
+
+### Command Options
+
+| Command | Action |
+|---------|--------------|
+| `/build` | Select highest-priority task from backlog |
+| `/build task_xxx` | Execute specific task's plan |
+| `/build T7` | Execute by short ID |
+| `/build F3` | Execute all tasks in feature |
+| `/build E1` | Execute all tasks in epic |
+
+### Raw Goals Not Accepted
+
+```bash
+# ❌ This will NOT work:
+/build "Add user auth"
+
+# ✅ Do this instead:
+/plan "Add user auth"   # Creates plan, asks questions
+/build task_xxx         # Executes the approved plan
 ```
 
 ## Workflow Phases

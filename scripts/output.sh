@@ -583,6 +583,86 @@ cmd_panel() {
     echo -e "${panel_color}╰$(printf '─%.0s' $(seq 1 $width))╯${RESET}"
 }
 
+# Timing command - display timing information
+# Usage: timing <label> <seconds> OR timing <label> <start_time> <end_time>
+cmd_timing() {
+    local label="${1:-Operation}"
+    local seconds="${2:-0}"
+    local end_time="${3:-}"
+    
+    # If end_time is provided, calculate duration
+    if [[ -n "$end_time" ]]; then
+        seconds=$((end_time - seconds))
+    fi
+    
+    local minutes=$((seconds / 60))
+    local remaining_seconds=$((seconds % 60))
+    
+    local time_str
+    if [[ $minutes -gt 0 ]]; then
+        time_str="${minutes}m ${remaining_seconds}s"
+    else
+        time_str="${seconds}s"
+    fi
+    
+    echo -e "${DIM}⏱${NC}  ${label}: ${BOLD}${time_str}${NC}"
+}
+
+# Timing breakdown command - display multiple timing segments
+# Usage: timing_breakdown <total_seconds> <segment1_name:seconds> <segment2_name:seconds> ...
+cmd_timing_breakdown() {
+    local total="${1:-0}"
+    shift
+    
+    local total_min=$((total / 60))
+    local total_sec=$((total % 60))
+    
+    echo ""
+    echo -e "${BOLD}Timing Breakdown${NC}"
+    echo -e "${DIM}────────────────────────────────────${NC}"
+    
+    for segment in "$@"; do
+        local name="${segment%%:*}"
+        local secs="${segment#*:}"
+        local pct=$((secs * 100 / total))
+        
+        local min=$((secs / 60))
+        local sec=$((secs % 60))
+        local time_str
+        if [[ $min -gt 0 ]]; then
+            time_str="${min}m ${sec}s"
+        else
+            time_str="${secs}s"
+        fi
+        
+        printf "  %-20s %8s  (%2d%%)\n" "$name" "$time_str" "$pct"
+    done
+    
+    echo -e "${DIM}────────────────────────────────────${NC}"
+    if [[ $total_min -gt 0 ]]; then
+        printf "  %-20s ${BOLD}%8s${NC}\n" "Total" "${total_min}m ${total_sec}s"
+    else
+        printf "  %-20s ${BOLD}%8s${NC}\n" "Total" "${total}s"
+    fi
+}
+
+# Next action suggestion command
+# Usage: next_action <action> <command> [description]
+cmd_next_action() {
+    local action="${1:-Next}"
+    local command="${2:-}"
+    local description="${3:-}"
+    
+    echo ""
+    echo -e "${BOLD}${BRIGHT_GREEN}→ Next:${NC} ${action}"
+    if [[ -n "$command" ]]; then
+        echo -e "  ${DIM}Run:${NC} ${BRIGHT_CYAN}${command}${NC}"
+    fi
+    if [[ -n "$description" ]]; then
+        echo -e "  ${DIM}${description}${NC}"
+    fi
+}
+
 # Resume prompt command - display task resume prompt
 # Usage: resume_prompt <task_id> <goal> <status> <step> <total> <last_activity>
 cmd_resume_prompt() {
@@ -671,21 +751,24 @@ main() {
     shift || true
 
     case "$cmd" in
-        header)        cmd_header "$@" ;;
-        phase)         cmd_phase "$@" ;;
-        agent)         cmd_agent "$@" ;;
-        status)        cmd_status "$@" ;;
-        verdict)       cmd_verdict "$@" ;;
-        banner)        cmd_banner "$@" ;;
-        separator)     cmd_separator "$@" ;;
-        progress_bar)  cmd_progress_bar "$@" ;;
-        step_header)   cmd_step_header "$@" ;;
-        build_status)  cmd_build_status "$@" ;;
-        error_box)     cmd_error_box "$@" ;;
-        spinner)       cmd_spinner "$@" ;;
-        panel)         cmd_panel "$@" ;;
-        resume_prompt) cmd_resume_prompt "$@" ;;
-        table)         cmd_table "$@" ;;
+        header)           cmd_header "$@" ;;
+        phase)            cmd_phase "$@" ;;
+        agent)            cmd_agent "$@" ;;
+        status)           cmd_status "$@" ;;
+        verdict)          cmd_verdict "$@" ;;
+        banner)           cmd_banner "$@" ;;
+        separator)        cmd_separator "$@" ;;
+        progress_bar)     cmd_progress_bar "$@" ;;
+        step_header)      cmd_step_header "$@" ;;
+        build_status)     cmd_build_status "$@" ;;
+        error_box)        cmd_error_box "$@" ;;
+        spinner)          cmd_spinner "$@" ;;
+        panel)            cmd_panel "$@" ;;
+        resume_prompt)    cmd_resume_prompt "$@" ;;
+        table)            cmd_table "$@" ;;
+        timing)           cmd_timing "$@" ;;
+        timing_breakdown) cmd_timing_breakdown "$@" ;;
+        next_action)      cmd_next_action "$@" ;;
         help|--help|-h)
             echo "STUDIO Output Utilities"
             echo ""
@@ -711,6 +794,11 @@ main() {
             echo "  panel <title> <content> [color]         Display content panel"
             echo "  resume_prompt <id> <goal> <status> <step> <total> <time> Display resume prompt"
             echo "  table <headers> <row1> [row2...]        Display table (pipe-separated)"
+            echo ""
+            echo "Timing Commands:"
+            echo "  timing <label> <seconds>                Display timing for an operation"
+            echo "  timing_breakdown <total> <seg1:sec>...  Display timing breakdown"
+            echo "  next_action <action> <cmd> [desc]       Display next action suggestion"
             ;;
         *)
             echo "Unknown command: $cmd" >&2
