@@ -1,358 +1,180 @@
----
-title: STUDIO Quick Reference
-version: 5.0.0
-type: reference
-audience: [developers, ai-agents]
-last_updated: 2026-02-02
+# STUDIO Quick Reference
+
+> Copy-paste ready commands and scripts for daily use.
+
 ---
 
-# STUDIO Quick Reference Card
+## 🚀 Essential Commands
 
-```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                           STUDIO QUICK REFERENCE v5.0                         ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
-```
+| Command | Alias | What it does |
+|---------|-------|--------------|
+| `/studio "goal"` | `/s` | **Start planning** - asks questions, creates plan |
+| `/build task_xxx` | `/b` | **Execute plan** - runs validated build |
+| `/build --resume` | | Continue from last completed step |
+| `/status` | | Check current task state |
 
-## Commands at a Glance
+---
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              BUILD COMMANDS                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  /build "goal"              Start a new build                               │
-│  /build:preview "goal"      Show what would happen (dry-run)                │
-│  /build:interactive "goal"  Step-by-step with confirmation                  │
-│  /build resume              Resume last incomplete build                    │
-│  /build status              Check current build status                      │
-│  /build abort               Cancel current build                            │
-│                                                                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                              BRAND COMMANDS                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  /brand                     Start brand discovery (5 phases)                │
-│  /brand:update identity     Update brand identity                           │
-│  /brand:audit               Check brand consistency                         │
-│  /brand:export md           Export brand guide                              │
-│                                                                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                             CONTENT COMMANDS                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  /blog "topic"              Create full blog post                           │
-│  /blog:outline "topic"      Create outline only                             │
-│  /blog:ideas                Generate topic ideas                            │
-│                                                                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                             PROJECT COMMANDS                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  /project:init "name"       Create new project                              │
-│  /project:task "goal"       Add task to project                             │
-│  /project:status            Show project status                             │
-│  /project:graph             Show dependency graph                           │
-│                                                                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                             UTILITY COMMANDS                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  /analytics                 View build analytics                            │
-│  /trace                     Show requirements traceability                  │
-│  /rollback:list             List rollback points                            │
-│  /rollback:to <task>        Rollback to pre-task state                      │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+## 🛠 Quality Pipeline Scripts
+
+All scripts output JSON. Run with `--help` for options.
+
+### Before Build
+```bash
+./scripts/validate-plan.sh --task-id task_xxx   # Structure check
+./scripts/confidence-score.sh --task-id task_xxx # Score 0-100
+./scripts/quality-precheck.sh                    # Lint + typecheck
 ```
 
-## Enterprise Scripts
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            ENTERPRISE SCRIPTS                                │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  SICVF VALIDATION                                                           │
-│  ./scripts/sicvf-validate.sh --task-id <id>   Validate task passes SICVF    │
-│                                                                             │
-│  CONTEXT SYSTEM                                                             │
-│  ./scripts/context-inject.sh --task-id <id>   Inject 4-tier context         │
-│  ./scripts/context-manager.sh status          Show context budget pools     │
-│  ./scripts/context-manager.sh scan            Find optimization targets     │
-│                                                                             │
-│  ORCHESTRATION                                                              │
-│  ./scripts/orchestrator.sh init "goal"        Start orchestration session   │
-│  ./scripts/orchestrator.sh route              Route goal to workflow        │
-│  ./scripts/orchestrator.sh checkpoint <name>  Save recovery checkpoint      │
-│  ./scripts/orchestrator.sh resume             Resume from checkpoint        │
-│                                                                             │
-│  SKILLS                                                                     │
-│  ./scripts/skills.sh detect "goal"            Detect matching skills        │
-│  ./scripts/skills.sh inject <skill>           Get skill injection content   │
-│  ./scripts/skills.sh list                     List available skills         │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+### During Build
+```bash
+./scripts/step-progress.sh status task_xxx      # Progress tracker
+./scripts/error-matcher.sh --input "error..."   # Get fix suggestions
 ```
 
-## Build States
-
-```
-┌────────────────┬────────────────────────────────────────────────────────────┐
-│ State          │ Description                                                │
-├────────────────┼────────────────────────────────────────────────────────────┤
-│ PLANNING       │ 🔵 Planner gathering requirements                          │
-│ READY_TO_BUILD │ 📋 Plan complete, ready to execute                         │
-│ BUILDING       │ 🟡 Builder executing steps                                 │
-│ AWAITING_QG    │ ⏳ Running quality gate checks                             │
-│ COMPLETE       │ ✅ All done, quality gate passed                           │
-│ BLOCKED        │ 🛑 Quality gate failed, fixes needed                       │
-│ HALTED         │ ⚠️ Step failed after max retries                           │
-│ ABORTED        │ ❌ User cancelled                                          │
-└────────────────┴────────────────────────────────────────────────────────────┘
-```
-
-## Quality Verdicts
-
-```
-┌──────────┬─────────────────────────────────────────────────────────────────┐
-│ Verdict  │ Meaning                                                         │
-├──────────┼─────────────────────────────────────────────────────────────────┤
-│ STRONG   │ ✅ All quality checks passed                                    │
-│ SOUND    │ ✅ Required passed, optional warnings                           │
-│ BLOCKED  │ 🛑 Required check failed - fix required                         │
-└──────────┴─────────────────────────────────────────────────────────────────┘
-```
-
-## Confidence Levels
-
-```
-┌───────────┬─────────┬───────────────────────────────────────────────────────┐
-│ Score     │ Level   │ Recommendation                                        │
-├───────────┼─────────┼───────────────────────────────────────────────────────┤
-│ 90-100%   │ HIGH    │ Proceed with confidence                               │
-│ 70-89%    │ MEDIUM  │ Proceed with caution                                  │
-│ 50-69%    │ LOW     │ Review warnings before proceeding                     │
-│ <50%      │ CRITICAL│ Revision required                                     │
-└───────────┴─────────┴───────────────────────────────────────────────────────┘
-```
-
-## The Three Agents
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│   🔵 PLANNER                🟡 BUILDER                🟣 CONTENT WRITER     │
-│   ───────────               ───────────               ─────────────────     │
-│   Creates plans             Executes plans            Creates content       │
-│   Asks questions            Follows exactly           Applies brand         │
-│   Embeds context            Validates steps           Optimizes SEO         │
-│   Challenges self           Retries on fail           Checks quality        │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-## The Five Challenges
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│   1️⃣  REQUIREMENTS    Does this solve what was asked?                       │
-│   2️⃣  EDGE CASES      What could break this?                                │
-│   3️⃣  SIMPLICITY      Is this the simplest solution?                        │
-│   4️⃣  INTEGRATION     Does this fit the codebase?                           │
-│   5️⃣  FAILURE MODES   What happens when it fails?                           │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-## Team Tiers
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│   TIER 1: CORE (Always loaded)                                              │
-│   ├── Orchestrator      Scope, priorities                                   │
-│   ├── Business Analyst  Requirements, rules                                 │
-│   ├── Tech Lead         Architecture, patterns                              │
-│   ├── Frontend Spec     Components, state                                   │
-│   ├── Backend Spec      APIs, data                                          │
-│   ├── UI/UX Designer    Flows, accessibility                                │
-│   └── Brand Strategist  Identity, voice                                     │
-│                                                                             │
-│   TIER 2: QUALITY (Loaded for quality tasks)                                │
-│   ├── QA Refiner        Testing, edge cases                                 │
-│   ├── Security Analyst  Auth, data protection                               │
-│   └── DevOps Engineer   Deployment, monitoring                              │
-│                                                                             │
-│   TIER 3: GROWTH (Loaded for user-facing tasks)                             │
-│   ├── Content Strategist Copy, messaging                                    │
-│   ├── Legal Compliance   Regulations, privacy                               │
-│   └── SEO & Growth       Search, discoverability                            │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-## Memory & Knowledge Files
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│   STUDIO_KNOWLEDGE_BASE.md  (Root Level)                                    │
-│   ├── Strict Constraints    Rules that MUST NOT be violated                 │
-│   ├── Slop Ledger           Naming/structural mistakes to avoid             │
-│   ├── Performance Delta     Measured improvements with numbers              │
-│   └── Pending Queue         Signals awaiting promotion                      │
-│                                                                             │
-│   studio/rules/                                                             │
-│   ├── global.md       Project-wide conventions                              │
-│   ├── frontend.md     UI/UX preferences                                     │
-│   ├── backend.md      API/architecture patterns                             │
-│   ├── testing.md      Testing requirements                                  │
-│   ├── security.md     Security constraints                                  │
-│   └── devops.md       Infrastructure preferences                            │
-│                                                                             │
-│   studio/learnings/                                                         │
-│   ├── global.md       Project-wide patterns                                 │
-│   ├── frontend.md     Frontend patterns                                     │
-│   ├── backend.md      Backend patterns                                      │
-│   ├── testing.md      Testing patterns                                      │
-│   ├── security.md     Security patterns                                     │
-│   └── performance.md  Performance patterns                                  │
-│                                                                             │
-│   .studio/sprint-counter.json    Sprint evolution state                     │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-## Key File Locations
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│   agents/planner.yaml          Planner configuration                        │
-│   agents/builder.yaml          Builder configuration                        │
-│   hooks/hooks.json             Lifecycle hooks (v5.0.0)                     │
-│   playbooks/*/SKILL.md         Methodologies                                │
-│   team/tier*/                  Domain experts                               │
-│   brand/*.yaml                 Brand identity                               │
-│   studio/projects/             Runtime data                                 │
-│                                                                             │
-│   KNOWLEDGE SYSTEM FILES:                                                   │
-│   STUDIO_KNOWLEDGE_BASE.md     Architectural constraints (root)             │
-│   scripts/signal-audit.sh      Signal vs. noise filtering                   │
-│   scripts/sprint-evolution.sh  Sprint evolution protocol                    │
-│   scripts/learnings.sh         Learning capture & classification            │
-│   studio/prompts/self-learning.md  Self-learning protocol                   │
-│   studio/config/tracked-frameworks.json  Framework detection                │
-│   .studio/sprint-counter.json  Sprint tracking state                        │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-## Learning Commands
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            LEARNING COMMANDS                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ./scripts/learnings.sh classify <text>      Classify and route learning    │
-│  ./scripts/learnings.sh check-duplicate <t>  Check for existing entries     │
-│  ./scripts/learnings.sh extract-metrics <t>  Extract before/after metrics   │
-│                                                                             │
-│  ./scripts/signal-audit.sh classify <text>   Full classification as JSON    │
-│  ./scripts/signal-audit.sh is-noise <text>   Check if entry is noise        │
-│  ./scripts/signal-audit.sh detect-type <t>   Detect signal type             │
-│                                                                             │
-│  ./scripts/sprint-evolution.sh status        Show sprint progress           │
-│  ./scripts/sprint-evolution.sh increment <id> Track task completion         │
-│  ./scripts/sprint-evolution.sh propose       Generate evolution proposals   │
-│  ./scripts/sprint-evolution.sh reset         Start new sprint               │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-## Signal Types
-
-```
-┌──────────────┬─────────────────────────────────────────────────────────────┐
-│ Type         │ Destination                                                 │
-├──────────────┼─────────────────────────────────────────────────────────────┤
-│ performance  │ Performance Delta (requires metrics)                        │
-│ error        │ Pending Queue → Strict Constraints (after 2+)               │
-│ convention   │ Slop Ledger                                                 │
-│ framework    │ Pending Queue                                               │
-│ pattern      │ Domain learnings (studio/learnings/{domain}.md)             │
-└──────────────┴─────────────────────────────────────────────────────────────┘
-```
-
-## SICVF Validation Criteria
-
-```
-┌──────────┬─────────────────────────────────────────────────────────────────┐
-│ Criterion│ Description                                                     │
-├──────────┼─────────────────────────────────────────────────────────────────┤
-│ Single   │ Can complete in one build cycle without external blocks         │
-│ Independ │ No circular dependencies in task graph                          │
-│ Clear    │ Well-defined inputs, outputs, acceptance criteria               │
-│ Verifiable│ Has executable validation commands                             │
-│ Fits     │ Within token budget (~30K active tier)                          │
-└──────────┴─────────────────────────────────────────────────────────────────┘
-```
-
-## 4-Tier Context System
-
-```
-┌──────────┬─────────┬─────────────────────────────────────────────────────────┐
-│ Tier     │ Budget  │ Contents                                                │
-├──────────┼─────────┼─────────────────────────────────────────────────────────┤
-│ Tier 0   │ 5K      │ Invariants - always loaded, never summarized            │
-│ Tier 1   │ 30K     │ Active - current task context, plan, code               │
-│ Tier 2   │ 15K     │ Summarized - recent tasks, compressed                   │
-│ Tier 3   │ 5K      │ Indexed - on-demand reference lookup                    │
-└──────────┴─────────┴─────────────────────────────────────────────────────────┘
-```
-
-## Common Workflows
-
-### Start a New Feature
-```
-1. /build "Add user authentication"
-2. Answer Planner's questions
-3. Review plan confidence score
-4. Watch Builder execute
-5. Verify quality gate passes
-```
-
-### Set Up Brand
-```
-1. /brand
-2. Complete 5-phase interview
-3. Brand files created in brand/
-4. All content now aligned
-```
-
-### Create Content
-```
-1. /blog "Topic Name"
-2. Content Writer loads brand
-3. Drafts with voice rules
-4. Optimizes for SEO
-5. Ready for publishing
-```
-
-### Recover from Issues
-```
-1. /rollback:list              See available points
-2. /rollback:preview <task>    Preview changes
-3. /rollback:to <task> --force Execute rollback
+### After Build
+```bash
+./scripts/verify-ac.sh --task-id task_xxx       # Run acceptance criteria
+./scripts/dod-check.sh --auto-detect            # Definition of Done
 ```
 
 ---
 
+## 📊 Confidence Scoring
+
+| Score | Verdict | Action |
+|-------|---------|--------|
+| **85-100** | ✅ PROCEED | Build with confidence |
+| **70-84** | ⚠️ CAUTION | Review warnings first |
+| **<70** | 🛑 BLOCKED | Fix issues before build |
+
+Scored across: Requirements (25) + Step Quality (25) + Context (25) + Risk (25)
+
+---
+
+## 📁 Build States
+
+| State | Icon | Meaning |
+|-------|------|---------|
+| `PLANNING` | 🔵 | Planner asking questions |
+| `READY_TO_BUILD` | 📋 | Plan approved, ready to go |
+| `BUILDING` | 🟡 | Builder executing steps |
+| `COMPLETE` | ✅ | Done, quality gate passed |
+| `BLOCKED` | 🛑 | Quality gate failed |
+| `HALTED` | ⚠️ | Step failed after retries |
+
+---
+
+## 🧠 Learning System
+
+```bash
+# Sprint evolution (auto-triggers every 5 tasks)
+./scripts/sprint-evolution.sh status    # Current sprint progress
+./scripts/sprint-evolution.sh propose   # Generate evolution proposals
+
+# Signal classification
+./scripts/signal-audit.sh classify "learning text"  # Route to correct section
+./scripts/learnings.sh check-duplicate "title"      # Avoid duplicates
 ```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║  "Plan thoroughly, execute precisely, learn continuously"                     ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
+
+### Knowledge Base Sections
+
+| Section | What goes here |
+|---------|----------------|
+| **Strict Constraints** | Rules that must NEVER be violated (auto-promoted after 2 hits) |
+| **Slop Ledger** | Naming/structural mistakes to avoid |
+| **Performance Delta** | Measured improvements with before/after metrics |
+| **Pending Queue** | Signals awaiting promotion |
+
+---
+
+## 🏗 Enterprise Scripts
+
+```bash
+# SICVF validation (large projects)
+./scripts/sicvf-validate.sh --task-id task_xxx
+
+# Context management
+./scripts/context-manager.sh status              # Check budgets
+./scripts/context-inject.sh --task-id task_xxx   # Load tiered context
+
+# Multi-agent orchestration
+./scripts/orchestrator.sh init "goal"            # Start session
+./scripts/orchestrator.sh checkpoint "name"      # Save state
+./scripts/orchestrator.sh recover                # Resume from failure
+
+# Parallel execution
+./scripts/parallel-build.sh --session-id orch_xxx  # Run independent tasks
+./scripts/dependency-graph.sh parallel-batches     # Find parallelizable work
 ```
+
+---
+
+## 📎 Quick Workflows
+
+### Build a Feature
+```bash
+/studio "Add user authentication"    # 1. Plan (answers questions)
+# Review plan, approve
+/build task_20260204_123456          # 2. Execute
+```
+
+### Resume Failed Build
+```bash
+/build --resume                      # Continues from last completed step
+```
+
+### Check Why Build Failed
+```bash
+./scripts/error-matcher.sh --input "$(cat .studio/tasks/task_xxx/error.log)"
+# Returns: pattern match, fix suggestion, auto-fix command
+```
+
+### Validate Before Build
+```bash
+./scripts/validate-plan.sh --task-id task_xxx && \
+./scripts/confidence-score.sh --task-id task_xxx
+```
+
+---
+
+## 📂 Key Files
+
+| File | Purpose |
+|------|---------|
+| `commands/studio.md` | Planning command definition |
+| `commands/build.md` | Build command definition |
+| `hooks/hooks.json` | Lifecycle automation |
+| `data/error-patterns.yaml` | Error → fix mappings |
+| `data/dod-templates/` | Definition of Done templates |
+| `STUDIO_KNOWLEDGE_BASE.md` | Learned constraints |
+| `.studio/` | Runtime state (gitignored) |
+
+---
+
+## 🎯 SICVF Criteria
+
+Tasks must pass all 5 to be buildable:
+
+| Letter | Criterion | Check |
+|--------|-----------|-------|
+| **S** | Single-pass | Completable in one build cycle |
+| **I** | Independent | No circular dependencies |
+| **C** | Clear | Well-defined inputs/outputs |
+| **V** | Verifiable | Has executable acceptance criteria |
+| **F** | Fits context | Within ~30K token budget |
+
+---
+
+## 📊 4-Tier Context
+
+| Tier | Budget | What's loaded |
+|------|--------|---------------|
+| 0 | 5K | Invariants (always loaded) |
+| 1 | 30K | Active task context |
+| 2 | 15K | Summarized recent tasks |
+| 3 | 5K | On-demand reference |
+
+---
+
+<p align="center"><sub>Plan → Validate → Build → Verify → Learn</sub></p>

@@ -159,6 +159,7 @@ studio/
 │   └── content-writer.yaml      # The Content Writer (creates content)
 │
 ├── 📋 commands/                  # Available Commands
+│   ├── studio.md                # /studio command (planning)
 │   ├── build.md                 # /build command
 │   ├── brand.md                 # /brand command
 │   ├── blog.md                  # /blog command
@@ -198,11 +199,15 @@ studio/
 │
 ├── 📐 schemas/                   # Validation Schemas
 │   ├── execution-ready-plan.schema.json
-│   ├── task-manifest.schema.json
-│   ├── brand.schema.json
+│   ├── plan.schema.json
 │   ├── backlog.schema.json
 │   ├── confidence.schema.json
-│   └── build-output.schema.json
+│   ├── dod.schema.json
+│   ├── context-tiers.schema.json
+│   ├── orchestration-state.schema.json
+│   ├── decomposition-map.schema.json
+│   ├── learnings.schema.json
+│   └── skill.schema.json
 │
 ├── 🎨 brand/                     # Brand Source of Truth
 │   ├── identity.yaml            # Who you are
@@ -212,13 +217,28 @@ studio/
 │
 ├── 🔧 scripts/                   # Runtime Scripts
 │   ├── output.sh                # Terminal formatting
-│   ├── backlog.sh               # Backlog management
-│   ├── learnings.sh             # Learning capture
+│   ├── validate-plan.sh         # Plan structure validation
+│   ├── confidence-score.sh      # Plan quality scoring (0-100)
+│   ├── quality-precheck.sh      # Pre-build lint/typecheck
+│   ├── step-progress.sh         # Build step tracking
+│   ├── error-matcher.sh         # Error pattern matching
+│   ├── verify-ac.sh             # Acceptance criteria runner
+│   ├── dod-check.sh             # Definition of Done checker
+│   ├── parallel-build.sh        # Concurrent task execution
 │   ├── orchestrator.sh          # Multi-agent orchestration
-│   └── context-manager.sh       # Context optimization
+│   ├── context-manager.sh       # Context budget management
+│   ├── context-inject.sh        # 4-tier context injection
+│   ├── sicvf-validate.sh        # SICVF task validation
+│   ├── sprint-evolution.sh      # Post-sprint self-correction
+│   ├── learnings.sh             # Learning capture
+│   ├── signal-audit.sh          # Signal vs noise filtering
+│   ├── skills.sh                # Skill detection/injection
+│   ├── backlog.sh               # Backlog management
+│   └── dependency-graph.sh      # Task dependency analysis
 │
 ├── 📊 data/                      # Static Data
-│   └── error-patterns.json      # Error classification
+│   ├── error-patterns.yaml      # Error classification patterns
+│   └── dod-templates/           # Definition of Done templates
 │
 ├── 📝 templates/                 # Code Templates
 │   ├── api-endpoint.json
@@ -1112,15 +1132,24 @@ For projects with 10+ tasks, the Planner generates a **Decomposition Map**:
 | `team/tier*/` | Domain expert personas |
 | `schemas/*.json` | Validation schemas |
 | `scripts/output.sh` | Terminal formatting |
-| `scripts/backlog.sh` | Backlog management |
-| `scripts/learnings.sh` | Learning capture & classification |
-| `scripts/signal-audit.sh` | Signal vs. noise filtering |
-| `scripts/sprint-evolution.sh` | Post-sprint self-correction |
+| `scripts/validate-plan.sh` | Plan structure validation |
+| `scripts/confidence-score.sh` | Plan quality scoring (0-100) |
+| `scripts/quality-precheck.sh` | Pre-build lint/typecheck |
+| `scripts/step-progress.sh` | Build step progress tracking |
+| `scripts/error-matcher.sh` | Error pattern matching & fix suggestions |
+| `scripts/verify-ac.sh` | Acceptance criteria runner |
+| `scripts/dod-check.sh` | Definition of Done checker |
+| `scripts/parallel-build.sh` | Concurrent task execution |
 | `scripts/orchestrator.sh` | Multi-agent orchestration |
 | `scripts/context-manager.sh` | Context budget management |
 | `scripts/context-inject.sh` | 4-tier context injection |
 | `scripts/sicvf-validate.sh` | SICVF task validation |
+| `scripts/sprint-evolution.sh` | Post-sprint self-correction |
+| `scripts/learnings.sh` | Learning capture & classification |
+| `scripts/signal-audit.sh` | Signal vs. noise filtering |
 | `scripts/skills.sh` | Skill detection/injection |
+| `scripts/dependency-graph.sh` | Task dependency analysis |
+| `scripts/backlog.sh` | Backlog management |
 | `STUDIO_KNOWLEDGE_BASE.md` | Active architectural constraints |
 | `studio/prompts/self-learning.md` | Self-learning protocol |
 | `studio/prompts/enterprise-decomposition.md` | Enterprise decomposition protocol |
