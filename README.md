@@ -1,392 +1,190 @@
-```mermaid
----
-config:
-  layout: dagre
-  theme: neo-dark
-  look: neo
----
-flowchart LR
-    Goal@{ label: "🎯 <b>GOAL</b><br>'Add user auth'" } --> Plan["📋 <b>PLAN</b><br>Atomic steps + validation"]
-    Plan --> Build["🔨 <b>BUILD</b><br>Execute &amp; validate"]
-    Build --> Verified["✅ <b>VERIFIED</b><br>Quality gates"]
-    Verified --> Learn["📚 <b>LEARN</b><br>Capture knowledge"]
-    Learn -. FEEDBACK LOOP .-> Plan
+<p align="center">
+  <img src="https://img.shields.io/badge/version-5.0-blue?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/platform-Claude%20MCP-purple?style=flat-square" alt="Platform">
+</p>
 
-    Goal@{ shape: rect}
-    style Goal fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000000
-    style Plan fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000000
-    style Build fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000000
-    style Verified fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000000
-    style Learn fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000000
-```
----
+<h1 align="center">🎬 STUDIO</h1>
+<p align="center"><strong>AI that plans before it builds, learns from mistakes, and never forgets.</strong></p>
 
-## Table of Contents
-
-1. [Why STUDIO?](#why-studio)
-2. [Quick Start](#quick-start)
-3. [Core Concepts](#core-concepts)
-4. [Commands](#commands)
-5. [Knowledge System](#knowledge-system)
-6. [Enterprise Features](#enterprise-features)
-7. [Architecture](#architecture)
-8. [Documentation](#documentation)
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-how-it-works">How It Works</a> •
+  <a href="#-commands">Commands</a> •
+  <a href="#-scripts">Scripts</a> •
+  <a href="docs/STUDIO-GUIDE.md">Full Guide</a>
+</p>
 
 ---
 
-## Why STUDIO?
+## The Problem
 
-| AI Problem | STUDIO Solution |
-|------------|-----------------|
-| 🤔 **Assumes requirements** | Mandatory questioning with domain experts |
-| 🏃 **Declares success early** | Quality gates block incomplete work |
-| 🌊 **Drifts from intent** | Plan anchors every execution step |
-| 🧠 **Forgets your preferences** | Knowledge base persists constraints across sessions |
-| 🔄 **Repeats same mistakes** | Sprint evolution promotes patterns to rules |
-| ❌ **Silent failures** | Classified errors with fix suggestions |
-| 😰 **No recovery option** | Git-based rollback to any task |
+Most AI coding assistants:
+- ❌ Assume requirements instead of asking
+- ❌ Declare success without verification  
+- ❌ Forget your preferences between sessions
+- ❌ Repeat the same mistakes
+
+**STUDIO fixes this.**
 
 ---
 
-## Quick Start
-
-### Installation
+## 🚀 Quick Start
 
 ```bash
+# Install
 /plugin marketplace add https://github.com/twofoldtech-dakota/studio.git
 /plugin install studio@twofoldtech-dakota
+
+# Plan something
+/studio "Add user authentication with email verification"
+
+# Build the plan
+/build task_xxx
 ```
 
-### Your First Build
+That's it. STUDIO asks questions, creates a plan, and executes with validation.
+
+---
+
+## 🔄 How It Works
+
+```
+   YOU                    STUDIO                   OUTPUT
+    │                        │                        │
+    │  "Add auth"            │                        │
+    ├───────────────────────►│                        │
+    │                        │                        │
+    │   ◄── Questions ───────┤  (3 rounds)           │
+    │   ─── Answers ────────►│                        │
+    │                        │                        │
+    │   ◄── Plan ────────────┤  (review & approve)   │
+    │   ─── "looks good" ───►│                        │
+    │                        │                        │
+    │                        ├───────────────────────►│ Code
+    │                        │  Build + Validate      │ Tests
+    │                        │  Quality Gates         │ Docs
+    │                        │  Learn & Remember      │
+    │                        │                        │
+```
+
+### The Pipeline
+
+| Phase | What Happens | Script |
+|-------|--------------|--------|
+| **Plan** | Questions → Requirements → Steps | `confidence-score.sh` |
+| **Validate** | Structure check, confidence ≥70 | `validate-plan.sh` |
+| **Pre-check** | Lint, types, existing issues | `quality-precheck.sh` |
+| **Build** | Execute steps, track progress | `step-progress.sh` |
+| **Verify** | Acceptance criteria, DoD | `verify-ac.sh`, `dod-check.sh` |
+| **Learn** | Capture patterns, evolve knowledge | `sprint-evolution.sh` |
+
+---
+
+## 📋 Commands
+
+| Command | Alias | What it does |
+|---------|-------|--------------|
+| `/studio "goal"` | `/s` | Start planning with questions |
+| `/build task_xxx` | `/b` | Execute an approved plan |
+| `/build --resume` | | Continue from last step |
+| `/status` | | Check current task state |
+
+> See [docs/QUICK-REFERENCE.md](docs/QUICK-REFERENCE.md) for all commands.
+
+---
+
+## 🔧 Scripts
+
+All scripts output JSON, have `--help`, and live in `scripts/`.
+
+### Quality Pipeline
 
 ```bash
-/build "Add user authentication with email verification"
+# Before build
+./scripts/validate-plan.sh --task-id task_xxx     # Structure check
+./scripts/confidence-score.sh --task-id task_xxx  # Quality score (0-100)
+./scripts/quality-precheck.sh                      # Lint + typecheck
+
+# During build  
+./scripts/step-progress.sh status task_xxx        # Track progress
+./scripts/error-matcher.sh --input "error text"   # Fix suggestions
+
+# After build
+./scripts/verify-ac.sh --task-id task_xxx         # Acceptance criteria
+./scripts/dod-check.sh --auto-detect              # Definition of Done
 ```
 
-STUDIO will:
-1. **Ask clarifying questions** using domain expert personas
-2. **Create an execution-ready plan** with atomic, validated steps
-3. **Challenge the plan** for edge cases and risks
-4. **Execute with validation** and automatic retry on failure
-5. **Run quality gates** before marking complete
-6. **Capture learnings** into the knowledge base
+### Confidence Scoring
+
+Plans are scored 0-100:
+
+| Category | Points | Checks |
+|----------|--------|--------|
+| Requirements | 25 | User confirmations, edge cases, scope |
+| Step Quality | 25 | Success criteria, atomic actions |
+| Context | 25 | Constraints, quality requirements |
+| Risk | 25 | Retry behavior, failure handling |
+
+**≥85** = PROCEED • **70-84** = CAUTION • **<70** = BLOCKED
 
 ---
 
-## Core Concepts
+## 🧠 Knowledge System
 
-### The Three Agents
+STUDIO learns from every build:
 
-```
-┌───────────────────────┬───────────────────────┬───────────────────────────────┐
-│                       │                       │                               │
-│   🔵 THE PLANNER      │   🟡 THE BUILDER      │   🟣 THE CONTENT WRITER       │
-│                       │                       │                               │
-│   Creates plans       │   Executes plans      │   Creates content             │
-│   Embeds constraints  │   Validates steps     │   Applies brand voice         │
-│   Challenges self     │   Captures learnings  │   Optimizes for SEO           │
-│                       │                       │                               │
-└───────────────────────┴───────────────────────┴───────────────────────────────┘
-```
+| Section | Purpose |
+|---------|--------|
+| **Strict Constraints** | Rules that must never be violated |
+| **Slop Ledger** | Naming/structural mistakes to avoid |
+| **Performance Delta** | Measured improvements with metrics |
+| **Pending Queue** | Signals awaiting promotion |
 
-### The Five Challenges
-
-Before any plan executes, it must answer:
-
-1. **REQUIREMENTS** — Does this solve what was asked?
-2. **EDGE CASES** — What inputs would break this?
-3. **SIMPLICITY** — Is this the simplest solution?
-4. **INTEGRATION** — Does this fit the codebase?
-5. **FAILURE MODES** — What happens when it fails?
-
-### Quality Gate Verdicts
-
-| Verdict | Meaning |
-|---------|---------|
-| **STRONG** | All checks passed |
-| **SOUND** | Required passed, optional warnings |
-| **BLOCKED** | Required check failed — fix required |
+Every 5 tasks → automatic evolution proposals.
 
 ---
 
-## Commands
+## 📁 Project Structure
 
-### Build Commands
-
-| Command | Description |
-|---------|-------------|
-| `/build "goal"` | Start a new build |
-| `/build:preview "goal"` | Preview what would happen (dry-run) |
-| `/build:interactive "goal"` | Step-by-step with confirmation |
-| `/build resume` | Resume incomplete build |
-| `/build status` | Check current build |
-| `/build abort` | Cancel build |
-
-### Brand & Content
-
-| Command | Description |
-|---------|-------------|
-| `/brand` | Start brand discovery (5-phase interview) |
-| `/brand:update [area]` | Update identity, voice, audience, or messaging |
-| `/brand:audit` | Check brand consistency |
-| `/blog "topic"` | Create brand-aligned blog post |
-| `/blog:outline "topic"` | Create outline only |
-| `/blog:ideas` | Generate topic ideas |
-
-### Project Management
-
-| Command | Description |
-|---------|-------------|
-| `/project:init "name"` | Create multi-task project |
-| `/project:task "goal"` | Add task with dependencies |
-| `/project:status` | Show project status |
-| `/project:graph` | Display dependency graph |
-
-### Utilities
-
-| Command | Description |
-|---------|-------------|
-| `/analytics` | View build metrics dashboard |
-| `/trace` | Show requirements traceability |
-| `/rollback:list` | List recovery points |
-| `/rollback:to <task>` | Rollback to pre-task state |
+```
+studio/
+├── commands/           # /studio, /build definitions
+├── scripts/            # Quality pipeline scripts
+├── hooks/              # Lifecycle automation
+├── schemas/            # JSON validation
+├── agents/             # Planner, Builder, Content Writer
+├── skills/             # Domain-specific context
+├── data/
+│   ├── dod-templates/  # Definition of Done templates
+│   └── error-patterns.yaml
+└── docs/               # Detailed documentation
+```
 
 ---
 
-## Knowledge System
+## 📚 Documentation
 
-STUDIO actively evolves its understanding through the **Dynamic SOP System**.
-
-### Knowledge Base Structure
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                          STUDIO KNOWLEDGE BASE                                   │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────────┐   │
-│  │  STRICT CONSTRAINTS                    (Never Violate)                  │   │
-│  │  Rules that kill performance/quality — promoted after 2+ occurrences    │   │
-│  │  Example: "Never mutate React state directly"                           │   │
-│  └─────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────────┐   │
-│  │  SLOP LEDGER                           (Avoid These Mistakes)           │   │
-│  │  Naming, structural mistakes — captured on 1st occurrence + rework cost │   │
-│  │  Example: "Mixed camelCase and kebab-case in component files"           │   │
-│  └─────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────────┐   │
-│  │  PERFORMANCE DELTA                     (Measured Improvements)          │   │
-│  │  Before/after metrics — must have concrete numbers                      │   │
-│  │  Example: "LCP: 2.4s → 1.1s (54% improvement) via lazy loading"         │   │
-│  └─────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────────┐   │
-│  │  PENDING QUEUE                         (Awaiting Promotion)             │   │
-│  │  Signals with 1 occurrence — moves to Strict Constraints after 2nd      │   │
-│  └─────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                 │
-└─────────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Sprint Evolution
-
-Every **5 tasks**, STUDIO proposes knowledge base evolution:
-
-```
-Task 1 → Task 2 → Task 3 → Task 4 → Task 5 → 🔄 EVOLUTION
-                                              │
-                                              ├── Propose deletable rules (stale, no violations)
-                                              ├── Propose new enforcement (recurring patterns)
-                                              └── User approves → Knowledge base updated
-```
-
-### Learning System Scripts
-
-| Script | Purpose |
-|--------|---------|
-| `./scripts/learnings.sh classify <text>` | Classify learning and determine destination |
-| `./scripts/learnings.sh check-duplicate <title>` | Check for existing similar entries |
-| `./scripts/learnings.sh extract-metrics <text>` | Extract before/after metrics |
-| `./scripts/signal-audit.sh classify <text>` | Full signal classification as JSON |
-| `./scripts/signal-audit.sh is-noise <text>` | Check if entry should be filtered |
-| `./scripts/sprint-evolution.sh status` | Show sprint progress |
-| `./scripts/sprint-evolution.sh propose` | Generate evolution proposals |
-| `./scripts/sprint-evolution.sh reset` | Start new sprint after review |
+| Doc | Description |
+|-----|-------------|
+| [STUDIO Guide](docs/STUDIO-GUIDE.md) | Complete usage guide |
+| [Architecture](docs/ARCH.md) | System design deep-dive |
+| [Quick Reference](docs/QUICK-REFERENCE.md) | Command cheat sheet |
+| [AGENTS.md](AGENTS.md) | For AI agents working here |
 
 ---
 
-## Enterprise Features
-
-### SICVF Validation Protocol
-
-For large-scale projects, every task must pass SICVF validation:
-
-| Criterion | Description |
-|-----------|-------------|
-| **S**ingle-pass | Can be completed in one build cycle |
-| **I**ndependent | No circular dependencies |
-| **C**lear boundaries | Well-defined inputs and outputs |
-| **V**erifiable | Has executable acceptance criteria |
-| **F**its context | Within token budget for agent |
+## 🧪 Development
 
 ```bash
-# Validate a task
-./scripts/sicvf-validate.sh --task-id <task_id>
+make test           # Run all tests
+make test-quick     # Fast validation only
+make lint           # Lint bash scripts
+make validate       # Validate JSON/YAML
 ```
-
-### 4-Tier Context System
-
-Context is preserved across tasks in tiers:
-
-| Tier | Budget | Contents |
-|------|--------|----------|
-| **Tier 0** | 5K tokens | Invariants (always loaded) |
-| **Tier 1** | 30K tokens | Active task context |
-| **Tier 2** | 15K tokens | Summarized recent context |
-| **Tier 3** | 5K tokens | Indexed reference (on-demand) |
-
-```bash
-# Inject context for a task
-./scripts/context-inject.sh --task-id <task_id> --goal "<goal>"
-```
-
-### Enterprise Decomposition
-
-For projects with 10+ tasks, the Planner generates a **Decomposition Map**:
-
-1. **Pillar Analysis** — Score 6 architectural pillars (data, auth, api, ui, integration, infra)
-2. **Hierarchy** — Epic → Feature → Task decomposition
-3. **Dependency Graph** — DAG with critical path and parallel batches
-4. **Context Plan** — 4-tier context preservation strategy
-
-See `studio/prompts/enterprise-decomposition.md` for the full protocol.
-
----
-
-## Architecture
-
-```
-                                STUDIO SYSTEM v5.0
-    ┌──────────────────────────────────────────────────────────────────────────┐
-    │                                                                          │
-    │   ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────────┐   │
-    │   │   USER   │────▶│ PLANNER  │────▶│ BUILDER  │────▶│   VERIFIED   │   │
-    │   │   GOAL   │     │  AGENT   │     │  AGENT   │     │    OUTPUT    │   │
-    │   └──────────┘     └────┬─────┘     └────┬─────┘     └──────┬───────┘   │
-    │                         │                │                   │           │
-    │                    ┌────┴────────────────┴───────────────────┘           │
-    │                    │                                                     │
-    │              ┌─────┴─────┐            ┌───────────────┐                  │
-    │              │  MEMORY   │            │    HOOKS      │                  │
-    │              │  SYSTEM   │            │    SYSTEM     │                  │
-    │              │ (Learning)│            │ (Validation)  │                  │
-    │              └─────┬─────┘            └───────────────┘                  │
-    │                    │                                                     │
-    │   ┌────────────────┴─────────────────────────────────────────────────┐   │
-    │   │                      KNOWLEDGE BASE                               │   │
-    │   │  ┌──────────────┐  ┌──────────────┐  ┌─────────────────────────┐ │   │
-    │   │  │   Strict     │  │    Slop      │  │     Performance         │ │   │
-    │   │  │ Constraints  │  │   Ledger     │  │        Delta            │ │   │
-    │   │  └──────────────┘  └──────────────┘  └─────────────────────────┘ │   │
-    │   │                                                                   │   │
-    │   │  ┌──────────────────────────────────────────────────────────────┐│   │
-    │   │  │  Sprint Evolution: Every 5 tasks → Propose → Approve → Update││   │
-    │   │  └──────────────────────────────────────────────────────────────┘│   │
-    │   └───────────────────────────────────────────────────────────────────┘   │
-    │                                                                          │
-    └──────────────────────────────────────────────────────────────────────────┘
-```
-
-### Project Structure
-
-```
-.
-├── STUDIO_KNOWLEDGE_BASE.md      # 📚 Active architectural constraints
-├── .studio/                      # Session state
-│   └── sprint-counter.json       # Sprint evolution tracking
-│
-└── studio/
-    ├── 🤖 agents/                # Agent definitions
-    ├── 📋 commands/              # Available commands
-    ├── 📚 playbooks/             # Methodologies (how agents think)
-    ├── 👥 team/                  # Domain expert personas (13 specialists)
-    ├── 🔗 hooks/                 # Lifecycle hooks (v5.0.0)
-    ├── 📐 schemas/               # Validation schemas
-    ├── 🎨 brand/                 # Brand source of truth
-    ├── 🔧 scripts/               # Runtime scripts
-    │   ├── learnings.sh          # Learning capture & classification
-    │   ├── signal-audit.sh       # Signal vs. noise filtering
-    │   ├── sprint-evolution.sh   # Post-sprint self-correction
-    │   ├── orchestrator.sh       # Multi-agent orchestration
-    │   ├── context-manager.sh    # Context budget management
-    │   ├── context-inject.sh     # 4-tier context injection
-    │   ├── sicvf-validate.sh     # SICVF task validation
-    │   └── skills.sh             # Skill detection/injection
-    ├── 📊 data/                  # Error patterns, analytics
-    ├── 📝 templates/             # Code templates
-    ├── 📖 docs/                  # Documentation
-    ├── 💾 learnings/             # Domain-specific learnings
-    ├── ⚙️ config/                # Framework tracking, signals
-    └── 📄 prompts/               # System prompts
-        ├── self-learning.md      # Self-learning protocol
-        └── enterprise-decomposition.md  # Enterprise workflow
-```
-
----
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| [STUDIO-GUIDE.md](docs/STUDIO-GUIDE.md) | Complete system documentation with visuals |
-| [QUICK-REFERENCE.md](docs/QUICK-REFERENCE.md) | Quick lookup card for commands |
-| [WORKFLOW-VISUAL.md](docs/WORKFLOW-VISUAL.md) | Visual workflow diagrams |
-| [ARCH.md](docs/ARCH.md) | Technical architecture reference |
-
----
-
-## Stack
-
-| Component | Technology |
-|-----------|------------|
-| Runtime | Claude Code |
-| Agents | YAML definitions |
-| Validation | JSON Schema |
-| Hooks | Shell + LLM prompts (v5.0.0) |
-| Storage | File-based (JSON, YAML, Markdown) |
-| Learning | Signal classification + Sprint evolution |
-| Enterprise | SICVF validation + 4-tier context |
-
----
-
-## Philosophy
-
-```
-╔═════════════════════════════════════════════════════════════════════════════════╗
-║                                                                                 ║
-║   "Plan thoroughly, execute precisely, learn continuously"                      ║
-║                                                                                 ║
-║   • Every plan is CHALLENGED before execution                                   ║
-║   • Every step has EXECUTABLE validation                                        ║
-║   • Every constraint is INJECTED into agent context                             ║
-║   • Every build CAPTURES learnings for the knowledge base                       ║
-║   • Every sprint EVOLVES the architectural understanding                        ║
-║                                                                                 ║
-╚═════════════════════════════════════════════════════════════════════════════════╝
-```
-
----
-
-## License
-
-MIT
 
 ---
 
 <p align="center">
-  <b>Built with precision. Executed with confidence. Learned continuously.</b>
-  <br><br>
-  <i>STUDIO v5.0.0</i>
+  <sub>Built for developers who want AI that thinks before it codes.</sub>
 </p>
