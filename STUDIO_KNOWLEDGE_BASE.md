@@ -1,5 +1,7 @@
 # STUDIO Knowledge Base
 
+> **Version**: 1.0.0 | **Last Updated**: 2026-02-04
+>
 > Active architectural evolution through learned constraints and patterns.
 
 This knowledge base contains **verified patterns** from actual build cycles. Entries are promoted based on occurrence thresholds and measurable impact.

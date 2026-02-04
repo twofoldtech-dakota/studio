@@ -4,7 +4,7 @@
 # Common tasks for development and testing
 
 .PHONY: test test-quick test-validation test-orchestrator test-skills test-integration
-.PHONY: install-deps check-deps lint validate help
+.PHONY: install-deps check-deps lint validate validate-docs generate-docs ci help
 
 # Default target
 help:
@@ -22,9 +22,16 @@ help:
 	@echo "  make install-deps      Install test dependencies (bats, yq)"
 	@echo "  make check-deps        Check if dependencies are installed"
 	@echo ""
-	@echo "Validation:"
+@echo "Validation:"
 	@echo "  make lint              Check bash scripts for errors"
 	@echo "  make validate          Validate JSON/YAML files"
+	@echo "  make validate-docs     Check docs reference real files"
+	@echo ""
+	@echo "Documentation:"
+	@echo "  make generate-docs     Generate file listings for docs"
+	@echo ""
+	@echo "CI:"
+	@echo "  make ci                Run full CI pipeline locally"
 	@echo ""
 
 # Install test dependencies
@@ -97,3 +104,44 @@ validate:
 		done; \
 		echo "All YAML files are valid"; \
 	fi
+
+# Validate documentation references real files
+validate-docs:
+	@echo "Checking documentation accuracy..."
+	@ERRORS=0; \
+	echo "  Checking script references..."; \
+	for script in $$(grep -roh 'scripts/[a-z_-]*.sh' docs/*.md AGENTS.md 2>/dev/null | sort -u); do \
+		if [ ! -f "$$script" ]; then \
+			echo "    MISSING: $$script"; \
+			ERRORS=$$((ERRORS + 1)); \
+		fi; \
+	done; \
+	echo "  Checking schema references..."; \
+	for schema in $$(grep -roh 'schemas/[a-z_-]*.schema.json' docs/*.md AGENTS.md 2>/dev/null | sort -u); do \
+		if [ ! -f "$$schema" ]; then \
+			echo "    MISSING: $$schema"; \
+			ERRORS=$$((ERRORS + 1)); \
+		fi; \
+	done; \
+	echo "  Checking command references..."; \
+	for cmd in $$(grep -roh 'commands/[a-z_-]*.md' docs/*.md AGENTS.md 2>/dev/null | sort -u); do \
+		if [ ! -f "$$cmd" ]; then \
+			echo "    MISSING: $$cmd"; \
+			ERRORS=$$((ERRORS + 1)); \
+		fi; \
+	done; \
+	if [ $$ERRORS -gt 0 ]; then \
+		echo "Found $$ERRORS documentation errors"; \
+		exit 1; \
+	else \
+		echo "All documentation references are valid"; \
+	fi
+
+# Generate file listings for documentation
+generate-docs:
+	@./scripts/generate-docs.sh
+
+# Run full CI pipeline locally
+ci: lint validate validate-docs test-quick
+	@echo ""
+	@echo "CI pipeline passed!"

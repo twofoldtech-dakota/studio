@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Lint & Validate
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check bash syntax
+        run: |
+          echo "Checking bash scripts..."
+          for script in scripts/*.sh; do
+            echo "  $script"
+            bash -n "$script"
+          done
+          echo "All scripts valid"
+      
+      - name: Validate JSON
+        run: |
+          echo "Validating JSON files..."
+          for json in hooks/hooks.json schemas/*.json; do
+            echo "  $json"
+            jq . "$json" > /dev/null
+          done
+          echo "All JSON valid"
+      
+      - name: Validate YAML
+        run: |
+          echo "Validating YAML files..."
+          for yaml in skills/*.yaml agents/*.yaml; do
+            echo "  $yaml"
+            python3 -c "import yaml; yaml.safe_load(open('$yaml'))"
+          done
+          echo "All YAML valid"
+      
+      - name: Check documentation accuracy
+        run: |
+          echo "Checking docs reference real files..."
+          ERRORS=0
+          
+          # Check scripts
+          for script in $(grep -roh 'scripts/[a-z_-]*.sh' docs/*.md AGENTS.md 2>/dev/null | sort -u); do
+            if [ ! -f "$script" ]; then
+              echo "MISSING: $script"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          
+          # Check schemas
+          for schema in $(grep -roh 'schemas/[a-z_-]*.schema.json' docs/*.md AGENTS.md 2>/dev/null | sort -u); do
+            if [ ! -f "$schema" ]; then
+              echo "MISSING: $schema"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          
+          # Check commands
+          for cmd in $(grep -roh 'commands/[a-z_-]*.md' docs/*.md AGENTS.md 2>/dev/null | sort -u); do
+            if [ ! -f "$cmd" ]; then
+              echo "MISSING: $cmd"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          
+          if [ $ERRORS -gt 0 ]; then
+            echo "Found $ERRORS documentation errors"
+            exit 1
+          fi
+          echo "All documentation references valid"
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install bats
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+      
+      - name: Run quick tests
+        run: |
+          if [ -f tests/run-tests.sh ]; then
+            chmod +x tests/run-tests.sh
+            ./tests/run-tests.sh --quick
+          else
+            echo "No test runner found, skipping"
+          fi

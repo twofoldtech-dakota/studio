@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> **Source of Truth**: This file is the authoritative reference for AI agents working in this repository. When docs and AGENTS.md conflict, AGENTS.md wins. Update this file first when making structural changes.
+
 This file provides guidance to WARP (warp.dev) when working with code in this repository.
 
 ## Build & Development Commands
@@ -28,6 +30,15 @@ make lint
 
 # Validate JSON/YAML files
 make validate
+
+# Check docs reference real files
+make validate-docs
+
+# Generate file listings for docs
+make generate-docs
+
+# Run full CI locally
+make ci
 ```
 
 ### Running a Single Test
